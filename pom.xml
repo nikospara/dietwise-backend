@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<groupId>eu.dietwise</groupId>
+	<artifactId>dietwise-parent</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	
+	<name>DietWise: Backend Parent</name>
+	<description>Parent module defining the base build configuration and further project structure for the entire DietWise backend monorepo</description>
+
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>dietwise-architecture</module>
+		<!--
+		<module>dietwise-common</module>
+		<module>dietwise-docker</module>
+		-->
+	</modules>
+
+	<properties>
+		<version.java>21</version.java>
+
+		<database-test.active>false</database-test.active>
+
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<version.quarkus.platform>3.25.0</version.quarkus.platform>
+
+		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
+		<version.h2>2.1.210</version.h2>
+		<version.hibernate-validator-cdi>9.0.1.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
+		<version.jakarta-el>4.0.2</version.jakarta-el>
+		<version.junit.jupiter>5.13.4</version.junit.jupiter>
+		<version.kafka>3.2.0</version.kafka><!-- When changing this, also check KafkaTestResource.java -->
+		<version.kafka.scala>2.13</version.kafka.scala>
+		<version.keycloak>26.3.0</version.keycloak>
+		<version.liquibase>4.33.0</version.liquibase>
+		<version.mockito>5.18.0</version.mockito>
+		<version.nimbus-jose-jwt>10.4</version.nimbus-jose-jwt>
+		<version.org.immutables>2.11.1</version.org.immutables>
+		<version.postgres>42.7.7</version.postgres>
+		<version.slf4j>2.0.6</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
+		<version.swagger-annotations>1.6.5</version.swagger-annotations>
+		<version.testcontainers>1.21.3</version.testcontainers><!-- Defined in quarkus-bom, search for testcontainers - consider removing from here -->
+		<version.weld-junit5>5.0.1.Final</version.weld-junit5>
+		<version.wiremock>3.13.1</version.wiremock>
+		<version.wiremock.testcontainers>1.0-alpha-15</version.wiremock.testcontainers><!-- Only in alpha :( check manually in https://central.sonatype.com/artifact/org.wiremock.integrations.testcontainers/wiremock-testcontainers-module -->
+	</properties>
+
+	<distributionManagement>
+		<!-- This is required for site:stage -->
+		<site>
+			<id>site.dietwise</id>
+			<url>https://dietwise.eu/</url>
+		</site>
+	</distributionManagement>
+
+	<dependencyManagement>
+		<!--
+			Let's keep them grouped and sorted as follows:
+
+			- First is the classification of the dependency with the following order:
+
+			FRAMEWORK dependencies, FRAMEWORK TEST, PROJECT (dependencies from within the project), PROJECT TEST
+			(test-scoped dependencies from within the project), SPECS (specification APIs e.g. JAX-RS),
+			OTHER (other non-test libraries), TEST (libraries intended for test scope).
+
+			- Within each classification group sort alphabetically, first by Maven groupId, then by artifactId.
+
+			Do NOT define the scope of the dependencies here, define it when actually used.
+			This allows us to have e.g., project-specific test modules that depend on JUnit in compile
+			scope. This is enforced anyway.
+		-->
+		<dependencies>
+			<!-- FRAMEWORK  -->
+			<dependency>
+				<groupId>io.quarkus.platform</groupId>
+				<artifactId>quarkus-bom</artifactId>
+				<version>${version.quarkus.platform}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<!-- SPECS -->
+			<!-- Many are defined in Quarkus BOM -->
+
+			<!--  OTHER -->
+			<dependency>
+				<groupId>com.nimbusds</groupId>
+				<artifactId>nimbus-jose-jwt</artifactId>
+				<version>${version.nimbus-jose-jwt}</version>
+			</dependency>
+			<!--
+			<dependency>
+				<groupId>io.swagger</groupId>
+				<artifactId>swagger-annotations</artifactId>
+				<version>${version.swagger-annotations}</version>
+				<scope>provided</scope>
+			</dependency>
+			-->
+			<!--
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka-clients</artifactId>
+				<version>${version.kafka}</version>
+			</dependency>
+			-->
+			<dependency>
+				<groupId>org.hibernate.validator</groupId>
+				<artifactId>hibernate-validator-cdi</artifactId>
+				<version>${version.hibernate-validator-cdi}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.immutables</groupId>
+				<artifactId>value</artifactId>
+				<version>${version.org.immutables}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.liquibase</groupId>
+				<artifactId>liquibase-core</artifactId>
+				<version>${version.liquibase}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.postgresql</groupId>
+				<artifactId>postgresql</artifactId>
+				<version>${version.postgres}</version>
+			</dependency>
+			<!-- Defined in Quarkus BOM but does not work without explicitly declaring the dependencies, check again -->
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${version.slf4j}</version>
+			</dependency>
+			<dependency>
+				<!-- TODO Why do we need this? -->
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-jdk14</artifactId>
+				<version>${version.slf4j}</version>
+			</dependency>
+
+			<!-- TEST -->
+			<dependency>
+				<groupId>org.glassfish</groupId>
+				<artifactId>jakarta.el</artifactId>
+				<version>${version.jakarta-el}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.weld</groupId>
+				<artifactId>weld-junit5</artifactId>
+				<version>${version.weld-junit5}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.junit</groupId>
+				<artifactId>junit-bom</artifactId>
+				<version>${version.junit.jupiter}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-core</artifactId>
+				<version>${version.mockito}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-junit-jupiter</artifactId>
+				<version>${version.mockito}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${version.testcontainers}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.wiremock</groupId>
+				<artifactId>wiremock</artifactId>
+				<version>${version.wiremock}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.wiremock.integrations.testcontainers</groupId>
+				<artifactId>wiremock-testcontainers-module</artifactId>
+				<version>${version.wiremock.testcontainers}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.6.1</version>
+				<executions>
+					<execution>
+						<id>enforce-maven</id>
+						<goals><goal>enforce</goal></goals>
+						<configuration>
+							<rules>
+								<!--
+									https://stackoverflow.com/questions/15221299/dependencymanagement-and-scope
+									https://maven.apache.org/enforcer/enforcer-rules/banDependencyManagementScope.html
+								-->
+								<banDependencyManagementScope />
+								<requireMavenVersion>
+									<version>3.9.6</version>
+								</requireMavenVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>com.googlecode.maven-download-plugin</groupId>
+					<artifactId>download-maven-plugin</artifactId>
+					<version>1.13.0</version>
+				</plugin>
+				<plugin>
+					<groupId>io.fabric8</groupId>
+					<artifactId>docker-maven-plugin</artifactId>
+					<version>0.46.0</version>
+				</plugin>
+				<plugin>
+					<groupId>io.quarkus.platform</groupId>
+					<artifactId>quarkus-maven-plugin</artifactId>
+					<version>${version.quarkus.platform}</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.5.0</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.14.0</version>
+					<configuration>
+						<release>${version.java}</release>
+						<source>${version.java}</source>
+						<target>${version.java}</target>
+						<parameters>true</parameters>
+					</configuration>
+				</plugin>
+				<!--
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>3.2.0</version>
+				</plugin>
+				-->
+				<plugin>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>3.1.4</version>
+				</plugin>
+				<!-- TODO The plugin and configuration is from Quarkus. Double check if it is needed, and if the configuration applies at this level, or just in the Quarkus modules.
+				<plugin>
+					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>3.5.3</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>integration-test</goal>
+								<goal>verify</goal>
+							</goals>
+						</execution>
+					</executions>
+					<configuration>
+						<systemPropertyVariables>
+							<native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+							<java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+							<maven.home>${maven.home}</maven.home>
+						</systemPropertyVariables>
+					</configuration>
+				</plugin>
+				-->
+				<plugin>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>3.1.4</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.4.2</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.3.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>3.21.0</version>
+					<!-- we shall see about that...
+					<dependencies>
+						<dependency>
+							<groupId>io.github.devacfr.maven.skins</groupId>
+							<artifactId>reflow-velocity-tools</artifactId>
+							<version>2.3.0</version>
+						</dependency>
+					</dependencies>
+					-->
+				</plugin>
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.5.3</version>
+					<!-- TODO The configuration is from Quarkus. Double check if it is needed at this level, or just in the Quarkus modules. -->
+					<configuration>
+						<systemPropertyVariables>
+							<java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+							<maven.home>${maven.home}</maven.home>
+						</systemPropertyVariables>
+					</configuration>
+				</plugin>
+				<!--
+				<plugin>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>3.3.2</version>
+					<configuration>
+						<failOnMissingWebXml>false</failOnMissingWebXml>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.jboss.jandex</groupId>
+					<artifactId>jandex-maven-plugin</artifactId>
+					<version>1.2.0</version>
+				</plugin>
+				-->
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>versions-maven-plugin</artifactId>
+					<version>2.18.0</version>
+					<configuration>
+						<ruleSet>
+							<ignoreVersions>
+								<ignoreVersion>
+									<type>regex</type>
+									<version>(.+-SNAPSHOT|.+-M\d+|.*.CR\d+)</version>
+								</ignoreVersion>
+								<ignoreVersion>
+									<type>regex</type>
+									<version>.+-([aA]lpha|[bB]eta)[.-]?\d*</version>
+								</ignoreVersion>
+								<ignoreVersion>
+									<type>regex</type>
+									<version>.+\.([aA]lpha|.+\.[bB]eta)[.-]?\d*</version>
+								</ignoreVersion>
+							</ignoreVersions>
+						</ruleSet>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>3.9.0</version>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>index</report>
+							<!--
+								This is a useful report, but activating here puts it in every module (and it is the same).
+								Got to find a way to generate it only for the parent module.
+							<report>dependency-convergence</report>
+							-->
+							<report>dependencies</report>
+							<report>dependency-info</report>
+							<report>modules</report>
+							<report>summary</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
+
+	<profiles>
+		<profile>
+			<id>jacoco</id>
+
+			<build>
+				<pluginManagement>
+					<plugins>
+						<!-- TODO Try putting it in the regular pluginManagement section -->
+						<plugin>
+							<groupId>org.jacoco</groupId>
+							<artifactId>jacoco-maven-plugin</artifactId>
+							<version>0.8.13</version>
+						</plugin>
+					</plugins>
+				</pluginManagement>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<configuration>
+							<append>true</append>
+						</configuration>
+						<executions>
+							<execution>
+								<id>agent-for-ut</id>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>agent-for-it</id>
+								<goals>
+									<goal>prepare-agent-integration</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>jacoco-site</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>report</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<!-- Deprecated, probably no need for H2 tests -->
+			<id>test-h2</id>
+
+			<properties>
+				<database-test.active>true</database-test.active>
+				<database-test.hibernate.dialect>org.hibernate.dialect.H2Dialect</database-test.hibernate.dialect>
+				<database-test.url>jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1</database-test.url>
+				<database-test.username>sa</database-test.username>
+				<database-test.password>sa</database-test.password>
+			</properties>
+
+			<dependencyManagement>
+				<dependencies>
+					<!-- TODO Place a regular dependencyManagement entry and use it here without the version -->
+					<dependency>
+						<groupId>com.h2database</groupId>
+						<artifactId>h2</artifactId>
+						<version>${version.h2}</version>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
+		</profile>
+	</profiles>
+</project>
