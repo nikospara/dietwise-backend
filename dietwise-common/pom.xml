@@ -8,15 +8,14 @@
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>dietwise-architecture</artifactId>
+	<artifactId>dietwise-common</artifactId>
 
-	<name>DietWise: Architecture container</name>
-	<description>Architecture container</description>
+	<name>DietWise: Common functionalities container</name>
+	<description>Container project for functionalities and types that are common between modules</description>
 
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>dietwise-model</module>
-		<module>dietwise-service-interfaces</module>
+		<module>dietwise-common-types</module>
 	</modules>
 </project>

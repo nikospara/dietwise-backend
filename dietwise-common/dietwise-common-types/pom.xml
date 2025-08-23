@@ -4,19 +4,14 @@
 
 	<parent>
 		<groupId>eu.dietwise</groupId>
-		<artifactId>dietwise-parent</artifactId>
+		<artifactId>dietwise-common</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>dietwise-architecture</artifactId>
+	<artifactId>dietwise-common-types</artifactId>
 
-	<name>DietWise: Architecture container</name>
-	<description>Architecture container</description>
+	<name>DietWise: Common types</name>
+	<description>Generic types, usable throughout the application and not tightly related to any specific module</description>
 
-	<packaging>pom</packaging>
-
-	<modules>
-		<module>dietwise-model</module>
-		<module>dietwise-service-interfaces</module>
-	</modules>
+	<packaging>jar</packaging>
 </project>

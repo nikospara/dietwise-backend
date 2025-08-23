@@ -13,10 +13,7 @@
 
 	<modules>
 		<module>dietwise-architecture</module>
-		<!--
 		<module>dietwise-common</module>
-		<module>dietwise-docker</module>
-		-->
 	</modules>
 
 	<properties>

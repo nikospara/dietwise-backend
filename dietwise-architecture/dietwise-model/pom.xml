@@ -4,19 +4,15 @@
 
 	<parent>
 		<groupId>eu.dietwise</groupId>
-		<artifactId>dietwise-parent</artifactId>
+		<artifactId>dietwise-architecture</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>dietwise-architecture</artifactId>
+	<artifactId>dietwise-model</artifactId>
 
-	<name>DietWise: Architecture container</name>
-	<description>Architecture container</description>
+	<name>DietWise: Model</name>
+	<description>Model and service interfaces for DietWise, from an architectural point of view</description>
 
-	<packaging>pom</packaging>
+	<packaging>jar</packaging>
 
-	<modules>
-		<module>dietwise-model</module>
-		<module>dietwise-service-interfaces</module>
-	</modules>
 </project>
