@@ -14,6 +14,7 @@
 	<modules>
 		<module>dietwise-architecture</module>
 		<module>dietwise-common</module>
+		<module>dietwise-container</module>
 	</modules>
 
 	<properties>
