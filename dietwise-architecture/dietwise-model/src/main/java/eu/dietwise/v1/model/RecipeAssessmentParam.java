@@ -9,4 +9,6 @@ public interface RecipeAssessmentParam {
 	String getUrl();
 
 	String getPageContent();
+
+	String getLangCode();
 }
