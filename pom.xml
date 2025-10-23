@@ -25,25 +25,25 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.25.0</version.quarkus.platform>
+		<version.quarkus.platform>3.28.5</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.h2>2.1.210</version.h2>
 		<version.hibernate-validator-cdi>9.0.1.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
-		<version.junit.jupiter>5.13.4</version.junit.jupiter>
+		<version.junit.jupiter>5.13.4</version.junit.jupiter><!-- Defined in quarkus-bom, search for junit-jupiter-api - consider removing from here -->
 		<version.kafka>3.2.0</version.kafka><!-- When changing this, also check KafkaTestResource.java -->
 		<version.kafka.scala>2.13</version.kafka.scala>
 		<version.keycloak>26.3.0</version.keycloak>
-		<version.liquibase>4.33.0</version.liquibase>
-		<version.mockito>5.18.0</version.mockito>
-		<version.nimbus-jose-jwt>10.4</version.nimbus-jose-jwt>
-		<version.org.immutables>2.11.1</version.org.immutables>
-		<version.postgres>42.7.7</version.postgres>
-		<version.slf4j>2.0.6</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
+		<version.liquibase>5.0.1</version.liquibase>
+		<version.mockito>5.19.0</version.mockito><!-- Defined in quarkus-bom, search for mockito-core - consider removing from here -->
+		<version.nimbus-jose-jwt>10.4.2</version.nimbus-jose-jwt><!-- Defined in quarkus-bom, search for nimbus-jose-jwt - consider removing from here -->
+		<version.org.immutables>2.11.6</version.org.immutables>
+		<version.postgres>42.7.8</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql - consider removing from here -->
+		<version.slf4j>2.0.17</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>
 		<version.testcontainers>1.21.3</version.testcontainers><!-- Defined in quarkus-bom, search for testcontainers - consider removing from here -->
-		<version.weld-junit5>5.0.1.Final</version.weld-junit5>
+		<version.weld-junit5>5.0.3.Final</version.weld-junit5>
 		<version.wiremock>3.13.1</version.wiremock>
 		<version.wiremock.testcontainers>1.0-alpha-15</version.wiremock.testcontainers><!-- Only in alpha :( check manually in https://central.sonatype.com/artifact/org.wiremock.integrations.testcontainers/wiremock-testcontainers-module -->
 	</properties>
@@ -192,7 +192,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>3.6.2</version>
 				<executions>
 					<execution>
 						<id>enforce-maven</id>
@@ -237,7 +237,7 @@
 				</plugin>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.14.0</version>
+					<version>3.14.1</version>
 					<configuration>
 						<release>${version.java}</release>
 						<source>${version.java}</source>
@@ -304,7 +304,7 @@
 				</plugin>
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.5.3</version>
+					<version>3.5.4</version>
 					<!-- TODO The configuration is from Quarkus. Double check if it is needed at this level, or just in the Quarkus modules. -->
 					<configuration>
 						<systemPropertyVariables>
@@ -330,7 +330,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>versions-maven-plugin</artifactId>
-					<version>2.18.0</version>
+					<version>2.19.1</version>
 					<configuration>
 						<ruleSet>
 							<ignoreVersions>
@@ -390,7 +390,7 @@
 						<plugin>
 							<groupId>org.jacoco</groupId>
 							<artifactId>jacoco-maven-plugin</artifactId>
-							<version>0.8.13</version>
+							<version>0.8.14</version>
 						</plugin>
 					</plugins>
 				</pluginManagement>
