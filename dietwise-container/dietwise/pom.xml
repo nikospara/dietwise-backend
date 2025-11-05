@@ -65,6 +65,11 @@
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-smallrye-health</artifactId>
 		</dependency>
+        <!-- Quarkiverse -->
+        <dependency>
+            <groupId>io.quarkiverse.langchain4j</groupId>
+            <artifactId>quarkus-langchain4j-ollama</artifactId>
+        </dependency>
 
 		<!-- FRAMEWORK TEST -->
 		<dependency>

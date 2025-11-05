@@ -4,6 +4,7 @@ import java.util.Random;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.services.v1.RecipeAssessmentService;
+import eu.dietwise.services.v1.ai.RecipeAssessmentAiService;
 import eu.dietwise.v1.model.ImmutableRecipeAssessmentResult;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
@@ -13,8 +14,21 @@ import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
+	private final RecipeAssessmentAiService aiService;
+
+	public RecipeAssessmentServiceImpl(RecipeAssessmentAiService aiService) {
+		this.aiService = aiService;
+	}
+
 	@Override
 	public Uni<RecipeAssessmentResult> assessHtmlRecipe(RecipeAssessmentParam param) {
+		long t1 = System.currentTimeMillis();
+		var recipeFromAi = aiService.extractRecipeFromHtml(param.getPageContent());
+		System.out.println("====================================================");
+		System.out.println(recipeFromAi);
+		long dt = System.currentTimeMillis() - t1;
+		System.out.println("Time to extract recipe from HTML: " + dt);
+		System.out.println("====================================================");
 		var result = ImmutableRecipeAssessmentResult.builder()
 				.status(RecipeAssessmentResultStatus.SUCCESS)
 				.rating(new Random().nextInt(10) / 2.0)

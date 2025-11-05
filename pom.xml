@@ -40,6 +40,7 @@
 		<version.nimbus-jose-jwt>10.4.2</version.nimbus-jose-jwt><!-- Defined in quarkus-bom, search for nimbus-jose-jwt - consider removing from here -->
 		<version.org.immutables>2.11.6</version.org.immutables>
 		<version.postgres>42.7.8</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql - consider removing from here -->
+        <version.quarkus-langchain4j>1.3.1</version.quarkus-langchain4j>
 		<version.slf4j>2.0.17</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>
 		<version.testcontainers>1.21.3</version.testcontainers><!-- Defined in quarkus-bom, search for testcontainers - consider removing from here -->
@@ -80,6 +81,17 @@
 				<version>${version.quarkus.platform}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<!-- Quarkiverse -->
+			<dependency>
+				<groupId>io.quarkiverse.langchain4j</groupId>
+				<artifactId>quarkus-langchain4j-core</artifactId>
+				<version>${version.quarkus-langchain4j}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.quarkiverse.langchain4j</groupId>
+				<artifactId>quarkus-langchain4j-ollama</artifactId>
+				<version>${version.quarkus-langchain4j}</version>
 			</dependency>
 
 			<!-- SPECS -->
