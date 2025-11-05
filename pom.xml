@@ -25,25 +25,25 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.28.5</version.quarkus.platform>
+		<version.quarkus.platform>3.29.0</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.h2>2.1.210</version.h2>
 		<version.hibernate-validator-cdi>9.0.1.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
-		<version.junit.jupiter>5.13.4</version.junit.jupiter><!-- Defined in quarkus-bom, search for junit-jupiter-api - consider removing from here -->
+		<!--<version.junit.jupiter>5.13.4</version.junit.jupiter>--><!-- Defined in quarkus-bom, search for junit-jupiter-api - consider removing from here -->
 		<version.kafka>3.2.0</version.kafka><!-- When changing this, also check KafkaTestResource.java -->
 		<version.kafka.scala>2.13</version.kafka.scala>
 		<version.keycloak>26.3.0</version.keycloak>
 		<version.liquibase>5.0.1</version.liquibase>
-		<version.mockito>5.19.0</version.mockito><!-- Defined in quarkus-bom, search for mockito-core - consider removing from here -->
-		<version.nimbus-jose-jwt>10.4.2</version.nimbus-jose-jwt><!-- Defined in quarkus-bom, search for nimbus-jose-jwt - consider removing from here -->
+		<!--<version.mockito>5.19.0</version.mockito>--><!-- Defined in quarkus-bom, search for mockito-core - consider removing from here -->
+		<!--<version.nimbus-jose-jwt>10.4.2</version.nimbus-jose-jwt>--><!-- Defined in quarkus-bom, search for nimbus-jose-jwt - consider removing from here -->
 		<version.org.immutables>2.11.6</version.org.immutables>
-		<version.postgres>42.7.8</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql - consider removing from here -->
+		<!--<version.postgres>42.7.8</version.postgres>--><!-- Defined in quarkus-bom, search for org.postgresql - consider removing from here -->
         <version.quarkus-langchain4j>1.3.1</version.quarkus-langchain4j>
 		<version.slf4j>2.0.17</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>
-		<version.testcontainers>1.21.3</version.testcontainers><!-- Defined in quarkus-bom, search for testcontainers - consider removing from here -->
+		<!--<version.testcontainers>1.21.3</version.testcontainers>--><!-- Defined in quarkus-bom, search for testcontainers - consider removing from here -->
 		<version.weld-junit5>5.0.3.Final</version.weld-junit5>
 		<version.wiremock>3.13.1</version.wiremock>
 		<version.wiremock.testcontainers>1.0-alpha-15</version.wiremock.testcontainers><!-- Only in alpha :( check manually in https://central.sonatype.com/artifact/org.wiremock.integrations.testcontainers/wiremock-testcontainers-module -->
@@ -98,11 +98,13 @@
 			<!-- Many are defined in Quarkus BOM -->
 
 			<!--  OTHER -->
+			<!--
 			<dependency>
 				<groupId>com.nimbusds</groupId>
 				<artifactId>nimbus-jose-jwt</artifactId>
 				<version>${version.nimbus-jose-jwt}</version>
 			</dependency>
+			-->
 			<!--
 			<dependency>
 				<groupId>io.swagger</groupId>
@@ -133,11 +135,13 @@
 				<artifactId>liquibase-core</artifactId>
 				<version>${version.liquibase}</version>
 			</dependency>
+			<!--
 			<dependency>
 				<groupId>org.postgresql</groupId>
 				<artifactId>postgresql</artifactId>
 				<version>${version.postgres}</version>
 			</dependency>
+			-->
 			<!-- Defined in Quarkus BOM but does not work without explicitly declaring the dependencies, check again -->
 			<dependency>
 				<groupId>org.slf4j</groupId>
@@ -162,6 +166,7 @@
 				<artifactId>weld-junit5</artifactId>
 				<version>${version.weld-junit5}</version>
 			</dependency>
+			<!--
 			<dependency>
 				<groupId>org.junit</groupId>
 				<artifactId>junit-bom</artifactId>
@@ -169,6 +174,8 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			-->
+			<!--
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
@@ -179,6 +186,8 @@
 				<artifactId>mockito-junit-jupiter</artifactId>
 				<version>${version.mockito}</version>
 			</dependency>
+			-->
+			<!--
 			<dependency>
 				<groupId>org.testcontainers</groupId>
 				<artifactId>testcontainers-bom</artifactId>
@@ -186,6 +195,7 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			-->
 			<dependency>
 				<groupId>org.wiremock</groupId>
 				<artifactId>wiremock</artifactId>
@@ -236,7 +246,7 @@
 				<plugin>
 					<groupId>io.fabric8</groupId>
 					<artifactId>docker-maven-plugin</artifactId>
-					<version>0.46.0</version>
+					<version>0.47.0</version>
 				</plugin>
 				<plugin>
 					<groupId>io.quarkus.platform</groupId>
