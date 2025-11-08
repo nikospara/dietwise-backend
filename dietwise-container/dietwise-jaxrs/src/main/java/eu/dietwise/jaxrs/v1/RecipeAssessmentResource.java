@@ -6,12 +6,12 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import eu.dietwise.services.v1.RecipeAssessmentService;
+import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
-import io.smallrye.common.annotation.Blocking;
-import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
+import org.jboss.resteasy.reactive.RestMulti;
 
 @Path("recipe/assess")
 public class RecipeAssessmentResource {
@@ -20,11 +20,9 @@ public class RecipeAssessmentResource {
 
 	@POST
 	@Path("html")
-	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Blocking // TODO Find better way
-	public Uni<Response> assessHtmlRecipe(RecipeAssessmentParam param) {
-		return service.assessHtmlRecipe(param)
-				.map(response -> Response.ok().entity(response).build());
+	@Produces(MediaType.APPLICATION_JSON)
+	public Multi<RecipeAssessmentMessage> assessHtmlRecipe(RecipeAssessmentParam param) {
+		return RestMulti.fromMultiData(service.assessHtmlRecipe(param)).encodeAsJsonArray(false).build();
 	}
 }

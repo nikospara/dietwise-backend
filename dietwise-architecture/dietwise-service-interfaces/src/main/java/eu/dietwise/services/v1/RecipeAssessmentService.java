@@ -1,9 +1,9 @@
 package eu.dietwise.services.v1;
 
+import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
-import eu.dietwise.v1.model.RecipeAssessmentResult;
-import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
 
 public interface RecipeAssessmentService {
-	Uni<RecipeAssessmentResult> assessHtmlRecipe(RecipeAssessmentParam param);
+	Multi<RecipeAssessmentMessage> assessHtmlRecipe(RecipeAssessmentParam param);
 }
