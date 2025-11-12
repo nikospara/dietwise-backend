@@ -9,6 +9,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 @SystemMessage(fromResource = "eu/dietwise/services/v1/ai/extract-recipe-from-html.md")
 @ApplicationScoped
 public interface RecipeAssessmentAiService {
-	@UserMessage("Input: {html}")
+	@UserMessage("{html}")
 	String extractRecipeFromHtml(String html);
 }

@@ -17,6 +17,7 @@
 
 	<modules>
 		<module>dietwise-model</module>
+		<module>dietwise-model-json</module>
 		<module>dietwise-service-interfaces</module>
 	</modules>
 </project>
