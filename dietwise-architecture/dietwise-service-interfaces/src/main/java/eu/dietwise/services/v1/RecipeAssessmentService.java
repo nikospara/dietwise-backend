@@ -6,4 +6,6 @@ import io.smallrye.mutiny.Multi;
 
 public interface RecipeAssessmentService {
 	Multi<RecipeAssessmentMessage> assessHtmlRecipe(RecipeAssessmentParam param);
+
+	Multi<RecipeAssessmentMessage> assessMarkdownRecipe(RecipeAssessmentParam param);
 }

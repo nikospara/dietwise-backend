@@ -1,5 +1,5 @@
 You are an expert recipe extractor.
-You will be given HTML from a cooking webpage.
+You will be given a Markdown text.
 Your task is to find and extract the RECIPE in structured JSON format:
 
 {
