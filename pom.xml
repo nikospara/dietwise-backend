@@ -16,6 +16,7 @@
 		<module>dietwise-architecture</module>
 		<module>dietwise-common</module>
 		<module>dietwise-container</module>
+		<module>dietwise-docker</module>
 	</modules>
 
 	<properties>
@@ -35,12 +36,12 @@
 		<!--<version.junit.jupiter>5.13.4</version.junit.jupiter>--><!-- Defined in quarkus-bom, search for junit-jupiter-api - consider removing from here -->
 		<version.kafka>3.2.0</version.kafka><!-- When changing this, also check KafkaTestResource.java -->
 		<version.kafka.scala>2.13</version.kafka.scala>
-		<version.keycloak>26.3.0</version.keycloak>
+		<version.keycloak>26.4.7</version.keycloak>
 		<version.liquibase>5.0.1</version.liquibase>
 		<!--<version.mockito>5.19.0</version.mockito>--><!-- Defined in quarkus-bom, search for mockito-core - consider removing from here -->
 		<!--<version.nimbus-jose-jwt>10.4.2</version.nimbus-jose-jwt>--><!-- Defined in quarkus-bom, search for nimbus-jose-jwt - consider removing from here -->
 		<version.org.immutables>2.11.7</version.org.immutables>
-		<!--<version.postgres>42.7.8</version.postgres>--><!-- Defined in quarkus-bom, search for org.postgresql - consider removing from here -->
+		<version.postgres>42.7.8</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
 		<version.quarkus-langchain4j>1.4.2</version.quarkus-langchain4j>
 		<!--<version.slf4j>2.0.17</version.slf4j>--><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>

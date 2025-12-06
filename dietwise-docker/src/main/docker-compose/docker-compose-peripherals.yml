@@ -1,0 +1,19 @@
+services:
+  postgresql:
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    image: 'dietwise-postgres:latest'
+    ports:
+      - '5432:5432'
+    volumes:
+      - data_db:/var/lib/postgresql/data
+  keycloak:
+    image: 'dietwise-keycloak:latest'
+    ports:
+      - '8280:8080'
+    depends_on:
+      - postgresql
+
+volumes:
+  data_db:
