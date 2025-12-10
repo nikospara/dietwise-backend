@@ -46,9 +46,14 @@ Create a new client in the Realm:
 	- Root URL: **TODO**
 	- Home URL: **TODO**
 	- Valid redirect URIs:
-		- **TODO**
-	- Valid post logout redirect URIs: **TODO**
-	- Web origins: **TODO**
+		- http://localhost:5173/authcallback
+		- **TODO** (more are needed for real usage)
+	- Valid post logout redirect URIs:
+		- http://localhost:5173/endsession
+		- **TODO** (more are needed for real usage)
+	- Web origins:
+		- http://localhost:5173
+		- **TODO** (more are needed for real usage)
 - Save & finish the new client wizard
 
 ### Create a client for Responsible Cooking Alliance
@@ -95,10 +100,10 @@ The ID is `716e038e-9f28-4f67-a797-2cb297818546`. Go to the "Credentials" tab, "
 Exporting from the UI does not include users in the export file; you have to use the CLI:
 
 ```bash
-docker exec -it dietwise_keycloak_1 bash
+docker exec -it dietwise-keycloak-1 bash
 # in the container
 /opt/keycloak/bin/kc.sh export --dir /opt/keycloak/data/import --users realm_file --realm dietwise
 exit # return to host
 # in the host
-docker cp dietwise_keycloak_1:/opt/keycloak/data/import/dietwise-realm.json dietwise-docker/dietwise-docker-keycloak/src/main/docker/
+docker cp dietwise-keycloak-1:/opt/keycloak/data/import/dietwise-realm.json dietwise-docker/dietwise-docker-keycloak/src/main/docker/
 ```
