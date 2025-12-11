@@ -17,5 +17,7 @@
 
 	<modules>
 		<module>dietwise-common-types</module>
+		<module>dietwise-common-dao-reactive</module>
+		<module>dietwise-common-dao-reactive-hibernate</module>
 	</modules>
 </project>

@@ -14,4 +14,13 @@
 	<description>Generic types, usable throughout the application and not tightly related to any specific module</description>
 
 	<packaging>jar</packaging>
+
+	<dependencies>
+		<!-- OTHER -->
+		<dependency>
+			<groupId>org.immutables</groupId>
+			<artifactId>value</artifactId>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
 </project>

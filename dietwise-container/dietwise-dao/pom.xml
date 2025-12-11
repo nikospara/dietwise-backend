@@ -4,21 +4,17 @@
 
 	<parent>
 		<groupId>eu.dietwise</groupId>
-		<artifactId>dietwise-parent</artifactId>
+		<artifactId>dietwise-container</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>dietwise-container</artifactId>
+	<artifactId>dietwise-dao</artifactId>
 
-	<name>DietWise: Container project for the backend</name>
+	<name>DietWise: DAO interfaces</name>
+	<description>DAO interfaces for managing the persistent storage of DietWise</description>
 
-	<packaging>pom</packaging>
+	<dependencies>
+		<!-- PROJECT -->
 
-	<modules>
-		<module>dietwise</module>
-		<module>dietwise-jaxrs</module>
-		<module>dietwise-services</module>
-		<module>dietwise-dao</module>
-		<module>dietwise-dao-hibernate-reactive</module>
-	</modules>
+	</dependencies>
 </project>

@@ -75,21 +75,19 @@
 									<outputFileName>dbdriver.jar</outputFileName>
 								</configuration>
 							</execution>
-							<!--
 							<execution>
-								<id>download-migrations-recipewatch</id>
+								<id>download-migrations</id>
 								<phase>package</phase>
 								<goals>
 									<goal>artifact</goal>
 								</goals>
 								<configuration>
 									<groupId>eu.dietwise</groupId>
-									<artifactId>recipewatch-dao-hibernate-reactive</artifactId>
+									<artifactId>dietwise-dao-hibernate-reactive</artifactId>
 									<version>${project.version}</version>
-									<outputFileName>migrations-recipewatch.jar</outputFileName>
+									<outputFileName>migrations-dietwise.jar</outputFileName>
 								</configuration>
 							</execution>
-							-->
 						</executions>
 					</plugin>
 					<plugin>

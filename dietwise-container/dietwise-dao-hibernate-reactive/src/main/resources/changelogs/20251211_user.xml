@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="user_and_related" author="nikospara">
+		<createTable tableName="DW_USER" remarks="Minimal user data, capable of connecting the user to the IDM">
+			<column name="id" type="UUID" remarks="The primary key, a UUID internal to the application">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER" />
+			</column>
+			<column name="idm_id" type="VARCHAR(40)" remarks="The identifier of this profile as stored in the IDM">
+				<constraints unique="true" uniqueConstraintName="UQ_DW_USER__IDM_ID" />
+			</column>
+		</createTable>
+		<createIndex tableName="DW_USER" indexName="IX_DW_USER__IDM_ID">
+			<column name="idm_id" />
+		</createIndex>
+	</changeSet>
+</databaseChangeLog>
