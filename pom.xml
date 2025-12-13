@@ -43,7 +43,7 @@
 		<version.org.immutables>2.11.7</version.org.immutables>
 		<version.postgres>42.7.8</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
 		<version.quarkus-langchain4j>1.4.2</version.quarkus-langchain4j>
-		<!--<version.slf4j>2.0.17</version.slf4j>--><!-- Defined in quarkus-bom, search for slf4j-api - consider removing from here - for some reason it does not work without it, check again -->
+		<version.slf4j>2.0.17</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - needed because quarkus-bom only uses slf4j-api, we use other artifacts too -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>
 		<!--<version.testcontainers>1.21.3</version.testcontainers>--><!-- Defined in quarkus-bom, search for testcontainers - consider removing from here -->
 		<version.weld-junit5>5.0.3.Final</version.weld-junit5>
@@ -144,19 +144,11 @@
 				<version>${version.postgres}</version>
 			</dependency>
 			-->
-			<!-- Defined in Quarkus BOM but does not work without explicitly declaring the dependencies, check again -->
-			<!--
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>${version.slf4j}</version>
-			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-jdk14</artifactId>
 				<version>${version.slf4j}</version>
 			</dependency>
-			-->
 
 			<!-- TEST -->
 			<dependency>

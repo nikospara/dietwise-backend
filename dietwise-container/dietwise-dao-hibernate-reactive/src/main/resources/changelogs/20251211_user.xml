@@ -20,5 +20,14 @@
 		<createIndex tableName="DW_USER" indexName="IX_DW_USER__IDM_ID">
 			<column name="idm_id" />
 		</createIndex>
+
+		<createTable tableName="DW_PERSONAL_INFO" remarks="Personal info about a user, used to personalize the suggestions">
+			<column name="user_id" type="UUID" remarks="The primary key, also FK to DW_USER">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_PERSONAL_INFO" />
+			</column>
+			<column name="gender" type="VARCHAR(6)" remarks="The biological gender" />
+			<column name="year_of_birth" type="INT" remarks="The year of birth" />
+		</createTable>
+		<addForeignKeyConstraint baseTableName="DW_PERSONAL_INFO" baseColumnNames="user_id" constraintName="FK_DW_PERSONAL_INFO__USER_ID__DW_USER__ID" referencedTableName="DW_USER" referencedColumnNames="id" />
 	</changeSet>
 </databaseChangeLog>
