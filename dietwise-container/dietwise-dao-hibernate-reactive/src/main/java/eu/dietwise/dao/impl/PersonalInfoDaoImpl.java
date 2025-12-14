@@ -1,6 +1,7 @@
 package eu.dietwise.dao.impl;
 
 import static eu.dietwise.common.utils.UniComprehensions.forc;
+import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,22 +31,12 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 
 	@Override
 	public Uni<PersonalInfo> storeForUser(ReactivePersistenceTxContext tx, HasUserId hasUserId, PersonalInfo personalInfo) {
-		return forc(
+		return forcm(
 				makeUserUuid(hasUserId),
 				uuid -> tx.find(PersonalInfoEntity.class, uuid),
-				(uuid, entity) -> {
-					if (entity != null) {
-						entity.setGender(personalInfo.getGender());
-						entity.setYearOfBirth(personalInfo.getYearOfBirth());
-						return tx.merge(entity);
-					} else {
-						entity = new PersonalInfoEntity();
-						entity.setGender(personalInfo.getGender());
-						entity.setYearOfBirth(personalInfo.getYearOfBirth());
-						return linkWithUserAndPersist(tx, uuid, entity);
-					}
-				}
-		).map(this::toPersonalInfo);
+				(uuid, entity) -> upsert(tx, uuid, entity, personalInfo),
+				this::toPersonalInfo
+		);
 	}
 
 	private Uni<UUID> makeUserUuid(HasUserId hasUserId) {
@@ -60,6 +51,19 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 			return Uni.createFrom().item(UUID.fromString(userId.asString()));
 		} catch (IllegalArgumentException e) {
 			return Uni.createFrom().failure(new IllegalArgumentException(String.format("Cannot convert userId to UUID: %s", userId.asString()), e));
+		}
+	}
+
+	private Uni<PersonalInfoEntity> upsert(ReactivePersistenceTxContext tx, UUID userId, PersonalInfoEntity entity, PersonalInfo personalInfo) {
+		if (entity != null) {
+			entity.setGender(personalInfo.getGender());
+			entity.setYearOfBirth(personalInfo.getYearOfBirth());
+			return tx.merge(entity);
+		} else {
+			entity = new PersonalInfoEntity();
+			entity.setGender(personalInfo.getGender());
+			entity.setYearOfBirth(personalInfo.getYearOfBirth());
+			return linkWithUserAndPersist(tx, userId, entity);
 		}
 	}
 
