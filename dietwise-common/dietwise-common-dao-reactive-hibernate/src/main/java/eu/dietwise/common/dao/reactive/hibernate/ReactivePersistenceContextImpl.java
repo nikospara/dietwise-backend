@@ -19,6 +19,11 @@ class ReactivePersistenceContextImpl implements ReactivePersistenceContext {
 	}
 
 	@Override
+	public boolean contains(Object entity) {
+		return session.contains(entity);
+	}
+
+	@Override
 	public Uni<Void> flush() {
 		return session.flush();
 	}

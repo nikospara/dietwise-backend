@@ -35,6 +35,7 @@
 		<dependency>
 			<groupId>org.hibernate.reactive</groupId>
 			<artifactId>hibernate-reactive-core</artifactId>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

@@ -12,6 +12,11 @@ import io.smallrye.mutiny.Uni;
  * In the case of Hibernate Reactive, this wraps a {@code Mutiny.Session}.
  */
 public interface ReactivePersistenceContext {
+	/**
+	 * Determine if the given instance belongs to this persistence context.
+	 */
+	boolean contains(Object entity);
+
 	Uni<Void> flush();
 
 	/**

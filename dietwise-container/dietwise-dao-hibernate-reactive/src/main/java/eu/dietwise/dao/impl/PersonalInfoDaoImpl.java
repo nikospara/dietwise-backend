@@ -1,5 +1,7 @@
 package eu.dietwise.dao.impl;
 
+import static eu.dietwise.common.utils.UniComprehensions.forc;
+
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -9,6 +11,7 @@ import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.common.v1.types.UserId;
 import eu.dietwise.dao.PersonalInfoDao;
 import eu.dietwise.dao.jpa.PersonalInfoEntity;
+import eu.dietwise.dao.jpa.UserEntity;
 import eu.dietwise.v1.model.ImmutablePersonalInfo;
 import eu.dietwise.v1.model.PersonalInfo;
 import io.smallrye.mutiny.Uni;
@@ -27,9 +30,10 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 
 	@Override
 	public Uni<PersonalInfo> storeForUser(ReactivePersistenceTxContext tx, HasUserId hasUserId, PersonalInfo personalInfo) {
-		return makeUserUuid(hasUserId)
-				.flatMap(uuid -> tx.find(PersonalInfoEntity.class, uuid))
-				.flatMap(entity -> {
+		return forc(
+				makeUserUuid(hasUserId),
+				uuid -> tx.find(PersonalInfoEntity.class, uuid),
+				(uuid, entity) -> {
 					if (entity != null) {
 						entity.setGender(personalInfo.getGender());
 						entity.setYearOfBirth(personalInfo.getYearOfBirth());
@@ -38,10 +42,10 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 						entity = new PersonalInfoEntity();
 						entity.setGender(personalInfo.getGender());
 						entity.setYearOfBirth(personalInfo.getYearOfBirth());
-						return tx.persist(entity);
+						return linkWithUserAndPersist(tx, uuid, entity);
 					}
-				})
-				.map(this::toPersonalInfo);
+				}
+		).map(this::toPersonalInfo);
 	}
 
 	private Uni<UUID> makeUserUuid(HasUserId hasUserId) {
@@ -57,6 +61,20 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 		} catch (IllegalArgumentException e) {
 			return Uni.createFrom().failure(new IllegalArgumentException(String.format("Cannot convert userId to UUID: %s", userId.asString()), e));
 		}
+	}
+
+	private Uni<PersonalInfoEntity> linkWithUserAndPersist(ReactivePersistenceTxContext tx, UUID userId, PersonalInfoEntity entity) {
+		return forc(
+				tx.find(UserEntity.class, userId),
+				user -> {
+					if (user != null) {
+						entity.setUser(user);
+						return tx.persist(entity);
+					} else {
+						return Uni.createFrom().failure(new IllegalArgumentException("Cannot find user"));
+					}
+				}
+		);
 	}
 
 	private PersonalInfo toPersonalInfo(PersonalInfoEntity entity) {
