@@ -4,8 +4,10 @@ import java.security.Principal;
 import java.util.EnumSet;
 
 import eu.dietwise.common.types.EmailAddress;
+import eu.dietwise.common.types.Nullable;
 import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.common.v1.types.Role;
+import eu.dietwise.common.v1.types.UserId;
 import org.immutables.value.Value;
 
 /**
@@ -16,6 +18,15 @@ public interface User extends Principal, HasUserId {
 	String SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
 	String SYSTEM_USER_NAME = "system";
 
+	@Override
+	@Nullable
+	UserId getId();
+
+	@Override
+	@Nullable
+	String getName();
+
+	@Nullable
 	EmailAddress getEmail();
 
 	/**

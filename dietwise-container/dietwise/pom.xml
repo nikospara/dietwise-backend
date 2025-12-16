@@ -16,15 +16,41 @@
 	<packaging>jar</packaging>
 
 	<dependencies>
+		<!-- PROJECT -->
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-common-dao-reactive-hibernate</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-dao-hibernate-reactive</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-jaxrs</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-model-json</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-services</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
 		<!-- FRAMEWORK -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
-			<artifactId>quarkus-arc</artifactId>
+			<artifactId>quarkus-agroal</artifactId>
 		</dependency>
-		<!--
 		<dependency>
 			<groupId>io.quarkus</groupId>
-			<artifactId>quarkus-agroal</artifactId>
+			<artifactId>quarkus-arc</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.quarkus</groupId>
@@ -34,12 +60,14 @@
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-hibernate-validator</artifactId>
 		</dependency>
-		-->
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-info</artifactId>
 		</dependency>
-		<!--
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-oidc</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-jdbc-postgresql</artifactId>
@@ -48,7 +76,6 @@
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-reactive-pg-client</artifactId>
 		</dependency>
-		-->
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-rest</artifactId>
@@ -71,35 +98,16 @@
             <artifactId>quarkus-langchain4j-ollama</artifactId>
         </dependency>
 
-		<!-- FRAMEWORK TEST -->
-		<dependency>
-			<groupId>io.quarkus</groupId>
-			<artifactId>quarkus-junit5</artifactId>
-		</dependency>
-
-		<!-- PROJECT -->
-		<dependency>
-			<groupId>eu.dietwise</groupId>
-			<artifactId>dietwise-jaxrs</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>eu.dietwise</groupId>
-			<artifactId>dietwise-model-json</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>eu.dietwise</groupId>
-			<artifactId>dietwise-services</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-
-		<!-- PROJECT TEST -->
-
 		<!-- OTHER -->
 		<dependency>
 			<groupId>org.jboss.slf4j</groupId>
 			<artifactId>slf4j-jboss-logmanager</artifactId>
+		</dependency>
+
+		<!-- FRAMEWORK TEST -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-junit5</artifactId>
 		</dependency>
 
 		<!-- TEST -->

@@ -28,6 +28,8 @@ Create a new enabled realm, "dietwise". Go to "Configure" from the left menu:
 		- Verify email: **should be On, TODO**
 	- Events: **TODO, for when we implement the user management events**
 	- Sessions: Make sure "Offline session settings" -> "Offline Session Idle" is set to something like 30 Days
+- Realm roles:
+    - Create Role: "influencer"
 
 ### Create a client for RecipeWatch
 

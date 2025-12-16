@@ -78,6 +78,14 @@
       "clientRole" : false,
       "containerId" : "5d896b69-83e0-47ec-9335-48aa1e116093",
       "attributes" : { }
+    }, {
+      "id" : "b8e4a9e6-6d11-464d-9bab-eefa20c11689",
+      "name" : "influencer",
+      "description" : "",
+      "composite" : false,
+      "clientRole" : false,
+      "containerId" : "5d896b69-83e0-47ec-9335-48aa1e116093",
+      "attributes" : { }
     } ],
     "client" : {
       "recipewatch" : [ ],
@@ -400,7 +408,7 @@
     } ],
     "disableableCredentialTypes" : [ ],
     "requiredActions" : [ ],
-    "realmRoles" : [ "default-roles-dietwise" ],
+    "realmRoles" : [ "offline_access", "default-roles-dietwise" ],
     "notBefore" : 0,
     "groups" : [ ]
   } ],
@@ -1378,7 +1386,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "oidc-address-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "saml-role-list-mapper", "saml-user-property-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper" ]
       }
     }, {
       "id" : "601389e3-5623-4cd1-8d11-12a210e65085",
@@ -1406,7 +1414,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-full-name-mapper", "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "saml-user-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "saml-role-list-mapper", "oidc-full-name-mapper" ]
       }
     }, {
       "id" : "cb7c6240-2e90-4c10-849b-b1833e8e0c32",

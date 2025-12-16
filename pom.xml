@@ -268,6 +268,8 @@
 						<source>${version.java}</source>
 						<target>${version.java}</target>
 						<parameters>true</parameters>
+						<!-- See https://quarkus.io/guides/hibernate-orm#jakarta-data -->
+						<annotationProcessorPathsUseDepMgmt>true</annotationProcessorPathsUseDepMgmt>
 						<!-- Why does Java 25 need the annotation processors explicitly? -->
 						<annotationProcessorPaths>
 							<annotationProcessorPath>
@@ -275,10 +277,11 @@
 								<artifactId>value</artifactId>
 								<version>${version.org.immutables}</version>
 							</annotationProcessorPath>
+							<annotationProcessorPath>
+								<groupId>org.hibernate.orm</groupId>
+								<artifactId>hibernate-processor</artifactId>
+							</annotationProcessorPath>
 						</annotationProcessorPaths>
-						<annotationProcessors>
-							<annotationProcessor>org.immutables.value.internal.$processor$.$Processor</annotationProcessor>
-						</annotationProcessors>
 					</configuration>
 				</plugin>
 				<!--
