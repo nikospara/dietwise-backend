@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.MediaType;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
+import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import io.smallrye.mutiny.Multi;
 import org.jboss.resteasy.reactive.RestMulti;
 
@@ -32,5 +33,13 @@ public class RecipeAssessmentResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(RecipeAssessmentParam param) {
 		return RestMulti.fromMultiData(service.assessMarkdownRecipe(param)).encodeAsJsonArray(false).build();
+	}
+
+	@POST
+	@Path("url")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param) {
+		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrl(param)).encodeAsJsonArray(false).build();
 	}
 }

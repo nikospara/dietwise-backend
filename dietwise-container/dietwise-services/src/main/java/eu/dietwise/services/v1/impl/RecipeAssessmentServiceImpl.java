@@ -7,6 +7,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import eu.dietwise.services.renderer.RenderRequest;
+import eu.dietwise.services.renderer.RenderResponse;
+import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.ai.RecipeAssessmentAiService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
@@ -14,14 +17,19 @@ import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErr
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutableRecipe;
+import eu.dietwise.v1.model.ImmutableRecipeAssessmentParam;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
+import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.Suggestion;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.smallrye.mutiny.subscription.MultiEmitter;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
+import org.jboss.resteasy.reactive.RestResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,9 +38,11 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
 	private final RecipeAssessmentAiService aiService;
+	private final RendererClient rendererClient;
 
-	public RecipeAssessmentServiceImpl(RecipeAssessmentAiService aiService) {
+	public RecipeAssessmentServiceImpl(RecipeAssessmentAiService aiService, @RestClient RendererClient rendererClient) {
 		this.aiService = aiService;
+		this.rendererClient = rendererClient;
 	}
 
 	@Override
@@ -45,15 +55,32 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return assessRecipe(param, this::extractRecipeFromMarkdown);
 	}
 
+	@Override
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param) {
+		var renderRequest = new RenderRequest(param.getUrl(), true, 30000, param.getViewport().orElse(null), false);
+		return rendererClient.render(renderRequest)
+				.map(assessRecipe(param, this::extractRecipeFromHtml))
+				.onFailure(ClientWebApplicationException.class)
+				.recoverWithItem(handleHtmlExtractionError(param))
+				.onItem()
+				.disjoint();
+	}
+
+	private Function<RestResponse<RenderResponse>, Multi<RecipeAssessmentMessage>> assessRecipe(RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
+		return response -> {
+			var assessmentParam = ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(response.getEntity().html()).build();
+			return assessRecipe(assessmentParam, this::extractRecipeFromHtml);
+		};
+	}
+
 	private Multi<RecipeAssessmentMessage> assessRecipe(RecipeAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
-		return Multi.createFrom().emitter(emitter -> {
-			extractor.apply(param)
-					.map(this::convertLlmResponseToRecipe)
-					.invoke(emitRecipeExtractionRecipeAssessmentMessage(emitter))
-					.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
-					.invoke(emitSuggestionsRecipeAssessmentMessage(emitter))
-					.subscribe().with(x -> emitter.complete(), handleError(emitter));
-		});
+		return Multi.createFrom().emitter(emitter ->
+				extractor.apply(param)
+						.map(this::convertLlmResponseToRecipe)
+						.invoke(emitRecipeExtractionRecipeAssessmentMessage(emitter))
+						.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
+						.invoke(emitSuggestionsRecipeAssessmentMessage(emitter))
+						.subscribe().with(x -> emitter.complete(), handleError(emitter)));
 	}
 
 	private Uni<String> extractRecipeFromHtml(RecipeAssessmentParam param) {
@@ -92,6 +119,13 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return error -> {
 			emitter.emit(new RecipeAssessmentErrorMessage(List.of("The server failed to assess the recipe")));
 			emitter.complete();
+		};
+	}
+
+	private Function<ClientWebApplicationException, Multi<RecipeAssessmentMessage>> handleHtmlExtractionError(RecipeExtractionAndAssessmentParam param) {
+		return e -> {
+			LOG.error("Could not read the page at {}", param.getUrl(), e);
+			return Multi.createFrom().item(new RecipeAssessmentErrorMessage(List.of("Could not read the page")));
 		};
 	}
 }

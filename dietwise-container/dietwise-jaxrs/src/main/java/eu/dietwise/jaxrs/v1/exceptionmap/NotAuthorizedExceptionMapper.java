@@ -1,11 +1,10 @@
-package eu.dietwise.web.exceptionmap;
+package eu.dietwise.jaxrs.v1.exceptionmap;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
 import eu.dietwise.common.types.authorization.NotAuthorizedException;
-
 
 /**
  * Map the {@link NotAuthorizedException} of TealHelix to HTTP 403 (FORBIDDEN).

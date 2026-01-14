@@ -7,6 +7,8 @@ import eu.dietwise.v1.model.PersonalInfo;
 import eu.dietwise.v1.model.PersonalInfoMixin;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeAssessmentParamMixin;
+import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParamMixin;
 
 public interface ObjectMapperModelUtils {
 	static ObjectMapper applyDefaultObjectMapperConfiguration(ObjectMapper om) {
@@ -14,6 +16,7 @@ public interface ObjectMapperModelUtils {
 		om.addMixIn(AppliesTo.class, AppliesToMixin.class);
 		om.addMixIn(PersonalInfo.class, PersonalInfoMixin.class);
 		om.addMixIn(RecipeAssessmentParam.class, RecipeAssessmentParamMixin.class);
+		om.addMixIn(RecipeExtractionAndAssessmentParam.class, RecipeExtractionAndAssessmentParamMixin.class);
 		return om;
 	}
 }
