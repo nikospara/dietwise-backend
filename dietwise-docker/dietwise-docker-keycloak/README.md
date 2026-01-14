@@ -75,10 +75,14 @@ Create a new client in the Realm:
 	- Root URL: **TODO**
 	- Home URL: **TODO**
 	- Valid redirect URIs:
+		- http://localhost:5173
+		- http://localhost:5173/
+		- http://localhost:8180/extension-callback.html
 		- **TODO**
 	- Valid post logout redirect URIs:
 		- **TODO**
 	- Web origins:
+		- http://localhost:5173
 		- **TODO**
 - Save & finish the new client wizard
 
