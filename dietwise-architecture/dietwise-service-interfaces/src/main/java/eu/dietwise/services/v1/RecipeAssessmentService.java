@@ -11,4 +11,6 @@ public interface RecipeAssessmentService {
 	Multi<RecipeAssessmentMessage> assessMarkdownRecipe(RecipeAssessmentParam param);
 
 	Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param);
+
+	Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(RecipeExtractionAndAssessmentParam param);
 }

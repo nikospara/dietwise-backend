@@ -42,4 +42,12 @@ public class RecipeAssessmentResource {
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param) {
 		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrl(param)).encodeAsJsonArray(false).build();
 	}
+
+	@POST
+	@Path("url-dummy")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(RecipeExtractionAndAssessmentParam param) {
+		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrlDummy(param)).encodeAsJsonArray(false).build();
+	}
 }
