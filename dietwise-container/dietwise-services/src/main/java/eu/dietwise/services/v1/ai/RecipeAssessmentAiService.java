@@ -1,12 +1,13 @@
 package eu.dietwise.services.v1.ai;
 
+import jakarta.enterprise.context.RequestScoped;
+
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import io.quarkiverse.langchain4j.RegisterAiService;
-import jakarta.enterprise.context.ApplicationScoped;
 
 @RegisterAiService
-@ApplicationScoped
+@RequestScoped
 public interface RecipeAssessmentAiService {
 	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/extract-recipe-from-html.md")
 	@UserMessage("{html}")

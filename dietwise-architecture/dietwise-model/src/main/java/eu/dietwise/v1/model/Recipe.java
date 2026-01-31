@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 public interface Recipe {
 	Optional<String> getName();
 	Optional<String> getRecipeYield();
-	List<String> getRecipeIngredient();
+	List<String> getRecipeIngredients();
 	List<String> getRecipeInstructions(); // TODO Must reference ingredient
 	String getText();
 }
