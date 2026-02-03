@@ -1,4 +1,8 @@
 package eu.dietwise.services.renderer;
 
-public record RenderResponse(String output, String finalUrl, Screenshot screenshot) {
+import java.util.List;
+
+import eu.dietwise.v1.model.Recipe;
+
+public record RenderResponse(String output, List<Recipe> jsonLdRecipes, String finalUrl, Screenshot screenshot) {
 }

@@ -1,5 +1,8 @@
 package eu.dietwise.services.v1.impl;
 
+import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
+import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Random;
@@ -12,7 +15,9 @@ import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.ai.RecipeAssessmentAiService;
+import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
+import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
@@ -57,18 +62,33 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	@Override
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param) {
-		var renderRequest = new RenderRequest(param.getUrl(), true, 30000, param.getViewport().orElse(null), false, true);
-		return rendererClient.render(renderRequest)
-				.map(assessRecipe(param, this::extractRecipeFromMarkdown))
-				.onFailure(ClientWebApplicationException.class)
-				.recoverWithItem(handleHtmlExtractionError(param))
-				.onItem()
-				.disjoint();
+		return Multi.createFrom().emitter(emitter -> {
+			var renderRequest = new RenderRequest(param.getUrl(), true, true, 30000, param.getViewport().orElse(null), false, true);
+			rendererClient.render(renderRequest)
+					.flatMap(restRenderResponse -> extractRecipesEitherFromJsonLdOrFromAi(restRenderResponse, param, this::extractRecipeFromMarkdown))
+					.invoke(emitRecipeExtractionMessageOrNoRecipesError(emitter))
+					.flatMap(this::assessSingleRecipe)
+					.invoke(emitter::emit)
+					.subscribe().with(x -> emitter.complete(), handleError(emitter));
+		});
 	}
 
 	@Override
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(RecipeExtractionAndAssessmentParam param) {
-		var recipe = ImmutableRecipe.builder()
+		var recipe = makeDummyRecipe();
+		var recipeMsg = new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, JSONLD)), "dummy page text");
+		double rating = new Random().nextInt(10) / 2.0;
+		List<Suggestion> suggestions = List.of(
+				ImmutableSuggestion.builder().text("Coming from the server - this is just a dummy, placeholder response").build(),
+				ImmutableSuggestion.builder().text("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.").build()
+		);
+		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(rating, suggestions);
+		return Multi.createFrom().<RecipeAssessmentMessage>items(recipeMsg, suggestionsMsg)
+				.onItem().call(m -> Uni.createFrom().nullItem().onItem().delayIt().by(Duration.ofSeconds(3L)));
+	}
+
+	private Recipe makeDummyRecipe() {
+		return ImmutableRecipe.builder()
 				.text("""
 						This is a dummy recipe, just for testing purposes
 						Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
@@ -86,22 +106,58 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 						"100g cream cheese"
 				)
 				.build();
-		var recipeMsg = new RecipeExtractionRecipeAssessmentMessage(List.of(recipe));
-		double rating = new Random().nextInt(10) / 2.0;
-		List<Suggestion> suggestions = List.of(
-				ImmutableSuggestion.builder().text("Coming from the server - this is just a dummy, placeholder response").build(),
-				ImmutableSuggestion.builder().text("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.").build()
-		);
-		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(rating, suggestions);
-		return Multi.createFrom().<RecipeAssessmentMessage>items(recipeMsg, suggestionsMsg)
-				.onItem().call(m -> Uni.createFrom().nullItem().onItem().delayIt().by(Duration.ofSeconds(3L)));
 	}
 
-	private Function<RestResponse<RenderResponse>, Multi<RecipeAssessmentMessage>> assessRecipe(RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
-		return response -> {
-			var assessmentParam = ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(response.getEntity().output()).build();
-			return assessRecipe(assessmentParam, this::extractRecipeFromHtml);
+	private Function<? super RestResponse<RenderResponse>, Uni<RecipeExtractionRecipeAssessmentMessage>> extractRecipesEitherFromJsonLdOrFromAi(RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
+		return restRenderResponse -> {
+			RenderResponse renderResponse = restRenderResponse.getEntity();
+			if (renderResponse.jsonLdRecipes() != null && !renderResponse.jsonLdRecipes().isEmpty()) {
+				var recipes = renderResponse.jsonLdRecipes().stream().map(r -> new RecipeAndDetectionType(r, JSONLD)).toList();
+				return Uni.createFrom().item(new RecipeExtractionRecipeAssessmentMessage(recipes, renderResponse.output()));
+			} else {
+				var assessmentParam = ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(renderResponse.output()).build();
+				return extractor.apply(assessmentParam).map(convertLlmResponseToRecipes(renderResponse.output()));
+			}
 		};
+	}
+
+	private Uni<RecipeExtractionRecipeAssessmentMessage> extractRecipesEitherFromJsonLdOrFromAi(RestResponse<RenderResponse> restRenderResponse, RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
+		RenderResponse renderResponse = restRenderResponse.getEntity();
+		if (renderResponse.jsonLdRecipes() != null && !renderResponse.jsonLdRecipes().isEmpty()) {
+			var recipes = renderResponse.jsonLdRecipes().stream().map(r -> new RecipeAndDetectionType(r, JSONLD)).toList();
+			return Uni.createFrom().item(new RecipeExtractionRecipeAssessmentMessage(recipes, renderResponse.output()));
+		} else {
+			var assessmentParam = ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(renderResponse.output()).build();
+			return extractor.apply(assessmentParam).map(convertLlmResponseToRecipes(renderResponse.output()));
+		}
+	}
+
+	private Function<String, RecipeExtractionRecipeAssessmentMessage> convertLlmResponseToRecipes(String pageText) {
+		return text -> {
+			var recipe = makeDummyRecipe();
+			return new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, LLM_FROM_TEXT)), pageText);
+		};
+	}
+
+	private Consumer<RecipeExtractionRecipeAssessmentMessage> emitRecipeExtractionMessageOrNoRecipesError(MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+		return recipeExtractionRecipeAssessmentMessage -> {
+			if (recipeExtractionRecipeAssessmentMessage.recipes() == null || recipeExtractionRecipeAssessmentMessage.recipes().isEmpty()) {
+				throw new NoRecipesDetectedException();
+			} else {
+				emitter.emit(recipeExtractionRecipeAssessmentMessage);
+			}
+		};
+	}
+
+	private Uni<SuggestionsRecipeAssessmentMessage> assessSingleRecipe(RecipeExtractionRecipeAssessmentMessage message) {
+		if (message.recipes().size() != 1) {
+			// this signals handleError to emit MoreThanOneRecipesAssessmentMessage
+			return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(message.recipes().size()));
+		} else {
+			// TODO Call the actual assessment service here
+			return Uni.createFrom().item(makeDummySuggestionsRecipeAssessmentMessage())
+					.onItem().delayIt().by(Duration.ofSeconds(2L)); // DUMMY for initial testing/demos
+		}
 	}
 
 	private Multi<RecipeAssessmentMessage> assessRecipe(RecipeAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
@@ -129,26 +185,36 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private Consumer<Recipe> emitRecipeExtractionRecipeAssessmentMessage(MultiEmitter<? super RecipeAssessmentMessage> emitter) {
-		return recipe -> emitter.emit(new RecipeExtractionRecipeAssessmentMessage(List.of(recipe)));
+		return recipe -> emitter.emit(new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, LLM_FROM_TEXT)), ""));
 	}
 
 	private Consumer<Recipe> emitSuggestionsRecipeAssessmentMessage(MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return recipe -> {
-			double rating = new Random().nextInt(10) / 2.0;
-			List<Suggestion> suggestions = List.of(
-					ImmutableSuggestion.builder().text("Coming from the server - this is just a dummy, placeholder response").build(),
-//					ImmutableSuggestion.builder().text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.").build(),
-//					ImmutableSuggestion.builder().text("Ed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?").build(),
-					ImmutableSuggestion.builder().text("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.").build()
-			);
-//			throw new RuntimeException("Testing exception");
-			emitter.emit(new SuggestionsRecipeAssessmentMessage(rating, suggestions));
+			emitter.emit(makeDummySuggestionsRecipeAssessmentMessage());
 		};
+	}
+
+	private SuggestionsRecipeAssessmentMessage makeDummySuggestionsRecipeAssessmentMessage() {
+		double rating = new Random().nextInt(10) / 2.0;
+		List<Suggestion> suggestions = List.of(
+				ImmutableSuggestion.builder().text("Coming from the server - this is just a dummy, placeholder response").build(),
+//				ImmutableSuggestion.builder().text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.").build(),
+//				ImmutableSuggestion.builder().text("Ed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?").build(),
+				ImmutableSuggestion.builder().text("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.").build()
+		);
+//		throw new RuntimeException("Testing exception");
+		return new SuggestionsRecipeAssessmentMessage(rating, suggestions);
 	}
 
 	private Consumer<Throwable> handleError(MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return error -> {
-			emitter.emit(new RecipeAssessmentErrorMessage(List.of("The server failed to assess the recipe")));
+			if (error instanceof NoRecipesDetectedException) {
+				emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
+			} else if (error instanceof MoreThanOneRecipesDetectedException mto) {
+				emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
+			} else {
+				emitter.emit(new RecipeAssessmentErrorMessage(List.of("The server failed to assess the recipe")));
+			}
 			emitter.complete();
 		};
 	}

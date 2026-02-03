@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Suggestion;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "type")
@@ -14,7 +13,13 @@ import eu.dietwise.v1.model.Suggestion;
 		@JsonSubTypes.Type(value = RecipeAssessmentMessage.RecipeAssessmentErrorMessage.class, name = "ERROR")
 })
 public sealed interface RecipeAssessmentMessage {
-	record RecipeExtractionRecipeAssessmentMessage(List<Recipe> recipes) implements RecipeAssessmentMessage {
+	record RecipeExtractionRecipeAssessmentMessage(
+			List<RecipeAndDetectionType> recipes,
+			String pageText
+	) implements RecipeAssessmentMessage {
+	}
+
+	record MoreThanOneRecipesAssessmentMessage(int numberOfRecipes) implements RecipeAssessmentMessage {
 	}
 
 	record SuggestionsRecipeAssessmentMessage(

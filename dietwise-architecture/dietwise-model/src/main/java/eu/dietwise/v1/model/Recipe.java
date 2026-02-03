@@ -11,5 +11,5 @@ public interface Recipe {
 	Optional<String> getRecipeYield();
 	List<String> getRecipeIngredients();
 	List<String> getRecipeInstructions(); // TODO Must reference ingredient
-	String getText();
+	Optional<String> getText();
 }
