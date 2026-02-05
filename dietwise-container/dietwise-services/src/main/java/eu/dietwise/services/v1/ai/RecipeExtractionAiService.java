@@ -6,9 +6,9 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import io.quarkiverse.langchain4j.RegisterAiService;
 
-@RegisterAiService
+@RegisterAiService(modelName = "extract")
 @RequestScoped
-public interface RecipeAssessmentAiService {
+public interface RecipeExtractionAiService {
 	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/extract-recipe-from-html.md")
 	@UserMessage("{html}")
 	String extractRecipeFromHtml(String html);

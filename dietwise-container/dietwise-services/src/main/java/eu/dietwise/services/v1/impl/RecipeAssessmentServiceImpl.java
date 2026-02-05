@@ -14,7 +14,7 @@ import eu.dietwise.services.renderer.RenderRequest;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
-import eu.dietwise.services.v1.ai.RecipeAssessmentAiService;
+import eu.dietwise.services.v1.ai.RecipeExtractionAiService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
@@ -42,11 +42,11 @@ import org.slf4j.LoggerFactory;
 public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
-	private final RecipeAssessmentAiService aiService;
+	private final RecipeExtractionAiService extractionAiService;
 	private final RendererClient rendererClient;
 
-	public RecipeAssessmentServiceImpl(RecipeAssessmentAiService aiService, @RestClient RendererClient rendererClient) {
-		this.aiService = aiService;
+	public RecipeAssessmentServiceImpl(RecipeExtractionAiService extractionAiService, @RestClient RendererClient rendererClient) {
+		this.extractionAiService = extractionAiService;
 		this.rendererClient = rendererClient;
 	}
 
@@ -171,12 +171,12 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private Uni<String> extractRecipeFromHtml(RecipeAssessmentParam param) {
-		return Uni.createFrom().item(() -> aiService.extractRecipeFromHtml(param.getPageContent()))
+		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromHtml(param.getPageContent()))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
 	}
 
 	private Uni<String> extractRecipeFromMarkdown(RecipeAssessmentParam param) {
-		return Uni.createFrom().item(() -> aiService.extractRecipeFromMarkdown(param.getPageContent()))
+		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromMarkdown(param.getPageContent()))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
 	}
 
