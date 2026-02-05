@@ -2,6 +2,6 @@ package eu.dietwise.v1.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-@JsonDeserialize(as = ImmutableRecipeAssessmentParam.class)
+@JsonDeserialize(builder = ImmutableRecipeAssessmentParam.Builder.class)
 public class RecipeAssessmentParamMixin {
 }

@@ -2,6 +2,6 @@ package eu.dietwise.v1.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-@JsonDeserialize(as = ImmutableRecipe.class)
+@JsonDeserialize(builder = ImmutableRecipe.Builder.class)
 public class RecipeMixin {
 }
