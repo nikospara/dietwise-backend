@@ -1,5 +1,7 @@
 package eu.dietwise.services.v1.impl;
 
+import static eu.dietwise.services.v1.ai.MarkdownBlockHeadingJoiner.joinHeadingWithFollowingContent;
+import static eu.dietwise.services.v1.ai.MarkdownBlockSegmenter.segment;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
 
@@ -126,7 +128,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private Uni<String> keepOnlyRelevantPageContent(String pageTextAsMarkdown, String langCode) {
-		List<String> blocks = MarkdownBlockSegmenter.segment(pageTextAsMarkdown);
+		List<MarkdownBlockSegmenter.Block> segmentedContent = segment(pageTextAsMarkdown);
+		List<String> blocks = joinHeadingWithFollowingContent(segmentedContent);
 		return Multi.createFrom().iterable(blocks).onItem().transformToUniAndConcatenate(this::filterRecipeBlock)
 				.filter(block -> !block.isBlank())
 				.collect().asList()

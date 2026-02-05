@@ -11,18 +11,19 @@ import java.util.regex.Pattern;
 public final class MarkdownBlockSegmenter {
 	private static final Pattern BULLET_LIST_PATTERN = Pattern.compile("^\\s*[*+-]\\s+.+");
 	private static final Pattern ORDERED_LIST_PATTERN = Pattern.compile("^\\s*\\d+[.)]\\s+.+");
+	private static final Pattern HEADING_PATTERN = Pattern.compile("^\\s*#{1,6}\\s+.+");
 
 	private MarkdownBlockSegmenter() {
 	}
 
-	public static List<String> segment(String markdown) {
+	public static List<Block> segment(String markdown) {
 		if (markdown == null || markdown.isBlank()) {
 			return List.of();
 		}
 
 		String normalized = markdown.replace("\r\n", "\n").replace("\r", "\n");
 		List<String> lines = List.of(normalized.split("\n", -1));
-		List<String> blocks = new ArrayList<>();
+		List<Block> blocks = new ArrayList<>();
 		List<String> current = new ArrayList<>();
 		BlockMode mode = BlockMode.NONE;
 		ListKind listKind = ListKind.NONE;
@@ -33,6 +34,7 @@ public final class MarkdownBlockSegmenter {
 			ListKind lineListKind = listKind(line);
 			boolean listItem = lineListKind != ListKind.NONE;
 			boolean indented = isIndented(line);
+			boolean heading = isHeading(line);
 
 			if (blank) {
 				if (mode == BlockMode.LIST) {
@@ -62,11 +64,25 @@ public final class MarkdownBlockSegmenter {
 			}
 
 			if (mode == BlockMode.NONE) {
+				if (heading) {
+					current.add(line);
+					flushBlock(blocks, current);
+					continue;
+				}
 				mode = listItem ? BlockMode.LIST : BlockMode.TEXT;
 				if (mode == BlockMode.LIST) {
 					listKind = lineListKind;
 				}
 				current.add(line);
+				continue;
+			}
+
+			if (heading) {
+				flushBlock(blocks, current);
+				mode = BlockMode.NONE;
+				listKind = ListKind.NONE;
+				current.add(line);
+				flushBlock(blocks, current);
 				continue;
 			}
 
@@ -103,6 +119,10 @@ public final class MarkdownBlockSegmenter {
 		return listKind(line) != ListKind.NONE;
 	}
 
+	private static boolean isHeading(String line) {
+		return HEADING_PATTERN.matcher(line).matches();
+	}
+
 	private static ListKind listKind(String line) {
 		if (BULLET_LIST_PATTERN.matcher(line).matches()) {
 			return ListKind.BULLET;
@@ -126,13 +146,13 @@ public final class MarkdownBlockSegmenter {
 		return -1;
 	}
 
-	private static void flushBlock(List<String> blocks, List<String> current) {
+	private static void flushBlock(List<Block> blocks, List<String> current) {
 		if (current.isEmpty()) {
 			return;
 		}
 		String block = String.join("\n", trimBlankEdges(current));
 		if (!block.isBlank()) {
-			blocks.add(block);
+			blocks.add(new Block(block, classifyBlock(block)));
 		}
 		current.clear();
 	}
@@ -159,5 +179,32 @@ public final class MarkdownBlockSegmenter {
 		NONE,
 		BULLET,
 		ORDERED
+	}
+
+	public enum BlockType {
+		HEADING,
+		LIST,
+		TEXT
+	}
+
+	public record Block(String content, BlockType type) {
+	}
+
+	private static BlockType classifyBlock(String block) {
+		String[] lines = block.split("\n", -1);
+		for (int i = 0; i < lines.length; i++) {
+			String line = lines[i];
+			if (line.isBlank()) {
+				continue;
+			}
+			if (i == 0 && lines.length == 1 && HEADING_PATTERN.matcher(line).matches()) {
+				return BlockType.HEADING;
+			}
+			if (isListItem(line)) {
+				return BlockType.LIST;
+			}
+			return BlockType.TEXT;
+		}
+		return BlockType.TEXT;
 	}
 }

@@ -14,11 +14,11 @@ class MarkdownBlockSegmenterTest {
 				Second paragraph.
 				""";
 
-		List<String> blocks = MarkdownBlockSegmenter.segment(markdown);
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
 
 		assertThat(blocks).containsExactly(
-				"First paragraph.",
-				"Second paragraph."
+				new MarkdownBlockSegmenter.Block("First paragraph.", MarkdownBlockSegmenter.BlockType.TEXT),
+				new MarkdownBlockSegmenter.Block("Second paragraph.", MarkdownBlockSegmenter.BlockType.TEXT)
 		);
 	}
 
@@ -33,12 +33,12 @@ class MarkdownBlockSegmenterTest {
 				Tail line.
 				""";
 
-		List<String> blocks = MarkdownBlockSegmenter.segment(markdown);
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
 
 		assertThat(blocks).containsExactly(
-				"Intro line.",
-				"- Item one\n- Item two",
-				"Tail line."
+				new MarkdownBlockSegmenter.Block("Intro line.", MarkdownBlockSegmenter.BlockType.TEXT),
+				new MarkdownBlockSegmenter.Block("- Item one\n- Item two", MarkdownBlockSegmenter.BlockType.LIST),
+				new MarkdownBlockSegmenter.Block("Tail line.", MarkdownBlockSegmenter.BlockType.TEXT)
 		);
 	}
 
@@ -50,10 +50,10 @@ class MarkdownBlockSegmenterTest {
 				- Item two
 				""";
 
-		List<String> blocks = MarkdownBlockSegmenter.segment(markdown);
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
 
 		assertThat(blocks).containsExactly(
-				"- Item one\n  continuation line\n- Item two"
+				new MarkdownBlockSegmenter.Block("- Item one\n  continuation line\n- Item two", MarkdownBlockSegmenter.BlockType.LIST)
 		);
 	}
 
@@ -65,10 +65,10 @@ class MarkdownBlockSegmenterTest {
 				- Item two
 				""";
 
-		List<String> blocks = MarkdownBlockSegmenter.segment(markdown);
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
 
 		assertThat(blocks).containsExactly(
-				"- Item one\n- Item two"
+				new MarkdownBlockSegmenter.Block("- Item one\n- Item two", MarkdownBlockSegmenter.BlockType.LIST)
 		);
 	}
 
@@ -80,10 +80,10 @@ class MarkdownBlockSegmenterTest {
 				3. Third item
 				""";
 
-		List<String> blocks = MarkdownBlockSegmenter.segment(markdown);
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
 
 		assertThat(blocks).containsExactly(
-				"1. First item\n2. Second item\n3. Third item"
+				new MarkdownBlockSegmenter.Block("1. First item\n2. Second item\n3. Third item", MarkdownBlockSegmenter.BlockType.LIST)
 		);
 	}
 
@@ -97,11 +97,72 @@ class MarkdownBlockSegmenterTest {
 				2) Numbered two
 				""";
 
-		List<String> blocks = MarkdownBlockSegmenter.segment(markdown);
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
 
 		assertThat(blocks).containsExactly(
-				"- Bullet one\n- Bullet two",
-				"1) Numbered one\n2) Numbered two"
+				new MarkdownBlockSegmenter.Block("- Bullet one\n- Bullet two", MarkdownBlockSegmenter.BlockType.LIST),
+				new MarkdownBlockSegmenter.Block("1) Numbered one\n2) Numbered two", MarkdownBlockSegmenter.BlockType.LIST)
+		);
+	}
+
+	@Test
+	void classifiesHeadingBlock() {
+		String markdown = """
+				# Heading Title
+				""";
+
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
+
+		assertThat(blocks).containsExactly(
+				new MarkdownBlockSegmenter.Block("# Heading Title", MarkdownBlockSegmenter.BlockType.HEADING)
+		);
+	}
+
+	@Test
+	void classifiesHeadingWithFollowingTextAsHeadingBlock() {
+		String markdown = """
+				## Section Title
+				Paragraph text that follows.
+				""";
+
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
+
+		assertThat(blocks).containsExactly(
+				new MarkdownBlockSegmenter.Block("## Section Title", MarkdownBlockSegmenter.BlockType.HEADING),
+				new MarkdownBlockSegmenter.Block("Paragraph text that follows.", MarkdownBlockSegmenter.BlockType.TEXT)
+		);
+	}
+
+	@Test
+	void classifiesHeadingWithListAsHeadingBlock() {
+		String markdown = """
+				### Ingredients
+				- Item one
+				- Item two
+				""";
+
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
+
+		assertThat(blocks).containsExactly(
+				new MarkdownBlockSegmenter.Block("### Ingredients", MarkdownBlockSegmenter.BlockType.HEADING),
+				new MarkdownBlockSegmenter.Block("- Item one\n- Item two", MarkdownBlockSegmenter.BlockType.LIST)
+		);
+	}
+
+	@Test
+	void splitsHeadingInsideTextBlock() {
+		String markdown = """
+				Intro paragraph line.
+				## Mid Heading
+				Following paragraph line.
+				""";
+
+		List<MarkdownBlockSegmenter.Block> blocks = MarkdownBlockSegmenter.segment(markdown);
+
+		assertThat(blocks).containsExactly(
+				new MarkdownBlockSegmenter.Block("Intro paragraph line.", MarkdownBlockSegmenter.BlockType.TEXT),
+				new MarkdownBlockSegmenter.Block("## Mid Heading", MarkdownBlockSegmenter.BlockType.HEADING),
+				new MarkdownBlockSegmenter.Block("Following paragraph line.", MarkdownBlockSegmenter.BlockType.TEXT)
 		);
 	}
 }
