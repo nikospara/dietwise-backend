@@ -14,7 +14,9 @@ import eu.dietwise.services.renderer.RenderRequest;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
+import eu.dietwise.services.v1.ai.MarkdownBlockSegmenter;
 import eu.dietwise.services.v1.ai.RecipeExtractionAiService;
+import eu.dietwise.services.v1.ai.RecipeFilterAiService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
@@ -42,10 +44,12 @@ import org.slf4j.LoggerFactory;
 public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
+	private final RecipeFilterAiService filterAiService;
 	private final RecipeExtractionAiService extractionAiService;
 	private final RendererClient rendererClient;
 
-	public RecipeAssessmentServiceImpl(RecipeExtractionAiService extractionAiService, @RestClient RendererClient rendererClient) {
+	public RecipeAssessmentServiceImpl(RecipeFilterAiService filterAiService, RecipeExtractionAiService extractionAiService, @RestClient RendererClient rendererClient) {
+		this.filterAiService = filterAiService;
 		this.extractionAiService = extractionAiService;
 		this.rendererClient = rendererClient;
 	}
@@ -108,35 +112,38 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				.build();
 	}
 
-	private Function<? super RestResponse<RenderResponse>, Uni<RecipeExtractionRecipeAssessmentMessage>> extractRecipesEitherFromJsonLdOrFromAi(RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
-		return restRenderResponse -> {
-			RenderResponse renderResponse = restRenderResponse.getEntity();
-			if (renderResponse.jsonLdRecipes() != null && !renderResponse.jsonLdRecipes().isEmpty()) {
-				var recipes = renderResponse.jsonLdRecipes().stream().map(r -> new RecipeAndDetectionType(r, JSONLD)).toList();
-				return Uni.createFrom().item(new RecipeExtractionRecipeAssessmentMessage(recipes, renderResponse.output()));
-			} else {
-				var assessmentParam = ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(renderResponse.output()).build();
-				return extractor.apply(assessmentParam).map(convertLlmResponseToRecipes(renderResponse.output()));
-			}
-		};
-	}
-
 	private Uni<RecipeExtractionRecipeAssessmentMessage> extractRecipesEitherFromJsonLdOrFromAi(RestResponse<RenderResponse> restRenderResponse, RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
 		RenderResponse renderResponse = restRenderResponse.getEntity();
 		if (renderResponse.jsonLdRecipes() != null && !renderResponse.jsonLdRecipes().isEmpty()) {
 			var recipes = renderResponse.jsonLdRecipes().stream().map(r -> new RecipeAndDetectionType(r, JSONLD)).toList();
 			return Uni.createFrom().item(new RecipeExtractionRecipeAssessmentMessage(recipes, renderResponse.output()));
 		} else {
-			var assessmentParam = ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(renderResponse.output()).build();
-			return extractor.apply(assessmentParam).map(convertLlmResponseToRecipes(renderResponse.output()));
+			return keepOnlyRelevantPageContent(renderResponse.output(), param.getLangCode())
+					.map(filteredContent -> ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(filteredContent).build())
+					.flatMap(extractor::apply)
+					.map(llmResponse -> convertLlmResponseToRecipes(llmResponse, renderResponse.output()));
 		}
 	}
 
-	private Function<String, RecipeExtractionRecipeAssessmentMessage> convertLlmResponseToRecipes(String pageText) {
-		return text -> {
-			var recipe = makeDummyRecipe();
-			return new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, LLM_FROM_TEXT)), pageText);
-		};
+	private Uni<String> keepOnlyRelevantPageContent(String pageTextAsMarkdown, String langCode) {
+		List<String> blocks = MarkdownBlockSegmenter.segment(pageTextAsMarkdown);
+		return Multi.createFrom().iterable(blocks).onItem().transformToUniAndConcatenate(this::filterRecipeBlock)
+				.filter(block -> !block.isBlank())
+				.collect().asList()
+				.map(filteredBlocks -> String.join("\n\n", filteredBlocks));
+	}
+
+	private Uni<String> filterRecipeBlock(String block) {
+		return Uni.createFrom().item(() -> filterAiService.filterRecipeBlock(block))
+				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
+				.map(result -> result == null ? "" : result.trim().toUpperCase()) // sanitize
+				.map(result -> "KEEP".equals(result) ? block : "");
+	}
+
+	private RecipeExtractionRecipeAssessmentMessage convertLlmResponseToRecipes(String llmResponse, String pageText) {
+		// TODO Extract the recipe (pain)
+		var recipe = makeDummyRecipe();
+		return new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, LLM_FROM_TEXT)), pageText);
 	}
 
 	private Consumer<RecipeExtractionRecipeAssessmentMessage> emitRecipeExtractionMessageOrNoRecipesError(MultiEmitter<? super RecipeAssessmentMessage> emitter) {
