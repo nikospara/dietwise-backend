@@ -5,8 +5,9 @@ Extract one recipe only (the primary/complete recipe on the page).
 Return STRICT JSON ONLY, with this schema:
 {
 	"name": string | null,
-	"ingredients": string[],
-	"steps": string[]
+	"recipeYield": string | null,
+	"recipeIngredients": string[],
+	"recipeInstructions": string[]
 }
 
 Rules:
@@ -15,4 +16,4 @@ Rules:
 - Ingredients and steps must each be single-line strings.
 - Normalize ingredient/step text into plain strings (remove bullets, numbering, extra whitespace).
 - Ignore navigation, ads, stories, comments, and unrelated content.
-- If no recipe is present, return: {"name": null, "ingredients": [], "steps": []}
+- If no recipe is present, return: {"name": null, "recipeIngredients": [], "recipeInstructions": []}

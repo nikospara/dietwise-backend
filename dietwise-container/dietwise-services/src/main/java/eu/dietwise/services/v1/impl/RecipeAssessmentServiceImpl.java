@@ -17,7 +17,7 @@ import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.ai.MarkdownBlockSegmenter;
-import eu.dietwise.services.v1.ai.RecipeExtractionAiService;
+import eu.dietwise.services.v1.ai.RecipeExtractionService;
 import eu.dietwise.services.v1.ai.RecipeFilterAiService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
@@ -47,12 +47,12 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
 	private final RecipeFilterAiService filterAiService;
-	private final RecipeExtractionAiService extractionAiService;
+	private final RecipeExtractionService extractionService;
 	private final RendererClient rendererClient;
 
-	public RecipeAssessmentServiceImpl(RecipeFilterAiService filterAiService, RecipeExtractionAiService extractionAiService, @RestClient RendererClient rendererClient) {
+	public RecipeAssessmentServiceImpl(RecipeFilterAiService filterAiService, RecipeExtractionService extractionService, @RestClient RendererClient rendererClient) {
 		this.filterAiService = filterAiService;
-		this.extractionAiService = extractionAiService;
+		this.extractionService = extractionService;
 		this.rendererClient = rendererClient;
 	}
 
@@ -114,7 +114,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				.build();
 	}
 
-	private Uni<RecipeExtractionRecipeAssessmentMessage> extractRecipesEitherFromJsonLdOrFromAi(RestResponse<RenderResponse> restRenderResponse, RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
+	private Uni<RecipeExtractionRecipeAssessmentMessage> extractRecipesEitherFromJsonLdOrFromAi(RestResponse<RenderResponse> restRenderResponse, RecipeExtractionAndAssessmentParam param, Function<RecipeAssessmentParam, Uni<Recipe>> extractor) {
 		RenderResponse renderResponse = restRenderResponse.getEntity();
 		if (renderResponse.jsonLdRecipes() != null && !renderResponse.jsonLdRecipes().isEmpty()) {
 			var recipes = renderResponse.jsonLdRecipes().stream().map(r -> new RecipeAndDetectionType(r, JSONLD)).toList();
@@ -143,9 +143,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				.map(result -> "KEEP".equals(result) ? block : "");
 	}
 
-	private RecipeExtractionRecipeAssessmentMessage convertLlmResponseToRecipes(String llmResponse, String pageText) {
-		// TODO Extract the recipe (pain)
-		var recipe = makeDummyRecipe();
+	private RecipeExtractionRecipeAssessmentMessage convertLlmResponseToRecipes(Recipe recipe, String pageText) {
 		return new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, LLM_FROM_TEXT)), pageText);
 	}
 
@@ -170,28 +168,21 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		}
 	}
 
-	private Multi<RecipeAssessmentMessage> assessRecipe(RecipeAssessmentParam param, Function<RecipeAssessmentParam, Uni<String>> extractor) {
+	private Multi<RecipeAssessmentMessage> assessRecipe(RecipeAssessmentParam param, Function<RecipeAssessmentParam, Uni<Recipe>> extractor) {
 		return Multi.createFrom().emitter(emitter ->
 				extractor.apply(param)
-						.map(this::convertLlmResponseToRecipe)
 						.invoke(emitRecipeExtractionRecipeAssessmentMessage(emitter))
 						.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
 						.invoke(emitSuggestionsRecipeAssessmentMessage(emitter))
 						.subscribe().with(x -> emitter.complete(), handleError(emitter)));
 	}
 
-	private Uni<String> extractRecipeFromHtml(RecipeAssessmentParam param) {
-		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromHtml(param.getPageContent()))
-				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
+	private Uni<Recipe> extractRecipeFromHtml(RecipeAssessmentParam param) {
+		return extractionService.extractRecipeFromHtml(param.getPageContent());
 	}
 
-	private Uni<String> extractRecipeFromMarkdown(RecipeAssessmentParam param) {
-		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromMarkdown(param.getPageContent()))
-				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
-	}
-
-	private Recipe convertLlmResponseToRecipe(String text) {
-		return ImmutableRecipe.builder().text(text).build();
+	private Uni<Recipe> extractRecipeFromMarkdown(RecipeAssessmentParam param) {
+		return extractionService.extractRecipeFromMarkdown(param.getPageContent());
 	}
 
 	private Consumer<Recipe> emitRecipeExtractionRecipeAssessmentMessage(MultiEmitter<? super RecipeAssessmentMessage> emitter) {
