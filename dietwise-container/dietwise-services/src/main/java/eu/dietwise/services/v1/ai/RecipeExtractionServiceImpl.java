@@ -18,10 +18,12 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 
 	private final RecipeExtractionAiService extractionAiService;
 	private final ObjectMapper objectMapper;
+	private final RecipeJsonNormalizer jsonNormalizer;
 
-	public RecipeExtractionServiceImpl(RecipeExtractionAiService extractionAiService, ObjectMapper objectMapper) {
+	public RecipeExtractionServiceImpl(RecipeExtractionAiService extractionAiService, ObjectMapper objectMapper, RecipeJsonNormalizer jsonNormalizer) {
 		this.extractionAiService = extractionAiService;
 		this.objectMapper = objectMapper;
+		this.jsonNormalizer = jsonNormalizer;
 	}
 
 	@Override
@@ -40,13 +42,13 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 
 	private Recipe parseRecipeWithRepair(String response) {
 		try {
-			return parseRecipe(response);
+			return parseRecipe(jsonNormalizer.normalize(response));
 		} catch (JsonProcessingException e) {
 			String repaired = repairJson(response);
 			if (!repaired.equals(response)) {
 				try {
 					LOG.debug("Repaired malformed recipe JSON from LLM");
-					return parseRecipe(repaired);
+					return parseRecipe(jsonNormalizer.normalize(repaired));
 				} catch (JsonProcessingException ignored) {
 					// fall through to throw the original exception
 				}

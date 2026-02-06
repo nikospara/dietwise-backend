@@ -21,7 +21,8 @@ class RecipeExtractionServiceImplTest {
 	@Test
 	void repairsMissingClosingBraceAndParsesRecipe() {
 		var objectMapper = ObjectMapperModelUtils.applyDefaultObjectMapperConfiguration(new ObjectMapper());
-		RecipeExtractionServiceImpl service = new RecipeExtractionServiceImpl(aiService, objectMapper);
+		var normalizer = new RecipeJsonNormalizerImpl(objectMapper, new CompactJsonCoercionStrategy());
+		RecipeExtractionServiceImpl service = new RecipeExtractionServiceImpl(aiService, objectMapper, normalizer);
 
 		String markdown = "ignored";
 		String malformedJson = """
@@ -45,7 +46,8 @@ class RecipeExtractionServiceImplTest {
 	@Test
 	void repairsMissingClosingBracketAndParsesRecipe() {
 		var objectMapper = ObjectMapperModelUtils.applyDefaultObjectMapperConfiguration(new ObjectMapper());
-		RecipeExtractionServiceImpl service = new RecipeExtractionServiceImpl(aiService, objectMapper);
+		var normalizer = new RecipeJsonNormalizerImpl(objectMapper, new CompactJsonCoercionStrategy());
+		RecipeExtractionServiceImpl service = new RecipeExtractionServiceImpl(aiService, objectMapper, normalizer);
 
 		String markdown = "ignored";
 		String malformedJson = """
