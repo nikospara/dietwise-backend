@@ -80,9 +80,46 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	private String extractJsonObject(String text) {
 		int start = text.indexOf('{');
 		if (start < 0) return text;
-		int end = text.lastIndexOf('}');
+		int end = findFirstCompleteJsonObjectEnd(text, start);
 		if (end >= start) return text.substring(start, end + 1);
 		return text.substring(start);
+	}
+
+	private int findFirstCompleteJsonObjectEnd(String text, int start) {
+		Deque<Character> stack = new ArrayDeque<>();
+		boolean inString = false;
+		boolean escaping = false;
+
+		for (int i = start; i < text.length(); i++) {
+			char c = text.charAt(i);
+			if (escaping) {
+				escaping = false;
+				continue;
+			}
+			if (c == '\\') {
+				escaping = true;
+				continue;
+			}
+			if (c == '"') {
+				inString = !inString;
+				continue;
+			}
+			if (inString) continue;
+
+			switch (c) {
+				case '{' -> stack.push('}');
+				case '[' -> stack.push(']');
+				case '}', ']' -> {
+					if (!stack.isEmpty() && stack.peek() == c) {
+						stack.pop();
+						if (stack.isEmpty()) return i;
+					}
+				}
+				default -> {
+				}
+			}
+		}
+		return -1;
 	}
 
 	private String appendMissingClosers(String text) {
