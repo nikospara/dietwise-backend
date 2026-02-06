@@ -170,7 +170,9 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	private Multi<RecipeAssessmentMessage> assessRecipe(RecipeAssessmentParam param, Function<RecipeAssessmentParam, Uni<Recipe>> extractor) {
 		return Multi.createFrom().emitter(emitter ->
-				extractor.apply(param)
+				keepOnlyRelevantPageContent(param.getPageContent(), param.getLangCode())
+						.map(filteredContent -> ImmutableRecipeAssessmentParam.builder().url(param.getUrl()).langCode(param.getLangCode()).pageContent(filteredContent).build())
+						.flatMap(extractor::apply)
 						.invoke(emitRecipeExtractionRecipeAssessmentMessage(emitter))
 						.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
 						.invoke(emitSuggestionsRecipeAssessmentMessage(emitter))
