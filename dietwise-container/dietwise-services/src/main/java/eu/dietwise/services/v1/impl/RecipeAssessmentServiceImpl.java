@@ -1,6 +1,5 @@
 package eu.dietwise.services.v1.impl;
 
-import static eu.dietwise.services.v1.ai.MarkdownBlockHeadingJoiner.joinHeadingWithFollowingContent;
 import static eu.dietwise.services.v1.ai.MarkdownBlockSegmenter.segment;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
@@ -16,6 +15,7 @@ import eu.dietwise.services.renderer.RenderRequest;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
+import eu.dietwise.services.v1.ai.MarkdownBlockCoalescer;
 import eu.dietwise.services.v1.ai.MarkdownBlockSegmenter;
 import eu.dietwise.services.v1.ai.RecipeExtractionService;
 import eu.dietwise.services.v1.ai.RecipeFilterAiService;
@@ -129,7 +129,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	private Uni<String> keepOnlyRelevantPageContent(String pageTextAsMarkdown, String langCode) {
 		List<MarkdownBlockSegmenter.Block> segmentedContent = segment(pageTextAsMarkdown);
-		List<String> blocks = joinHeadingWithFollowingContent(segmentedContent);
+		List<String> blocks = MarkdownBlockCoalescer.coalesce(segmentedContent, 5000);
 		return Multi.createFrom().iterable(blocks).onItem().transformToUniAndConcatenate(this::filterRecipeBlock)
 				.filter(block -> !block.isBlank())
 				.collect().asList()
@@ -222,6 +222,10 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		};
 	}
 
+	/**
+	 * @deprecated The rendering service returns appropriate messages and this left unused; keeping around because we may reconsider
+	 */
+	@Deprecated(forRemoval = true)
 	private Function<ClientWebApplicationException, Multi<RecipeAssessmentMessage>> handleHtmlExtractionError(RecipeExtractionAndAssessmentParam param) {
 		return e -> {
 			LOG.error("Could not read the page at {}", param.getUrl(), e);
