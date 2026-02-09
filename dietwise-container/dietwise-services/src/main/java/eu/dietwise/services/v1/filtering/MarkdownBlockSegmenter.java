@@ -1,4 +1,4 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.filtering;
 
 import java.util.ArrayList;
 import java.util.List;

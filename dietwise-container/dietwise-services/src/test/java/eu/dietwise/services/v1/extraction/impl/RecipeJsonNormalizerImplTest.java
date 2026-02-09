@@ -1,9 +1,11 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.extraction.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dietwise.services.v1.extraction.RecipeJsonCoercionStrategy;
+import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
 import eu.dietwise.v1.json.ObjectMapperModelUtils;
 import org.junit.jupiter.api.Test;
 

@@ -5,4 +5,4 @@
  * detection is more reliable.
  * </p>
  */
-package eu.dietwise.services.v1.impl.filtering;
+package eu.dietwise.services.v1.filtering;

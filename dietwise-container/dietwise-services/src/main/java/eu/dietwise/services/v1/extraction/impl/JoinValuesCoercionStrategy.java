@@ -1,10 +1,11 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.extraction.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dietwise.services.v1.extraction.RecipeJsonCoercionStrategy;
 
 public class JoinValuesCoercionStrategy implements RecipeJsonCoercionStrategy {
 	@Override

@@ -1,10 +1,11 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.extraction.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
 import eu.dietwise.v1.json.ObjectMapperModelUtils;
 import eu.dietwise.v1.model.Recipe;
 import org.junit.jupiter.api.BeforeEach;

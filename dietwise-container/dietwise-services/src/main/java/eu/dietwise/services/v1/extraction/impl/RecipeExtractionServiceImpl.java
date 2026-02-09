@@ -1,4 +1,4 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.extraction.impl;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -6,6 +6,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
+import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
 import eu.dietwise.v1.model.Recipe;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;

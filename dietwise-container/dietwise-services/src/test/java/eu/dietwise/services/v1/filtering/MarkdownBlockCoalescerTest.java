@@ -1,8 +1,8 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.filtering;
 
-import static eu.dietwise.services.v1.ai.MarkdownBlockSegmenter.BlockType.HEADING;
-import static eu.dietwise.services.v1.ai.MarkdownBlockSegmenter.BlockType.LIST;
-import static eu.dietwise.services.v1.ai.MarkdownBlockSegmenter.BlockType.TEXT;
+import static eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter.BlockType.HEADING;
+import static eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter.BlockType.LIST;
+import static eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter.BlockType.TEXT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

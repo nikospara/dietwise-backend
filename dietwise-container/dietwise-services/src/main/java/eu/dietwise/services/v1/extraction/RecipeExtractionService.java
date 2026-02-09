@@ -1,4 +1,4 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.extraction;
 
 import eu.dietwise.v1.model.Recipe;
 import io.smallrye.mutiny.Uni;

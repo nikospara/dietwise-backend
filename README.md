@@ -147,6 +147,8 @@ supports CUDA but requires some extra installation steps that I haven't got down
 
 Until then running Ollama locally is ver easy: download, extract and run `./bin/ollama serve`
 
+For bigger context (default is 4096): `OLLAMA_CONTEXT_LENGTH=8192 ./bin/ollama serve`
+
 ### From IDE
 
 Create a Quarkus run configuration. You need to specify the DB connection parameters (and any other runtime parameters)

@@ -1,4 +1,4 @@
-package eu.dietwise.services.v1.ai;
+package eu.dietwise.services.v1.extraction.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import eu.dietwise.services.v1.extraction.RecipeJsonCoercionStrategy;
+import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
 
 @ApplicationScoped
 public class RecipeJsonNormalizerImpl implements RecipeJsonNormalizer {

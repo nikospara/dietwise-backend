@@ -1,6 +1,6 @@
 package eu.dietwise.services.v1.impl;
 
-import static eu.dietwise.services.v1.ai.MarkdownBlockSegmenter.segment;
+import static eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter.segment;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
 
@@ -15,10 +15,10 @@ import eu.dietwise.services.renderer.RenderRequest;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
-import eu.dietwise.services.v1.ai.MarkdownBlockCoalescer;
-import eu.dietwise.services.v1.ai.MarkdownBlockSegmenter;
-import eu.dietwise.services.v1.ai.RecipeExtractionService;
-import eu.dietwise.services.v1.ai.RecipeFilterAiService;
+import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.filtering.RecipeFilterAiService;
+import eu.dietwise.services.v1.filtering.MarkdownBlockCoalescer;
+import eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
