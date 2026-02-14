@@ -1,11 +1,11 @@
 services:
   postgresql:
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
     image: 'dietwise-postgres:latest'
     ports:
       - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - data_db:/var/lib/postgresql/data
   keycloak:
@@ -14,6 +14,12 @@ services:
       - '8280:8080'
     depends_on:
       - postgresql
+  dietwise-renderer:
+    image: 'dietwise-renderer:latest'
+    ports:
+      - '3000:3000'
+    environment:
+      DW_RENDERER_TEST_DIR: ${DW_RENDERER_TEST_DIR:-}
 
 volumes:
   data_db:

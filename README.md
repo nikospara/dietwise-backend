@@ -75,6 +75,7 @@ possible therefore, we do not use Quarkus dependencies anywhere, except from the
 However, we need to stay compatible; so we mark version properties that actually depend on Quarkus with an XML comment.
 Be careful when upgrading those dependencies.
 
+
 ## Building
 
 Build with Maven as usual, `package` is enough:
@@ -82,7 +83,7 @@ Build with Maven as usual, `package` is enough:
 ```shell
 mvn package
 # -OR-
-mvn package -Pdocker # to build the docker images too
+mvn package -Pdocker # to build the docker images of the required peripherals too
 ```
 
 > **NOTE/WARNING:** As of the date of this writing, the Docker images are for development purposes only!
@@ -118,6 +119,18 @@ mvn org.liquibase:liquibase-maven-plugin:rollback \
 
 Full info [here](https://docs.liquibase.com/tools-integrations/maven/commands/maven-rollback.html).
 
+### Building the Docker image
+
+The root Dockerfile executes the entire Maven build (no tests) and then creates the application image.
+To keep the build fast, we are caching the Maven dependencies first, then copy the sources and build.
+If the Maven modules change, use the script `dietwise-architecture/src/scripts/update-dockerfile-pom-copy.sh`
+to regenerate the Dockerfile. It should be safe to run it everytime. The final command is:
+
+```bash
+docker build -t dietwise .
+```
+
+
 ## Running
 
 **NOTE:** For the time being you need to run Ollama by hand. See below for details.
@@ -137,6 +150,8 @@ docker compose -f docker-compose-peripherals.yml -p dietwise stop     # to stop
 docker compose -f docker-compose-peripherals.yml -p dietwise down     # to remove the containers, without removing the persistent volumes
 docker compose -f docker-compose-peripherals.yml -p dietwise down -v  # to remove the containers, also removing the persistent volumes
 ```
+
+Take a look at `dietwise-docker/src/main/docker-compose/template.env` for environment variables that may need to be set.
 
 ### Prerequisite: Ollama
 

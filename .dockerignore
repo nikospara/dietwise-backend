@@ -1,0 +1,25 @@
+# VCS
+.git
+.gitignore
+
+# IDE/editor
+.idea/
+.vscode/
+*.iml
+
+# Maven/Java build outputs
+**/target/
+
+# Local runtime/temp artifacts
+**/*.log
+**/.DS_Store
+
+# Local environment files
+**/.env
+**/.env.*
+
+# Node/npm artifacts if present
+**/node_modules/
+
+# OS-specific
+**/Thumbs.db
