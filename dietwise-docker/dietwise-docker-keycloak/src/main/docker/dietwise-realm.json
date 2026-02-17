@@ -198,7 +198,7 @@
         "composite" : true,
         "composites" : {
           "client" : {
-            "realm-management" : [ "view-users", "manage-identity-providers", "manage-authorization", "manage-clients", "manage-events", "query-groups", "query-realms", "view-realm", "query-users", "impersonation", "query-clients", "manage-users", "create-client", "view-authorization", "view-clients", "view-identity-providers", "manage-realm", "view-events" ]
+            "realm-management" : [ "view-users", "manage-identity-providers", "manage-authorization", "manage-events", "manage-clients", "query-groups", "query-realms", "view-realm", "query-users", "impersonation", "query-clients", "manage-users", "create-client", "view-authorization", "view-clients", "view-identity-providers", "manage-realm", "view-events" ]
           }
         },
         "clientRole" : true,
@@ -632,7 +632,7 @@
     "enabled" : true,
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
-    "redirectUris" : [ "http://localhost:5173/authcallback" ],
+    "redirectUris" : [ "http://localhost:5173/recipewatch/authcallback", "http://localhost:5173/authcallback", "https://gaia.ispatial.survey.ntua.gr/recipewatch/authcallback" ],
     "webOrigins" : [ "http://localhost:5173" ],
     "notBefore" : 0,
     "bearerOnly" : false,
@@ -645,30 +645,31 @@
     "frontchannelLogout" : true,
     "protocol" : "openid-connect",
     "attributes" : {
-      "id.token.as.detached.signature" : "false",
       "request.object.signature.alg" : "any",
-      "request.object.encryption.alg" : "any",
-      "client.introspection.response.allow.jwt.claim.enabled" : "false",
-      "standard.token.exchange.enabled" : "false",
       "frontchannel.logout.session.required" : "true",
-      "post.logout.redirect.uris" : "http://localhost:5173/endsession",
+      "post.logout.redirect.uris" : "http://localhost:5173/endsession##http://localhost:5173/recipewatch/endsession##https://gaia.ispatial.survey.ntua.gr/recipewatch/endsession",
       "oauth2.device.authorization.grant.enabled" : "false",
       "backchannel.logout.revoke.offline.tokens" : "false",
       "use.refresh.tokens" : "true",
       "realm_client" : "false",
       "oidc.ciba.grant.enabled" : "false",
-      "client.use.lightweight.access.token.enabled" : "false",
       "backchannel.logout.session.required" : "true",
-      "request.object.required" : "not required",
       "client_credentials.use_refresh_token" : "false",
+      "require.pushed.authorization.requests" : "false",
+      "request.object.encryption.enc" : "any",
+      "dpop.bound.access.tokens" : "false",
+      "id.token.as.detached.signature" : "false",
+      "logout.confirmation.enabled" : "false",
+      "request.object.encryption.alg" : "any",
+      "client.introspection.response.allow.jwt.claim.enabled" : "false",
+      "standard.token.exchange.enabled" : "false",
+      "client.use.lightweight.access.token.enabled" : "false",
+      "request.object.required" : "not required",
       "access.token.header.type.rfc9068" : "false",
       "tls.client.certificate.bound.access.tokens" : "false",
-      "require.pushed.authorization.requests" : "false",
       "acr.loa.map" : "{}",
       "display.on.consent.screen" : "false",
-      "request.object.encryption.enc" : "any",
-      "token.response.type.bearer.lower-case" : "false",
-      "dpop.bound.access.tokens" : "false"
+      "token.response.type.bearer.lower-case" : "false"
     },
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
@@ -1386,7 +1387,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "saml-user-property-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper" ]
       }
     }, {
       "id" : "601389e3-5623-4cd1-8d11-12a210e65085",
@@ -1414,7 +1415,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "saml-role-list-mapper", "oidc-full-name-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-user-property-mapper", "oidc-full-name-mapper", "oidc-address-mapper", "oidc-usermodel-property-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper" ]
       }
     }, {
       "id" : "cb7c6240-2e90-4c10-849b-b1833e8e0c32",
@@ -2212,7 +2213,7 @@
     "shortVerificationUri" : "",
     "actionTokenGeneratedByUserLifespan.reset-credentials" : ""
   },
-  "keycloakVersion" : "26.4.7",
+  "keycloakVersion" : "26.5.3",
   "userManagedAccessAllowed" : false,
   "organizationsEnabled" : false,
   "verifiableCredentialsEnabled" : false,
