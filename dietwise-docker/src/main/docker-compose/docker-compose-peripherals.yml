@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - data_db:/var/lib/postgresql/data
+      - data_db:/var/lib/postgresql
   keycloak:
     image: 'dietwise-keycloak:latest'
     ports:
