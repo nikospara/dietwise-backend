@@ -19,7 +19,9 @@ services:
     ports:
       - '3000:3000'
     environment:
-      DW_RENDERER_TEST_DIR: ${DW_RENDERER_TEST_DIR:-}
+      DW_RENDERER_TEST_DIR: /var/opt
+    volumes:
+      - ${DW_RENDERER_TEST_DIR:-.}:/var/opt
 
 volumes:
   data_db:
