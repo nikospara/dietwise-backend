@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
-import eu.dietwise.v1.model.Recipe;
+import eu.dietwise.services.model.RecipeExtractedFromInput;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.slf4j.Logger;
@@ -30,20 +30,20 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	}
 
 	@Override
-	public Uni<Recipe> extractRecipeFromMarkdown(String markdown) {
+	public Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(String markdown) {
 		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromMarkdown(markdown))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
 				.map(this::parseRecipeWithRepair);
 	}
 
 	@Override
-	public Uni<Recipe> extractRecipeFromHtml(String html) {
+	public Uni<RecipeExtractedFromInput> extractRecipeFromHtml(String html) {
 		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromHtml(html))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
 				.map(this::parseRecipeWithRepair);
 	}
 
-	private Recipe parseRecipeWithRepair(String response) {
+	private RecipeExtractedFromInput parseRecipeWithRepair(String response) {
 		try {
 			return parseRecipe(jsonNormalizer.normalize(response));
 		} catch (JsonProcessingException e) {
@@ -60,8 +60,8 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 		}
 	}
 
-	private Recipe parseRecipe(String json) throws JsonProcessingException {
-		return objectMapper.readValue(json, Recipe.class);
+	private RecipeExtractedFromInput parseRecipe(String json) throws JsonProcessingException {
+		return objectMapper.readValue(json, RecipeExtractedFromInput.class);
 	}
 
 	private String repairJson(String text) {

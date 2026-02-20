@@ -2,7 +2,12 @@ package eu.dietwise.services.renderer;
 
 import java.util.List;
 
-import eu.dietwise.v1.model.Recipe;
+import eu.dietwise.services.model.RecipeExtractedFromInput;
 
-public record RenderResponse(String output, List<Recipe> jsonLdRecipes, String finalUrl, Screenshot screenshot) {
+public record RenderResponse(
+		String output,
+		List<RecipeExtractedFromInput> jsonLdRecipes,
+		String finalUrl,
+		Screenshot screenshot
+) {
 }

@@ -16,6 +16,13 @@
 	<packaging>jar</packaging>
 
 	<dependencies>
+		<!-- PROJECT -->
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-common-types</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+
 		<!-- OTHER -->
 		<dependency>
 			<groupId>org.immutables</groupId>

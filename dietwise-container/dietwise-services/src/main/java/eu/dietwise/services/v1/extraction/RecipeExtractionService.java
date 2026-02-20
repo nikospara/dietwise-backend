@@ -1,10 +1,10 @@
 package eu.dietwise.services.v1.extraction;
 
-import eu.dietwise.v1.model.Recipe;
+import eu.dietwise.services.model.RecipeExtractedFromInput;
 import io.smallrye.mutiny.Uni;
 
 public interface RecipeExtractionService {
-	Uni<Recipe> extractRecipeFromMarkdown(String markdown);
+	Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(String markdown);
 
-	Uni<Recipe> extractRecipeFromHtml(String html);
+	Uni<RecipeExtractedFromInput> extractRecipeFromHtml(String html);
 }

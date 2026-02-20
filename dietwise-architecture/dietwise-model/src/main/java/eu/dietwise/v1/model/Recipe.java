@@ -8,8 +8,12 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface Recipe {
 	Optional<String> getName();
+
 	Optional<String> getRecipeYield();
-	List<String> getRecipeIngredients();
+
+	List<Ingredient> getRecipeIngredients();
+
 	List<String> getRecipeInstructions(); // TODO Must reference ingredient
+
 	Optional<String> getText();
 }

@@ -5,9 +5,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
 import eu.dietwise.v1.json.ObjectMapperModelUtils;
-import eu.dietwise.v1.model.Recipe;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,7 @@ class RecipeExtractionServiceImplTest {
 	@BeforeEach
 	void beforeEach() {
 		var om = ObjectMapperModelUtils.applyDefaultObjectMapperConfiguration(new ObjectMapper());
+		om.registerModule(new Jdk8Module()); // at runtime Quarkus provides this
 		var normalizer = new RecipeJsonNormalizerImpl(om, new CompactJsonCoercionStrategy());
 		sut = new RecipeExtractionServiceImpl(aiService, om, normalizer);
 	}
@@ -42,11 +44,11 @@ class RecipeExtractionServiceImplTest {
 
 		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJson);
 
-		Recipe recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
 
-		assertThat(recipe.getName()).hasValue("Simple Pasta");
-		assertThat(recipe.getRecipeIngredients()).containsExactly("200g pasta", "salt");
-		assertThat(recipe.getRecipeInstructions()).containsExactly("Boil water", "Cook pasta");
+		assertThat(recipe.name()).hasValue("Simple Pasta");
+		assertThat(recipe.recipeIngredients()).containsExactly("200g pasta", "salt");
+		assertThat(recipe.recipeInstructions()).containsExactly("Boil water", "Cook pasta");
 		verify(aiService).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
 	}
 
@@ -63,11 +65,11 @@ class RecipeExtractionServiceImplTest {
 
 		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJson);
 
-		Recipe recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
 
-		assertThat(recipe.getName()).hasValue("Tomato Soup");
-		assertThat(recipe.getRecipeIngredients()).containsExactly("tomatoes", "salt");
-		assertThat(recipe.getRecipeInstructions()).containsExactly("Simmer", "Blend");
+		assertThat(recipe.name()).hasValue("Tomato Soup");
+		assertThat(recipe.recipeIngredients()).containsExactly("tomatoes", "salt");
+		assertThat(recipe.recipeInstructions()).containsExactly("Simmer", "Blend");
 		verify(aiService).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
 	}
 
@@ -97,14 +99,14 @@ class RecipeExtractionServiceImplTest {
 
 		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJson);
 
-		Recipe recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
 
-		assertThat(recipe.getName()).hasValue("Creamy Chocolate Cheesecake");
-		assertThat(recipe.getRecipeIngredients()).containsExactly(
+		assertThat(recipe.name()).hasValue("Creamy Chocolate Cheesecake");
+		assertThat(recipe.recipeIngredients()).containsExactly(
 				"{\"ingredientName\":\"Crust\",\"quantity\":\"16 Oreos\",\"unit\":\"count\"}",
 				"{\"ingredientName\":\"Filling\",\"quantity\":\"bittersweet chocolate\",\"unit\":\"oz\"}"
 		);
-		assertThat(recipe.getRecipeInstructions()).containsExactly("step one", "step two");
+		assertThat(recipe.recipeInstructions()).containsExactly("step one", "step two");
 		verify(aiService).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
 	}
 
@@ -121,11 +123,11 @@ class RecipeExtractionServiceImplTest {
 
 		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJson);
 
-		Recipe recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
 
-		assertThat(recipe.getName()).hasValue("Simple Salad");
-		assertThat(recipe.getRecipeIngredients()).containsExactly("lettuce", "olive oil");
-		assertThat(recipe.getRecipeInstructions()).containsExactly("Mix", "Serve");
+		assertThat(recipe.name()).hasValue("Simple Salad");
+		assertThat(recipe.recipeIngredients()).containsExactly("lettuce", "olive oil");
+		assertThat(recipe.recipeInstructions()).containsExactly("Mix", "Serve");
 		verify(aiService).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
 	}
 }
