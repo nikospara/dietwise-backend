@@ -6,10 +6,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
-import eu.dietwise.services.model.RecipeExtractedFromInput;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.slf4j.Logger;
@@ -32,13 +32,6 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	@Override
 	public Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(String markdown) {
 		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromMarkdown(markdown))
-				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
-				.map(this::parseRecipeWithRepair);
-	}
-
-	@Override
-	public Uni<RecipeExtractedFromInput> extractRecipeFromHtml(String html) {
-		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromHtml(html))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
 				.map(this::parseRecipeWithRepair);
 	}

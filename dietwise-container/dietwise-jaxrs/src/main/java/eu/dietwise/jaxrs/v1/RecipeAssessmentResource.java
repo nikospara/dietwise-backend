@@ -20,14 +20,6 @@ public class RecipeAssessmentResource {
 	RecipeAssessmentService service;
 
 	@POST
-	@Path("html")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Multi<RecipeAssessmentMessage> assessHtmlRecipe(RecipeAssessmentParam param) {
-		return RestMulti.fromMultiData(service.assessHtmlRecipe(param)).encodeAsJsonArray(false).build();
-	}
-
-	@POST
 	@Path("markdown")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
