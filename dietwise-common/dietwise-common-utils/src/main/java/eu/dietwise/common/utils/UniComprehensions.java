@@ -170,4 +170,17 @@ public interface UniComprehensions {
 	) {
 		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r1, r2).flatMap(r3 -> mapper3.apply(r1, r2, r3))));
 	}
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
+	 */
+	static <R1, R2, R3, R4, R> Uni<R> forc(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			Function<? super R2, Uni<? extends R3>> mapper2,
+			Function<? super R3, Uni<? extends R4>> mapper3,
+			Function<? super R4, Uni<? extends R>> mapper4
+	) {
+		return init.flatMap(mapper1).flatMap(mapper2).flatMap(mapper3).flatMap(mapper4);
+	}
 }

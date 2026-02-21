@@ -55,6 +55,13 @@ class RecipeAssessmentServiceImplTest {
 			List.of("Mix", "Serve"),
 			Optional.empty()
 	);
+	private static final RecipeExtractedFromInput RECIPE_WITHOUT_INGREDIENTS = new RecipeExtractedFromInput(
+			Optional.of("Ingredient-less recipe"),
+			Optional.empty(),
+			List.of(),
+			List.of("Step one"),
+			Optional.empty()
+	);
 	private static final RecipeExtractionAndAssessmentParam URL_EXTRACTION_PARAM = ImmutableRecipeExtractionAndAssessmentParam.builder()
 			.url("https://example.test/recipe")
 			.langCode("en")
@@ -200,6 +207,33 @@ class RecipeAssessmentServiceImplTest {
 	}
 
 	@Test
+	void extractAndAssessRecipeFromUrlKeepsOnlyValidJsonLdRecipesWhenInputIsMixed() {
+		var sut = new RecipeAssessmentServiceImpl(filterAiService, extractionService, rendererClient);
+		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA, RECIPE_WITHOUT_INGREDIENTS));
+		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
+
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(URL_EXTRACTION_PARAM)
+				.collect().asList()
+				.await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(messages).hasSize(2);
+		assertThat(messages.getFirst()).isInstanceOf(RecipeExtractionRecipeAssessmentMessage.class);
+		var extractionMessage = (RecipeExtractionRecipeAssessmentMessage) messages.getFirst();
+		assertThat(extractionMessage.recipes()).hasSize(1);
+		assertThat(extractionMessage.recipes().getFirst().detectionType()).isEqualTo(JSONLD);
+		assertThat(extractionMessage.recipes().getFirst().recipe().getName()).contains("Simple Pasta");
+
+		assertThat(messages.getLast()).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
+		var suggestionsMessage = (SuggestionsRecipeAssessmentMessage) messages.getLast();
+		assertThat(suggestionsMessage.rating()).isNotNull().isBetween(0.0, 4.5); // TODO This applies to the dummy suggestions
+		assertThat(suggestionsMessage.suggestions()).hasSize(2);
+
+		verify(rendererClient).render(any());
+		verifyNoInteractions(filterAiService);
+		verifyNoInteractions(extractionService);
+	}
+
+	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
 		var sut = new RecipeAssessmentServiceImpl(filterAiService, extractionService, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
@@ -218,6 +252,28 @@ class RecipeAssessmentServiceImplTest {
 
 		verify(rendererClient).render(any());
 		verify(filterAiService).filterRecipeBlock(any());
+		verify(extractionService).extractRecipeFromMarkdown(RENDERED_MARKDOWN);
+	}
+
+	@Test
+	void extractAndAssessRecipeFromUrlEmitsErrorWhenAiReturnsRecipeWithoutIngredients() {
+		var sut = new RecipeAssessmentServiceImpl(filterAiService, extractionService, rendererClient);
+		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
+		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
+		when(filterAiService.filterRecipeBlock(RENDERED_MARKDOWN)).thenReturn("KEEP");
+		when(extractionService.extractRecipeFromMarkdown(RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_WITHOUT_INGREDIENTS));
+
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(URL_EXTRACTION_PARAM)
+				.collect().asList()
+				.await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(messages).hasSize(1);
+		assertThat(messages.getFirst()).isInstanceOf(RecipeAssessmentErrorMessage.class);
+		var errorMessage = (RecipeAssessmentErrorMessage) messages.getFirst();
+		assertThat(errorMessage.errors()).containsExactly("No recipes detected on the page");
+
+		verify(rendererClient).render(any());
+		verify(filterAiService).filterRecipeBlock(RENDERED_MARKDOWN);
 		verify(extractionService).extractRecipeFromMarkdown(RENDERED_MARKDOWN);
 	}
 

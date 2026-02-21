@@ -6,11 +6,14 @@ import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.utils.UniComprehensions;
@@ -88,6 +91,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			var renderRequest = new RenderRequest(param.getUrl(), true, true, 30000, param.getViewport().orElse(null), false, true);
 			UniComprehensions.forc(
 					rendererClient.render(renderRequest),
+					sanitizeRenderResponse(correlationId, param),
 					extractRecipesEitherFromJsonLdOrFromAi(correlationId, param),
 					emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
 					assessSingleRecipe(correlationId, param.getUrl(), emitter)
@@ -95,10 +99,45 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		});
 	}
 
-	private Function<? super RestResponse<RenderResponse>, Uni<? extends RecipeExtractionRecipeAssessmentMessage>> extractRecipesEitherFromJsonLdOrFromAi(
+	private Function<? super RestResponse<RenderResponse>, Uni<? extends RenderResponse>> sanitizeRenderResponse(
 			UUID correlationId, RecipeExtractionAndAssessmentParam param) {
 		return restRenderResponse -> {
 			RenderResponse renderResponse = restRenderResponse.getEntity();
+			List<RecipeExtractedFromInput> sanitizedJsonLdRecipes = renderResponse.jsonLdRecipes() == null
+					? Collections.emptyList()
+					: sanitizeRecipes(correlationId, param, renderResponse.jsonLdRecipes());
+			return Uni.createFrom().item(new RenderResponse(renderResponse.output(), sanitizedJsonLdRecipes, renderResponse.finalUrl(), renderResponse.screenshot()));
+		};
+	}
+
+	private List<RecipeExtractedFromInput> sanitizeRecipes(UUID correlationId, RecipeExtractionAndAssessmentParam param, List<RecipeExtractedFromInput> recipes) {
+		return recipes.stream()
+				.map(this::sanitizeRecipe)
+				.filter(keepRecipeWithValidIngredients(correlationId, param))
+				.toList();
+	}
+
+	private RecipeExtractedFromInput sanitizeRecipe(RecipeExtractedFromInput recipe) {
+		List<String> filteredIngredients = recipe.recipeIngredients().stream().filter(Objects::nonNull).filter(s -> !s.isBlank()).toList();
+		return filteredIngredients.size() == recipe.recipeIngredients().size()
+				? recipe
+				: new RecipeExtractedFromInput(recipe.name(), recipe.recipeYield(), filteredIngredients, recipe.recipeInstructions(), recipe.text());
+	}
+
+	private Predicate<? super RecipeExtractedFromInput> keepRecipeWithValidIngredients(UUID correlationId, RecipeExtractionAndAssessmentParam param) {
+		return recipe -> {
+			if (recipe.recipeIngredients().isEmpty()) {
+				LOG.warn("Recipe contains no ingredients <{}> {} in {}", correlationId, recipe.name(), param.getUrl());
+				return false;
+			} else {
+				return true;
+			}
+		};
+	}
+
+	private Function<? super RenderResponse, Uni<? extends RecipeExtractionRecipeAssessmentMessage>> extractRecipesEitherFromJsonLdOrFromAi(
+			UUID correlationId, RecipeExtractionAndAssessmentParam param) {
+		return renderResponse -> {
 			if (renderResponse.jsonLdRecipes() != null && !renderResponse.jsonLdRecipes().isEmpty()) {
 				LOG.info("Found JSON-LD format recipes <{}> in {} ({} in total)", correlationId, param.getUrl(), renderResponse.jsonLdRecipes().size());
 				LOG.debug("JSON-LD recipes: {}", renderResponse.jsonLdRecipes());
@@ -120,7 +159,20 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return keepOnlyRelevantPageContent(markdown, langCode)
 				.map(filteredContent -> ImmutableRecipeAssessmentParam.builder().url(url).langCode(langCode).pageContent(filteredContent).build())
 				.flatMap(this::extractRecipeFromMarkdown)
+				.flatMap(recipe -> failIfRecipeHasNoIngredients(correlationId, url, recipe))
 				.map(llmResponse -> convertLlmResponseToRecipes(llmResponse, markdown));
+	}
+
+	private Uni<Recipe> failIfRecipeHasNoIngredients(UUID correlationId, String url, Recipe recipe) {
+		List<Ingredient> filteredIngredients = recipe.getRecipeIngredients().stream().filter(Ingredient::hasName).toList();
+		if (filteredIngredients.isEmpty()) {
+			LOG.warn("AI extracted recipe without ingredients <{}> in {}", correlationId, url);
+			return Uni.createFrom().failure(new NoRecipesDetectedException());
+		}
+		var recipeToReturn = filteredIngredients.size() == recipe.getRecipeIngredients().size()
+				? recipe
+				: ImmutableRecipe.copyOf(recipe).withRecipeIngredients(filteredIngredients);
+		return Uni.createFrom().item(recipeToReturn);
 	}
 
 	private Function<? super RecipeExtractionRecipeAssessmentMessage, Uni<? extends RecipeExtractionRecipeAssessmentMessage>> emitRecipeExtractionMessageOrNoRecipesError(
@@ -145,7 +197,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				// this signals handleError to emit MoreThanOneRecipesAssessmentMessage
 				return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
 			} else {
-				// TODO Call the actual assessment service here
+				// TODO Call the actual assessment service here - probably use a separate helper service
 				return Uni.createFrom().item(makeDummySuggestionsRecipeAssessmentMessage())
 						.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
 						.invoke(emitter::emit);

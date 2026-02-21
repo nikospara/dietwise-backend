@@ -14,4 +14,8 @@ public interface Ingredient extends HasIngredientId {
 	Optional<TriggerIngredient> getTriggerIngredient();
 
 	Optional<RoleOrTechnique> getRoleOrTechnique();
+
+	static boolean hasName(Ingredient ingredient) {
+		return ingredient != null && ingredient.getNameInRecipe() != null && !ingredient.getNameInRecipe().isBlank();
+	}
 }
