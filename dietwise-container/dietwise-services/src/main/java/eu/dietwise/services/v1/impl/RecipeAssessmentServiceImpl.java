@@ -33,6 +33,7 @@ import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesA
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
+import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableIngredient;
 import eu.dietwise.v1.model.ImmutableRecipe;
 import eu.dietwise.v1.model.ImmutableRecipeAssessmentParam;
@@ -198,7 +199,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
 			} else {
 				// TODO Call the actual assessment service here - probably use a separate helper service
-				return Uni.createFrom().item(makeDummySuggestionsRecipeAssessmentMessage())
+				Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
+				return Uni.createFrom().item(makeDummySuggestionsRecipeAssessmentMessage(recipe))
 						.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
 						.invoke(emitter::emit);
 			}
@@ -211,8 +213,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		var recipeMsg = new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, JSONLD)), "dummy page text");
 		double rating = new Random().nextInt(10) / 2.0;
 		List<Suggestion> suggestions = List.of(
-				dummyFromTextOnly("Coming from the server - this is just a dummy, placeholder response"),
-				dummyFromTextOnly("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.")
+				dummyFromTextOnly(recipe, "Dummy suggestion one"),
+				dummyFromTextOnly(recipe, "Dummy suggestion two")
 		);
 		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(rating, suggestions);
 		return Multi.createFrom().<RecipeAssessmentMessage>items(recipeMsg, suggestionsMsg)
@@ -279,22 +281,24 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return ImmutableIngredient.builder().id(new GenericIngredientId(UUID.randomUUID().toString())).nameInRecipe(name).build();
 	}
 
-	private SuggestionsRecipeAssessmentMessage makeDummySuggestionsRecipeAssessmentMessage() {
+	private SuggestionsRecipeAssessmentMessage makeDummySuggestionsRecipeAssessmentMessage(Recipe recipe) {
 		double rating = new Random().nextInt(10) / 2.0;
 		List<Suggestion> suggestions = List.of(
-				dummyFromTextOnly("Coming from the server - this is just a dummy, placeholder response"),
-//				dummyFromTextOnly("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
-//				dummyFromTextOnly("Ed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"),
-				dummyFromTextOnly("At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.")
+				dummyFromTextOnly(recipe, "Coming from the server - this is just a dummy, placeholder response"),
+//				dummyFromTextOnly(recipe, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+//				dummyFromTextOnly(recipe, "Ed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"),
+				dummyFromTextOnly(recipe, "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.")
 		);
 //		throw new RuntimeException("Testing exception");
 		return new SuggestionsRecipeAssessmentMessage(rating, suggestions);
 	}
 
-	private Suggestion dummyFromTextOnly(String text) {
+	private Suggestion dummyFromTextOnly(Recipe recipe, String text) {
+		var rand = new Random();
+		var ingredient = recipe.getRecipeIngredients().get(rand.nextInt(recipe.getRecipeIngredients().size()));
 		return ImmutableSuggestion.builder()
 				.alternative(new AlternativeIngredientImpl("alternative"))
-				.targetIngredientId(new GenericIngredientId(UUID.randomUUID().toString()))
+				.target(new AppliesTo.AppliesToIngredient(ingredient.getId()))
 				.ruleId(new GenericRuleId("7"))
 				.recommendation(new RecommendationImpl("Increase milk"))
 				.text(text)

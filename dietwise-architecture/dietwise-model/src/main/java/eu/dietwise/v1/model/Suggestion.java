@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface Suggestion extends SuggestionTemplate {
-	IngredientId getTargetIngredientId();
+	AppliesTo getTarget();
 
 	RuleId getRuleId();
 
