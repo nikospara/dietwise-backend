@@ -192,3 +192,15 @@ You need to make sure the IDE runner resolves workspace artifacts.
 ### From Docker
 
 **TODO**
+
+
+## Releases
+
+```bash
+mvn versions:set -DnewVersion=x.y.z -DgenerateBackupPoms=false
+git commit -am "Version x.y.z"
+git tag -am "Version x.y.z" vx.y.z
+git push --tags
+mvn versions:set -DnewVersion=1.0.0-SNAPSHOT -DgenerateBackupPoms=false
+git commit -am "Continue development with 1.0.0-SNAPSHOT"
+```
