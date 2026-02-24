@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="recommendation_data" author="nikospara">
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="name" value="Decrease processed meat"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="name" value="Decrease red meat"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="name" value="Decrease sodium"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="name" value="Decrease sugar-sweetened beverages"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="name" value="Decrease trans fatty acids"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="name" value="Diet low in calcium"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="name" value="Diet low in fiber"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="name" value="Diet low in fruits"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="name" value="Diet low in legumes"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="name" value="Diet low in milk"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="name" value="Diet low in nuts and seeds"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="name" value="Diet low in omega-6 polyunsaturated fatty acids"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="name" value="Diet low in seafood omega-3 fatty acids"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="name" value="Diet low in vegetables"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION">
+			<column name="id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="name" value="Diet low in whole grains"/>
+		</insert>
+
+		<insert tableName="DW_AGE_GROUP">
+			<column name="id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="min" valueNumeric="15"/>
+			<column name="max" valueNumeric="49"/>
+		</insert>
+		<insert tableName="DW_AGE_GROUP">
+			<column name="id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="min" valueNumeric="50"/>
+			<column name="max" valueNumeric="74"/>
+		</insert>
+		<insert tableName="DW_AGE_GROUP">
+			<column name="id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="min" valueNumeric="75"/>
+			<column name="max" valueNumeric="9999"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="fda84845-9743-4b53-b0ca-c1dc185d35e5"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.21"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="d8f84474-2bf4-476d-b367-69f895f48850"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.35"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="a302c338-b2d2-4936-bad8-8b30b7ff8f16"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.64"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="ba3dc109-85af-4664-bd96-c616f9f4f347"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.19"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="0fbb1718-c4b1-4c45-8cab-17f3418941f7"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.64"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="29ee372c-eb84-4dc0-9ff8-e35e50796f9a"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.29"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="8093cad8-9f4d-4f97-8268-6d40ef7d0742"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.16"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="b4b1da92-8654-4f19-a966-54f8f164406f"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.33"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="13b39a5d-4819-458f-9f29-ee47f3a6f450"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.44"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="b63b47ad-3f69-4fd4-a94b-79ed228176c8"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.80"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="bf594fff-c41b-419e-9f30-27bb111f491f"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.06"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="9f790f39-bd25-4a18-9af0-1fe2f73f5c31"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.19"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="ab00bc96-54df-4d17-84df-09b4a8eff1d2"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.83"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="add5f17f-c7a5-443d-bec9-4d5af15e0432"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.99"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="9bd89056-a70f-4385-b2b2-5737c9d4df04"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="2.29"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="86288ea8-188d-42f5-b3a3-16f47f3e4f40"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="2.93"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="8946a33c-4ebd-48dc-a193-9dc6c88e8ba4"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.59"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="cc7524d7-2e52-4e6e-b167-8f5558307309"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.89"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="94ef7ffc-c74d-4b20-bac9-c0f5f6ea6f4c"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.26"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="f70d83fa-8cd3-4db0-95ed-6ab1f0e9e6d7"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.14"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="cb1889bf-09a4-4c24-a85e-54a4cce5cd70"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.03"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="19bcf7e6-7f96-40ab-90cc-cf1478e89249"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.64"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="856a42d9-1be8-4ee7-a0a8-a3a774af9a24"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.63"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="9ebfce15-e8a5-4fa2-921f-93056900ca73"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.99"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="f5fa0e8b-a07a-4a6e-9d7d-f7ef5bd5ffdd"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.69"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="43552b7f-1501-4ae3-83b0-1270375460e5"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.91"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="e6d184da-3f16-469d-9ef2-9a5a98d120aa"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.32"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="7588ef31-ced1-4ab3-b66b-0a49630ebf34"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.29"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="a39b367c-c28f-454e-a532-ff788f29e051"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.27"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="aa9af31f-f6b1-4eb6-a509-bee54ae35f5e"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="age_group_id" value="e2df2f12-f910-486c-8be7-e373b339dd89"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.73"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="5a8cb836-15a6-456d-9e22-9da62f11ea98"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.56"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="2cb5b545-bde7-448d-a4f3-1b5afc63faf0"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.75"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="6fdf2473-368b-49a2-ac39-cde0818cca2f"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.89"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="53c8e11f-6508-421a-8aeb-276bb725510b"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.73"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="a1b81fcf-60d8-47f2-a551-333a7f3373ad"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="2.72"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="31855f0f-f07d-4376-9f78-4446f7851a5a"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="4.48"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="e14b5018-182e-478f-8f5d-0a4d509b220a"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.29"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="afca6475-84f8-4d52-9e07-ef8e7c92f4b4"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.42"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="a5902db7-6d60-447c-b4e2-90aa6f606cae"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.76"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="8c4cca07-08bd-4d14-8d73-e2d8df0cc811"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.99"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="ff1af068-8d2f-4356-810d-c722c5c5fce4"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.3"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="153ef5be-becf-4966-aa07-62b6c21d7f98"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.09"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="32d52e64-293b-4c82-8f15-a87065f34a64"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.9"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="280f9187-d97a-4925-a36d-f15740365f8c"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.9"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="12feca80-e378-484e-b36d-4ba75cf5d779"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="3.68"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="65cf9f5a-e3e6-4f3e-95b0-4f1593875a4a"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="4.16"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="41a36ec7-a9cb-4eaa-8c22-fbcf8f6ad407"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.08"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="af0449bf-bce9-4c40-a5f9-1475d0a4f4dc"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.32"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="3e990b90-b923-40a1-af61-d348e2fb5e81"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.49"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="2b3e803e-2145-4460-af0f-29f941d21385"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.27"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="25305ab9-30d3-4a18-a797-a3f181291e10"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.67"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="66fa47ed-4eb2-49fd-bf32-5f49e5cbe57d"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="2.07"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="253a1bd5-d4f2-4f72-8f94-daf96cc2fa26"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.04"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="2a3c8ac6-4a8e-4c94-8fcd-187d7a5cd6c9"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.34"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="e14e584a-f3ec-4808-b8d2-d8bb69f4eef0"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.09"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="1094a1c7-aa10-4ca2-87f1-7e9ea343c17c"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.07"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="c6cf0773-e58c-4f3d-aea7-7d211fd6e724"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.96"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="f4a7bb6d-a109-4ef3-a60e-9e8c8b2f938c"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.89"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="7ec1b6de-88d0-48b2-bad6-94ba416aa5f0"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="2.42"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="2c799588-b97a-47d6-a0cd-f922c0586d14"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="age_group_id" value="c2ce5a6f-c7ad-4b80-b92d-4701515b674f"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="2.78"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="6a0ebdf9-65e4-4dc8-bd03-f1881dcd3acf"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.52"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="3a8f5f9a-37c6-4e2c-975f-e7599ca2c4f6"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.59"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="41d7cb09-3475-4de2-b9ce-f65d9dd2f933"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.61"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="1d9f39e8-0a87-43b3-9e0b-9bd74525d52c"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.71"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="e26f1ace-a420-4f90-958f-f2a764b55801"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="2.59"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="fc538ca2-d8c8-4a9c-84f8-a4f0f2bb3049"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="3.73"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="8f27d9ef-1508-47d1-8332-337e39676d0e"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.21"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="fbf9d616-59a1-4a17-a31d-f464ebf0f6db"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.27"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="507ca3b8-85ca-4f95-9bb4-640793130de5"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.55"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="c92f2d1e-e290-4586-9de8-2d91af9f34a2"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.6"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="ca26869f-1668-4f2e-856b-74ac30d27eea"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.21"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="57f7de94-af03-4a85-a55f-4958002dded9"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.05"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="ccdc07a2-f90f-443d-a31c-c64997d00127"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.79"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="0b2f5a44-0719-4955-965e-df476b98f4df"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.68"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="0d66ba09-8881-4b71-9412-f17457f00148"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="2.68"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="edcc3fcc-18eb-4a4a-84a9-c01715966635"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="2.88"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="5bb3f42d-c47d-45fe-a7c8-b7f8f6a94ee5"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.12"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="9f8795fa-3cb5-44ed-8f49-00f62f8f8792"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.02"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="89e88d0e-f94d-4496-bb00-edf796f336be"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.34"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="e3e001e0-0cea-4b36-b6dd-0d0b1d58f7dc"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.17"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="06266bf5-bb97-4552-8763-16b272ea257b"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.47"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="249c16ef-dcaf-4480-ab3a-6fb625a7cf69"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.41"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="fe23f637-c97a-4191-ad7f-f11c5acc416e"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.75"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="3276f5f1-f104-4be6-be8b-93a966ec5c14"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.8"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="066b7c66-fee0-42ba-b44a-d2922600f8a2"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="0.98"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="ee0f233d-cd52-4cca-8b18-b6c85f139941"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="0.8"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="03b3f530-c9ac-434f-9cc9-9113360624cb"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="1.76"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="3ff1fb70-0c77-4283-a818-34e1619b4652"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.55"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="327f9408-8b03-4072-b9ec-7f0945bf401e"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="FEMALE"/>
+			<column name="value" valueNumeric="2.02"/>
+		</insert>
+		<insert tableName="DW_RECOMMENDATION_VALUE">
+			<column name="id" value="f1e052ee-7728-4220-98f8-ec96da06a4ca"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="age_group_id" value="53514fdd-34c7-4d1e-a5ad-2b3819fe1f01"/>
+			<column name="gender" value="MALE"/>
+			<column name="value" valueNumeric="1.97"/>
+		</insert>
+	</changeSet>
+</databaseChangeLog>

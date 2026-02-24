@@ -10,4 +10,5 @@
 >
 	<include relativeToChangelogFile="true" file="changelogs/20251211_user.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260224_recommendations.xml"/>
+	<include relativeToChangelogFile="true" file="changelogs/20260224_recommendation_data.xml"/>
 </databaseChangeLog>
