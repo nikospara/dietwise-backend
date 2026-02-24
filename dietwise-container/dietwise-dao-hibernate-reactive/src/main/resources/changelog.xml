@@ -9,4 +9,5 @@
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
 >
 	<include relativeToChangelogFile="true" file="changelogs/20251211_user.xml"/>
+	<include relativeToChangelogFile="true" file="changelogs/20260224_recommendations.xml"/>
 </databaseChangeLog>

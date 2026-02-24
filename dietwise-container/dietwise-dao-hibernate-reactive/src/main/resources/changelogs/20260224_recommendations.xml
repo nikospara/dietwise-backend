@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="recommendations" author="nikospara">
+		<createTable tableName="DW_RECOMMENDATION" remarks="Recommendation, from the GBD">
+			<column name="id" type="UUID" remarks="The primary key, a UUID internal to the application">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_RECOMMENDATION" />
+			</column>
+			<column name="name" type="VARCHAR(200)" remarks="Name of this recommendation, English">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION__NAME" unique="true" uniqueConstraintName="UQ_DW_RECOMMENDATION__NAME" />
+			</column>
+		</createTable>
+
+		<createTable tableName="DW_AGE_GROUP" remarks="Age group configuration, from the GBD">
+			<column name="id" type="UUID" remarks="The primary key, a UUID internal to the application">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_AGE_GROUP" />
+			</column>
+			<column name="min" type="INT" remarks="Minimum value of range, inclusive">
+				<constraints nullable="false" notNullConstraintName="NL_DW_AGE_GROUP__MIN" unique="true" uniqueConstraintName="UQ_DW_AGE_GROUP__MIN" />
+			</column>
+			<column name="max" type="INT" remarks="Maximum value of range, inclusive">
+				<constraints nullable="false" notNullConstraintName="NL_DW_AGE_GROUP__MAX" unique="true" uniqueConstraintName="UQ_DW_AGE_GROUP__MAX" />
+			</column>
+		</createTable>
+
+		<createTable tableName="DW_RECOMMENDATION_VALUE" remarks="Recommendation value by age group and biological gender">
+			<column name="id" type="UUID" remarks="The primary key, a UUID internal to the application">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_RECOMMENDATION_VALUE" />
+			</column>
+			<column name="recommendation_id" type="UUID" remarks="Reference to the recommendation">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_VALUE__RECOMMENDATION_ID" />
+			</column>
+			<column name="age_group_id" type="UUID" remarks="Reference to the age group">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_VALUE__AGE_GROUP_ID" />
+			</column>
+			<column name="gender" type="VARCHAR(50)" remarks="The biological gender">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_VALUE__GENDER" />
+			</column>
+			<column name="value" type="DECIMAL" remarks="The value for this recommendation profile">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_VALUE__VALUE" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_RECOMMENDATION_VALUE"
+			baseColumnNames="recommendation_id"
+			constraintName="FK_RECOMMENDATION_VALUE__RECOMMENDATION_ID__RECOMMENDATION__ID"
+			referencedTableName="DW_RECOMMENDATION"
+			referencedColumnNames="id"
+		/>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_RECOMMENDATION_VALUE"
+			baseColumnNames="age_group_id"
+			constraintName="FK_RECOMMENDATION_VALUE__AGE_GROUP_ID__AGE_GROUP__ID"
+			referencedTableName="DW_AGE_GROUP"
+			referencedColumnNames="id"
+		/>
+	</changeSet>
+</databaseChangeLog>

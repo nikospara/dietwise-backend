@@ -6,7 +6,11 @@
 	<persistence-unit name="default-persistence-unit">
 		<provider>org.hibernate.reactive.provider.ReactivePersistenceProvider</provider>
 
+		<!-- Let's keep them sorted alphabetically by entity name, disregarding package -->
+		<class>eu.dietwise.dao.jpa.recommendations.AgeGroupEntity</class>
 		<class>eu.dietwise.dao.jpa.PersonalInfoEntity</class>
+		<class>eu.dietwise.dao.jpa.recommendations.RecommendationEntity</class>
+		<class>eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity</class>
 		<class>eu.dietwise.dao.jpa.UserEntity</class>
 
 		<properties>
