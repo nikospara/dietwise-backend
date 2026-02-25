@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="statistics" author="nikospara">
+		<createTable tableName="DW_USER_STATS" remarks="User-level statistics">
+			<column name="user_id" type="UUID" remarks="The primary key, also FK to DW_USER">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_STATS" />
+			</column>
+			<column name="last_launched" type="TIMESTAMP" remarks="The time the application was last launched" />
+			<column name="last_seen" type="TIMESTAMP" remarks="The time the user was last seen, i.e. performed an activity; could be same as last_launched" />
+			<column name="days_launched" type="INT" remarks="Number of days the user launched the app" />
+			<column name="recipes_assessed" type="INT" remarks="Number of times the user assessed a recipe" />
+		</createTable>
+		<addForeignKeyConstraint baseTableName="DW_USER_STATS" baseColumnNames="user_id" constraintName="FK_DW_USER_STATS__USER_ID__DW_USER__ID" referencedTableName="DW_USER" referencedColumnNames="id" />
+
+		<createTable tableName="DW_USER_SUGGESTION_STATS" remarks="Per-user statistics for suggestion templates">
+			<column name="user_id" type="UUID" remarks="Reference to the user">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_SUGGESTION_STATS" />
+			</column>
+			<column name="suggestion_template_id" type="UUID" remarks="Reference to the suggestion template">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_SUGGESTION_STATS" />
+			</column>
+			<column name="times_suggested" type="INT" remarks="Number of times this suggestion template was shown to the user" />
+			<column name="times_accepted" type="INT" remarks="Number of times this suggestion template was accepted by the user" />
+			<column name="times_rejected" type="INT" remarks="Number of times this suggestion template was rejected by the user" />
+		</createTable>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_USER_SUGGESTION_STATS"
+			baseColumnNames="user_id"
+			constraintName="FK_DW_USER_SUGGESTION_STATS__USER_ID__DW_USER__ID"
+			referencedTableName="DW_USER"
+			referencedColumnNames="id"
+		/>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_USER_SUGGESTION_STATS"
+			baseColumnNames="suggestion_template_id"
+			constraintName="FK_DW_USER_SUGGESTION_STATS__SUGGESTION_TEMPLATE_ID__DW_SUGGESTION_TEMPLATE__ID"
+			referencedTableName="DW_SUGGESTION_TEMPLATE"
+			referencedColumnNames="id"
+		/>
+	</changeSet>
+</databaseChangeLog>
