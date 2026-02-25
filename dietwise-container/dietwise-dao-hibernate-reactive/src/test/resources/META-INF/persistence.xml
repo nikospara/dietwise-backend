@@ -6,12 +6,19 @@
 	<persistence-unit name="default-persistence-unit">
 		<provider>org.hibernate.reactive.provider.ReactivePersistenceProvider</provider>
 
-		<!-- Let's keep them sorted alphabetically by entity name, disregarding package -->
-		<class>eu.dietwise.dao.jpa.recommendations.AgeGroupEntity</class>
+		<!-- Let's keep them sorted alphabetically by FQCN -->
 		<class>eu.dietwise.dao.jpa.PersonalInfoEntity</class>
+		<class>eu.dietwise.dao.jpa.UserEntity</class>
+		<class>eu.dietwise.dao.jpa.recommendations.AgeGroupEntity</class>
 		<class>eu.dietwise.dao.jpa.recommendations.RecommendationEntity</class>
 		<class>eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity</class>
-		<class>eu.dietwise.dao.jpa.UserEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.RuleEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity</class>
+		<class>eu.dietwise.dao.jpa.statistics.UserStatsEntity</class>
+		<class>eu.dietwise.dao.jpa.statistics.UserSuggestionStatsEntity</class>
 
 		<properties>
 			<!-- The DB connection properties are overridden in the code -->

@@ -87,3 +87,4 @@ suffix respectively.
 2. Never name methods that access the DB with a `get-` prefix. They look like ordinary getters.
 	- Use `find-` or `findBy-` if the method may return `null`/empty `Optional`
 	- Use `require-` or `requireBy-` if the method throws when it does not find a result
+	- Use `retrieve-` if the method performs some extra operation, e.g. aggregation of results

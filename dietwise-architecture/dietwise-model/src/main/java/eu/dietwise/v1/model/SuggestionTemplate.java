@@ -3,6 +3,7 @@ package eu.dietwise.v1.model;
 import java.util.Optional;
 
 import eu.dietwise.v1.types.AlternativeIngredient;
+import eu.dietwise.v1.types.HasSuggestionTemplateId;
 import org.immutables.value.Value;
 
 /**
@@ -10,7 +11,7 @@ import org.immutables.value.Value;
  * usage information.
  */
 @Value.Immutable
-public interface SuggestionTemplate {
+public interface SuggestionTemplate extends HasSuggestionTemplateId {
 	AlternativeIngredient getAlternative();
 
 	Optional<String> getRestriction();

@@ -46,6 +46,7 @@ import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
+import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -297,6 +298,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		var rand = new Random();
 		var ingredient = recipe.getRecipeIngredients().get(rand.nextInt(recipe.getRecipeIngredients().size()));
 		return ImmutableSuggestion.builder()
+				.id(new GenericSuggestionTemplateId(UUID.randomUUID().toString()))
 				.alternative(new AlternativeIngredientImpl("alternative"))
 				.target(new AppliesTo.AppliesToIngredient(ingredient.getId()))
 				.ruleId(new GenericRuleId("7"))
