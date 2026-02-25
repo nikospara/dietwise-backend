@@ -1,0 +1,1801 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="suggestion_data" author="nikospara">
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="f8e6df4f-72f5-4f92-b3ca-05328707fd5e"/>
+			<column name="name" value="Beef"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="f3cfdd6d-7f4c-419a-a53b-e6f4b9d17f2b"/>
+			<column name="name" value="Pork"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="4ff9a168-e0ee-4b26-b76a-c432e7f140e9"/>
+			<column name="name" value="Bacon/lardons"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="5e3ce795-acf3-48f4-a334-d0ff6e2eeb08"/>
+			<column name="name" value="Luncheon meat"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="8d0ac58d-6d87-4930-9cd8-dc8afb734e34"/>
+			<column name="name" value="White pasta"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="764a34fa-26f5-43a7-b4b3-ae8f0f9d7d97"/>
+			<column name="name" value="Canned tuna"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="f2427736-d9d5-4349-a03d-42db3f93df95"/>
+			<column name="name" value="Soy sauce"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="d607739a-e1ff-46bf-8ac4-f7247fcf2a67"/>
+			<column name="name" value="Any meat sauce"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="652da138-84bf-46bc-aa40-0eb2c3f28aad"/>
+			<column name="name" value="Minced meat"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="fd0450d0-7998-4e57-b6e6-f11f03e67265"/>
+			<column name="name" value="Butter"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="97347f0e-15de-4689-9762-21d30f95d423"/>
+			<column name="name" value="General fat choice"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="5743b9ea-af74-41a5-975d-a61591f2df8e"/>
+			<column name="name" value="Low-dairy sauce"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="728af0fd-f56a-44d0-b2f9-25087934ff26"/>
+			<column name="name" value="White rice"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="46f8f2e1-2ad1-4c4f-8983-540840ec7a80"/>
+			<column name="name" value="Refined bread"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="da5ee35c-1d75-4019-966f-10e17558f1fb"/>
+			<column name="name" value="Margarine (non-HO)"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="0cbfe219-6450-40ac-8947-58038ab399f4"/>
+			<column name="name" value="Salad topping"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="d1a039dc-d4c1-4ace-97a7-f03918df1f8e"/>
+			<column name="name" value="Protein choice"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="f23fdc9d-444a-4df1-8ba5-c9231abe4f6f"/>
+			<column name="name" value="SSB"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="9ecae8c4-fb67-4935-9dd0-600619f2fc6a"/>
+			<column name="name" value="Low-dairy breakfast"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="8f0125e5-cfcf-4dca-b4cb-cf13125ceff8"/>
+			<column name="name" value="Roerbak proteïne"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="eb39d54c-11b0-4766-934d-a5bf5112472a"/>
+			<column name="name" value="Pasta dishes"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="e2a4a35f-37ad-46b6-be35-c11d5a3060ec"/>
+			<column name="name" value="Stock cube"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="36786d90-0f4d-40d5-98ca-6561514f0f43"/>
+			<column name="name" value="Lamb"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="c1948f9f-688e-48a8-a6ad-f09e39f7ef42"/>
+			<column name="name" value="Cream"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="f8491158-ef9f-41a4-9f5d-8fd43724b840"/>
+			<column name="name" value="White flour"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_TRIGGER_INGREDIENT">
+			<column name="id" value="fb0f7577-2f21-4c34-835a-3fda6567bc4a"/>
+			<column name="name" value="White couscous"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="f56b72c0-4af0-4e4b-99a8-83bd31c6f7d8"/>
+			<column name="name" value="steak centerpiece"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="29739438-82da-477f-95cd-8dd1218245c4"/>
+			<column name="name" value="minced in sauce"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="34f204c3-86fa-42f5-beca-f6d721acdcda"/>
+			<column name="name" value="cubes stew"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="f3cead4d-2f32-4fc3-81e1-6d1f1c5491ca"/>
+			<column name="name" value="flavoring"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="17b15a95-e6f7-4ffe-80bb-f1195df66f20"/>
+			<column name="name" value="sandwich fill"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="e8decf2f-490d-46f6-9f2d-cb8fd4a938b4"/>
+			<column name="name" value="bread pizza"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="e26f84e8-e4d7-478b-9dcf-62fe1843861f"/>
+			<column name="name" value="pasta"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="7d7df8bd-19fb-4eca-840a-1646e4fef3c4"/>
+			<column name="name" value="brine pack"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="a48f52f8-a47c-4212-a0d3-bd9c7a64f828"/>
+			<column name="name" value="seasoning"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="a65f8ec5-f742-4ec7-85f3-3eb6d474977a"/>
+			<column name="name" value="sauce addin"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="be4c1a78-e01e-4067-b42d-c20e79070c6f"/>
+			<column name="name" value="chili burgers"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="52024da0-d7af-414a-aa1b-611fe0ac672d"/>
+			<column name="name" value="sauté fat"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="13af976e-e053-4aab-9691-275886aebf61"/>
+			<column name="name" value="finish oil"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="0ec80286-8a15-4e70-8188-5de62032bd66"/>
+			<column name="name" value="cream swap"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="aa8763cc-b321-44f8-a156-72f1863f9ad0"/>
+			<column name="name" value="bread"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="11c5ca34-b3a8-4566-973a-30710f6ddc00"/>
+			<column name="name" value="baking fat"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="520de1cf-849d-4daf-8de7-cc11badfdd34"/>
+			<column name="name" value="topping"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="c59d848b-d430-4edf-a4d8-c5f16d595557"/>
+			<column name="name" value="beverage"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="9c5a8aee-df52-4764-ad8b-9235957028f0"/>
+			<column name="name" value="swap in"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="c896765e-e7f3-4513-89ac-1975bfd3269a"/>
+			<column name="name" value="stirfry protein"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="7f9e1147-a2de-41fb-a611-79c27da38ed2"/>
+			<column name="name" value="veg boost"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="24b87e27-8d07-4ba6-9989-6b342228f6af"/>
+			<column name="name" value="broth base"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="17f6b8f6-bf3b-47f9-ab6c-cf1b6b1bd7f3"/>
+			<column name="name" value="curry cubes"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="0b850f2d-5183-4876-b783-0ef50fd0788b"/>
+			<column name="name" value="sauce enricher"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="6f53e9ea-62a9-492d-9ac3-1f877b8ec067"/>
+			<column name="name" value="roux binder"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+		<insert tableName="DW_ROLE_OR_TECHNIQUE">
+			<column name="id" value="94ee4768-08cb-4bb4-ba7d-b5f4eb6ead85"/>
+			<column name="name" value="staple"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000001"/>
+			<column name="name" value="Seitan steak"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000002"/>
+			<column name="name" value="Seitan chunks"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000003"/>
+			<column name="name" value="Smoked tofu cubes"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000004"/>
+			<column name="name" value="Hummus + walnut"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000005"/>
+			<column name="name" value="Whole grain flour (blend 50%)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000006"/>
+			<column name="name" value="Wholegrain pasta"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000007"/>
+			<column name="name" value="Fresh tuna"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000008"/>
+			<column name="name" value="Low-sodium soy sauce"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000009"/>
+			<column name="name" value="Mushrooms + carrot + pepper"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000000a"/>
+			<column name="name" value="+50–100% beans/lentils"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000000b"/>
+			<column name="name" value="Olive oil"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000000c"/>
+			<column name="name" value="Neutral oil (75% of butter weight)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000000d"/>
+			<column name="name" value="Extra virgin rapeseed oil"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000000e"/>
+			<column name="name" value="Fortified oat drink"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000000f"/>
+			<column name="name" value="Brown rice"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000010"/>
+			<column name="name" value="Wholegrain bread"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000011"/>
+			<column name="name" value="Butter or HO margarine"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000012"/>
+			<column name="name" value="Sunflower seeds"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000013"/>
+			<column name="name" value="Mackerel"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000014"/>
+			<column name="name" value="Water + fruit infusion"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000015"/>
+			<column name="name" value="Low-fat milk"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000016"/>
+			<column name="name" value="Tempeh"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000017"/>
+			<column name="name" value="Add 150–250g veg per 4p"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000018"/>
+			<column name="name" value="Low-salt stock"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000019"/>
+			<column name="name" value="Chickpea + aubergine mix"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000001a"/>
+			<column name="name" value="Evaporated milk"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000001b"/>
+			<column name="name" value="Wholemeal flour (25–50%)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000001c"/>
+			<column name="name" value="Wholewheat couscous"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000001d"/>
+			<column name="name" value="Soy mince"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000001e"/>
+			<column name="name" value="Tofu steak"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000001f"/>
+			<column name="name" value="Brown lentils (cooked)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000020"/>
+			<column name="name" value="Firm tofu cubes"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000021"/>
+			<column name="name" value="Olive oil + smoked paprika"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000022"/>
+			<column name="name" value="Pulse flour blend (20–30%)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000023"/>
+			<column name="name" value="Pulse pasta"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000024"/>
+			<column name="name" value="Canned in spring water"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000025"/>
+			<column name="name" value="Coconut aminos"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000026"/>
+			<column name="name" value="Spinach (chopped)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000027"/>
+			<column name="name" value="Replace 50–100% with soy mince"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000028"/>
+			<column name="name" value="Rapeseed oil"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000029"/>
+			<column name="name" value="Greek yogurt (30–50% swap)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000002a"/>
+			<column name="name" value="Walnut oil"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000002b"/>
+			<column name="name" value="Low-fat yogurt"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000002c"/>
+			<column name="name" value="Half brown/half white"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000002d"/>
+			<column name="name" value="Sourdough wholegrain"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000002e"/>
+			<column name="name" value="Olive oil swap (partial)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000002f"/>
+			<column name="name" value="Pumpkin seeds"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000030"/>
+			<column name="name" value="Sardines"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000031"/>
+			<column name="name" value="Unsweetened tea"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000032"/>
+			<column name="name" value="Fortified plant drink"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000033"/>
+			<column name="name" value="Firm tofu"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000034"/>
+			<column name="name" value="Swap 50% pasta → veg noodles"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000035"/>
+			<column name="name" value="Homemade veg stock"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000036"/>
+			<column name="name" value="Paneer (if dairy ok)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000037"/>
+			<column name="name" value="Skimmed milk + roux"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000038"/>
+			<column name="name" value="Oat flour (partial)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000039"/>
+			<column name="name" value="Bulgur"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000003a"/>
+			<column name="name" value="Young jackfruit chunks"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000003b"/>
+			<column name="name" value="Grilled portobello"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000003c"/>
+			<column name="name" value="Mushroom–lentil mix"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000003d"/>
+			<column name="name" value="Jackfruit chunks"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000003e"/>
+			<column name="name" value="Mushroom + soy sauce"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000003f"/>
+			<column name="name" value="Roasted chickpea spread"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000040"/>
+			<column name="name" value="Spelt (partial)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000041"/>
+			<column name="name" value="50/50 mix (white+wholegrain)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000042"/>
+			<column name="name" value="Half tuna + half beans"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000043"/>
+			<column name="name" value="Miso paste + water"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000044"/>
+			<column name="name" value="Courgette (grated)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000045"/>
+			<column name="name" value="Lentil–oat burger mix"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000046"/>
+			<column name="name" value="Half butter/half oil"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000047"/>
+			<column name="name" value="Apple sauce (up to 30%)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000048"/>
+			<column name="name" value="Flaxseed oil"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000049"/>
+			<column name="name" value="Silken tofu cream"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000004a"/>
+			<column name="name" value="Add barley (soup/stews)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="name" value="Add seeds mix"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000004c"/>
+			<column name="name" value="Avocado purée (partial)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000004d"/>
+			<column name="name" value="Walnuts"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000004e"/>
+			<column name="name" value="Salmon"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-00000000004f"/>
+			<column name="name" value="Sparkling water"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000050"/>
+			<column name="name" value="Skyr/yogurt"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000051"/>
+			<column name="name" value="Seitan"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000052"/>
+			<column name="name" value="Add legumes to sauce"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000053"/>
+			<column name="name" value="Half cube + extra herbs"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000054"/>
+			<column name="name" value="Tofu cubes"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000055"/>
+			<column name="name" value="Cashew cream"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000056"/>
+			<column name="name" value="Chickpea flour (partial)"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT">
+			<column name="id" value="70000000-0000-0000-0000-000000000057"/>
+			<column name="name" value="Quinoa"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="6629b06b-2756-4e26-ace8-95c1fda46cfe"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="trigger_ingredient_id" value="f8e6df4f-72f5-4f92-b3ca-05328707fd5e"/>
+			<column name="role_or_technique_id" value="29739438-82da-477f-95cd-8dd1218245c4"/>
+			<column name="cuisine" value="Italian"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="90984ed6-5e6b-4381-ac0d-92b6dd3cf503"/>
+			<column name="rule_id" value="6629b06b-2756-4e26-ace8-95c1fda46cfe"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001f"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Not for burgers without binder"/>
+			<column name="equivalence" value="1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms"/>
+			<column name="technique_notes" value="Finely chop mushrooms; dry sauté before adding"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="ce09b981-0d78-499a-9430-42a324d665a4"/>
+			<column name="rule_id" value="6629b06b-2756-4e26-ace8-95c1fda46cfe"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001d"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Avoid if soy allergy"/>
+			<column name="equivalence" value="1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms"/>
+			<column name="technique_notes" value="Finely chop mushrooms; dry sauté before adding"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="197b3d2c-2c80-4702-b4fd-72ba94318961"/>
+			<column name="rule_id" value="6629b06b-2756-4e26-ace8-95c1fda46cfe"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003c"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Use only in sauces"/>
+			<column name="equivalence" value="1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms"/>
+			<column name="technique_notes" value="Finely chop mushrooms; dry sauté before adding"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="86b9386f-7b10-4d54-8278-c5d86c6986ff"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="trigger_ingredient_id" value="f8e6df4f-72f5-4f92-b3ca-05328707fd5e"/>
+			<column name="role_or_technique_id" value="34f204c3-86fa-42f5-beca-f6d721acdcda"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="153ff634-5f6d-44a7-90d7-4080329ab4fd"/>
+			<column name="rule_id" value="86b9386f-7b10-4d54-8278-c5d86c6986ff"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000002"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Avoid if gluten-free"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Simmer longer for seitan; coat tofu in starch before braise"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="c9601a0e-515a-47b5-82a6-6007e3950a5a"/>
+			<column name="rule_id" value="86b9386f-7b10-4d54-8278-c5d86c6986ff"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000020"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Not suitable for quick stir-fry"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Simmer longer for seitan; coat tofu in starch before braise"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="0263fd54-2dc3-43f4-afcf-40ad5a5e5b6f"/>
+			<column name="rule_id" value="86b9386f-7b10-4d54-8278-c5d86c6986ff"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003a"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Lower protein content"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Simmer longer for seitan; coat tofu in starch before braise"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="f5108072-08c1-490a-b29c-877e987af2c4"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="trigger_ingredient_id" value="f8e6df4f-72f5-4f92-b3ca-05328707fd5e"/>
+			<column name="role_or_technique_id" value="f56b72c0-4af0-4e4b-99a8-83bd31c6f7d8"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="faa27b53-6696-4178-8116-1ddccc63cb81"/>
+			<column name="rule_id" value="f5108072-08c1-490a-b29c-877e987af2c4"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000001"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Avoid if gluten-free"/>
+			<column name="equivalence" value="1:1 piece count (approx. 150–200g)"/>
+			<column name="technique_notes" value="High-heat sear for crust"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f9d8fdf0-89bc-4a50-a84d-ad4d0061a692"/>
+			<column name="rule_id" value="f5108072-08c1-490a-b29c-877e987af2c4"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001e"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Press 20 min before searing"/>
+			<column name="equivalence" value="1:1 piece count (approx. 150–200g)"/>
+			<column name="technique_notes" value="High-heat sear for crust"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="770bbfeb-7a5f-48c1-99d0-91c58856e9df"/>
+			<column name="rule_id" value="f5108072-08c1-490a-b29c-877e987af2c4"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003b"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Lower protein/iron"/>
+			<column name="equivalence" value="1:1 piece count (approx. 150–200g)"/>
+			<column name="technique_notes" value="High-heat sear for crust"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="79c845bb-ff9c-4a0e-9188-d2f9050f42c1"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="trigger_ingredient_id" value="f3cfdd6d-7f4c-419a-a53b-e6f4b9d17f2b"/>
+			<column name="role_or_technique_id" value="29739438-82da-477f-95cd-8dd1218245c4"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="64f02c55-1763-4940-bfb8-31acadfc40e3"/>
+			<column name="rule_id" value="79c845bb-ff9c-4a0e-9188-d2f9050f42c1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001d"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Avoid if soy allergy"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Pre-brown"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f52ff745-8b20-4f7d-96f3-a54b89de0185"/>
+			<column name="rule_id" value="79c845bb-ff9c-4a0e-9188-d2f9050f42c1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001f"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Texture softer"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Pre-brown"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="4dd27a45-fb6d-4983-824b-c0a0e8e99862"/>
+			<column name="rule_id" value="79c845bb-ff9c-4a0e-9188-d2f9050f42c1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003c"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Use only in sauces"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Pre-brown"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="d27a01f2-071e-4b18-9a8d-6d86e3ef1dce"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="trigger_ingredient_id" value="f3cfdd6d-7f4c-419a-a53b-e6f4b9d17f2b"/>
+			<column name="role_or_technique_id" value="34f204c3-86fa-42f5-beca-f6d721acdcda"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="943d545b-5880-4da7-820f-8d64b97a3ad9"/>
+			<column name="rule_id" value="d27a01f2-071e-4b18-9a8d-6d86e3ef1dce"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000002"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Avoid if gluten-free"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Simmer gently"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="c535d78d-3cce-4c7c-9eda-7f19b30ca461"/>
+			<column name="rule_id" value="d27a01f2-071e-4b18-9a8d-6d86e3ef1dce"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000020"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Press first"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Simmer gently"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="e781bf4e-dbfb-4f42-a7e7-0cd65ebcff28"/>
+			<column name="rule_id" value="d27a01f2-071e-4b18-9a8d-6d86e3ef1dce"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003d"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Lower protein"/>
+			<column name="equivalence" value="1:1 by weight"/>
+			<column name="technique_notes" value="Simmer gently"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="ef63a7c5-3c90-429c-9e6f-c0855a1d7cfb"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="trigger_ingredient_id" value="4ff9a168-e0ee-4b26-b76a-c432e7f140e9"/>
+			<column name="role_or_technique_id" value="f3cead4d-2f32-4fc3-81e1-6d1f1c5491ca"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="5e0b5d4b-6c7d-462d-b380-c299fb3fb2ff"/>
+			<column name="rule_id" value="ef63a7c5-3c90-429c-9e6f-c0855a1d7cfb"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000003"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Vegan only"/>
+			<column name="equivalence" value="Replace 50–100g bacon with 120g smoked tofu"/>
+			<column name="technique_notes" value="Render tofu to crisp"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="5446a40f-b0f7-4942-99d5-da7fe9f632eb"/>
+			<column name="rule_id" value="ef63a7c5-3c90-429c-9e6f-c0855a1d7cfb"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000021"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Not suitable for vegan if anchovy used"/>
+			<column name="equivalence" value="Replace 50–100g bacon with 120g smoked tofu"/>
+			<column name="technique_notes" value="Render tofu to crisp"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f0c1890d-7f14-4252-bf35-979188185b9a"/>
+			<column name="rule_id" value="ef63a7c5-3c90-429c-9e6f-c0855a1d7cfb"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003e"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Use small amounts"/>
+			<column name="equivalence" value="Replace 50–100g bacon with 120g smoked tofu"/>
+			<column name="technique_notes" value="Render tofu to crisp"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="95fcf98d-fc75-4773-9034-22ad58584a1a"/>
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="trigger_ingredient_id" value="5e3ce795-acf3-48f4-a334-d0ff6e2eeb08"/>
+			<column name="role_or_technique_id" value="17b15a95-e6f7-4ffe-80bb-f1195df66f20"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="2b7fe2ce-0ad3-4999-b3ba-618bd10e56fc"/>
+			<column name="rule_id" value="95fcf98d-fc75-4773-9034-22ad58584a1a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000004"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Not for nut allergy"/>
+			<column name="equivalence" value="1 slice → 40–60g spread"/>
+			<column name="technique_notes" value="Spread on wholegrain bread"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="a3db93ee-2750-43a2-a342-3384847e97b1"/>
+			<column name="rule_id" value="95fcf98d-fc75-4773-9034-22ad58584a1a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000013"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="If fish allowed"/>
+			<column name="equivalence" value="1 slice → 40–60g spread"/>
+			<column name="technique_notes" value="Spread on wholegrain bread"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="6d46edb5-d4fc-4f5c-8130-3e74125d6bd7"/>
+			<column name="rule_id" value="95fcf98d-fc75-4773-9034-22ad58584a1a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003f"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Lower protein than meat"/>
+			<column name="equivalence" value="1 slice → 40–60g spread"/>
+			<column name="technique_notes" value="Spread on wholegrain bread"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="a256697c-5499-4092-a396-9f92846c5a96"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="trigger_ingredient_id" value="f8491158-ef9f-41a4-9f5d-8fd43724b840"/>
+			<column name="role_or_technique_id" value="e8decf2f-490d-46f6-9f2d-cb8fd4a938b4"/>
+			<column name="cuisine" value="Italian"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="12e06b1e-ef4e-4faf-ac3f-6b7a475e9798"/>
+			<column name="rule_id" value="a256697c-5499-4092-a396-9f92846c5a96"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000005"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Hydration + proofing adjust"/>
+			<column name="equivalence" value="Start 30–50% blend"/>
+			<column name="technique_notes" value="Increase hydration +5–10%"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="7936526c-608a-4d1d-92f8-211649a4f111"/>
+			<column name="rule_id" value="a256697c-5499-4092-a396-9f92846c5a96"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000022"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Texture changes"/>
+			<column name="equivalence" value="Start 30–50% blend"/>
+			<column name="technique_notes" value="Increase hydration +5–10%"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="90fffe1d-0302-4b97-990f-a80220d5316d"/>
+			<column name="rule_id" value="a256697c-5499-4092-a396-9f92846c5a96"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000040"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Gluten content differs"/>
+			<column name="equivalence" value="Start 30–50% blend"/>
+			<column name="technique_notes" value="Increase hydration +5–10%"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="6b785198-5d70-4bb3-8726-d0641b63a136"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="trigger_ingredient_id" value="8d0ac58d-6d87-4930-9cd8-dc8afb734e34"/>
+			<column name="role_or_technique_id" value="e26f84e8-e4d7-478b-9dcf-62fe1843861f"/>
+			<column name="cuisine" value="Italian"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="2294bf8d-55a5-4b9d-aab2-92d9bbf1ece1"/>
+			<column name="rule_id" value="6b785198-5d70-4bb3-8726-d0641b63a136"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000006"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Track cook time (firmer bite)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="c666d842-2cb0-4343-97e1-ee31a9b0c98a"/>
+			<column name="rule_id" value="6b785198-5d70-4bb3-8726-d0641b63a136"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000023"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Track cook time (firmer bite)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="c2653d4a-c057-4303-a5a4-a2cf7d2939f8"/>
+			<column name="rule_id" value="6b785198-5d70-4bb3-8726-d0641b63a136"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000041"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Track cook time (firmer bite)"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="03c6e864-56b9-4021-81d0-8d32237d770d"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="trigger_ingredient_id" value="764a34fa-26f5-43a7-b4b3-ae8f0f9d7d97"/>
+			<column name="role_or_technique_id" value="7d7df8bd-19fb-4eca-840a-1646e4fef3c4"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="2e8120b9-a1b3-46e4-a465-a9b51770106e"/>
+			<column name="rule_id" value="03c6e864-56b9-4021-81d0-8d32237d770d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000007"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Rinse canned tuna to reduce salt"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="69bb34cb-a9ac-4be4-89cb-ea98e5a131f4"/>
+			<column name="rule_id" value="03c6e864-56b9-4021-81d0-8d32237d770d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000024"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Rinse before use"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Rinse canned tuna to reduce salt"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="cf74c92a-ae6a-4e48-b09a-7f36b1bc44d4"/>
+			<column name="rule_id" value="03c6e864-56b9-4021-81d0-8d32237d770d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Texture mix"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Rinse canned tuna to reduce salt"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="a77ad055-68a7-4bf1-8df3-3556b558cc97"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="trigger_ingredient_id" value="f2427736-d9d5-4349-a03d-42db3f93df95"/>
+			<column name="role_or_technique_id" value="a48f52f8-a47c-4212-a0d3-bd9c7a64f828"/>
+			<column name="cuisine" value="Asian stirfry"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="79e7dfd4-7d44-4c9e-8a28-152d37f0067b"/>
+			<column name="rule_id" value="a77ad055-68a7-4bf1-8df3-3556b558cc97"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000008"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Use 50–75% of original sodium"/>
+			<column name="technique_notes" value="Add gradually"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="8dfd52c6-adca-41cc-8090-3e5c5910a010"/>
+			<column name="rule_id" value="a77ad055-68a7-4bf1-8df3-3556b558cc97"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000025"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Sweeter profile"/>
+			<column name="equivalence" value="Use 50–75% of original sodium"/>
+			<column name="technique_notes" value="Add gradually"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f679699a-4147-4816-935f-d267bf2d2e22"/>
+			<column name="rule_id" value="a77ad055-68a7-4bf1-8df3-3556b558cc97"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000043"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Not 1:1 in stir-fries"/>
+			<column name="equivalence" value="Use 50–75% of original sodium"/>
+			<column name="technique_notes" value="Add gradually"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="34809532-d1b8-411e-abad-4e555208e90a"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="trigger_ingredient_id" value="d607739a-e1ff-46bf-8ac4-f7247fcf2a67"/>
+			<column name="role_or_technique_id" value="a65f8ec5-f742-4ec7-85f3-3eb6d474977a"/>
+			<column name="cuisine" value="Italian"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="98776a12-bca9-44e1-8855-e38c350374f3"/>
+			<column name="rule_id" value="34809532-d1b8-411e-abad-4e555208e90a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000009"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="+150–250g extra veg per 4p"/>
+			<column name="technique_notes" value="sweat veg before adding"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="3134c38f-e32a-437c-8caa-b8e8c2a852a0"/>
+			<column name="rule_id" value="34809532-d1b8-411e-abad-4e555208e90a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000026"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Water down risk"/>
+			<column name="equivalence" value="+150–250g extra veg per 4p"/>
+			<column name="technique_notes" value="sweat veg before adding"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="ba74b6fb-d115-400b-896e-acc8fb70cea9"/>
+			<column name="rule_id" value="34809532-d1b8-411e-abad-4e555208e90a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000044"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Watch dilution"/>
+			<column name="equivalence" value="+150–250g extra veg per 4p"/>
+			<column name="technique_notes" value="sweat veg before adding"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="ef71fd4d-9336-48e0-8eda-f17f00049185"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="trigger_ingredient_id" value="652da138-84bf-46bc-aa40-0eb2c3f28aad"/>
+			<column name="role_or_technique_id" value="be4c1a78-e01e-4067-b42d-c20e79070c6f"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="6bcb3918-acbd-46f2-8fd0-b6716f04e477"/>
+			<column name="rule_id" value="ef71fd4d-9336-48e0-8eda-f17f00049185"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000a"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 replacement or add 80–150g beans per 200g meat"/>
+			<column name="technique_notes" value="Add binder (oats/egg/flax)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="989115b3-ce2f-46ef-8369-2b37ac402246"/>
+			<column name="rule_id" value="ef71fd4d-9336-48e0-8eda-f17f00049185"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000027"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Check soy allergy"/>
+			<column name="equivalence" value="1:1 replacement or add 80–150g beans per 200g meat"/>
+			<column name="technique_notes" value="Add binder (oats/egg/flax)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="d71779c8-9018-40d4-9404-6613903e6fd0"/>
+			<column name="rule_id" value="ef71fd4d-9336-48e0-8eda-f17f00049185"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000045"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Needs binder"/>
+			<column name="equivalence" value="1:1 replacement or add 80–150g beans per 200g meat"/>
+			<column name="technique_notes" value="Add binder (oats/egg/flax)"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="8ea10b07-f5c2-4e85-b945-e961de04f89a"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="trigger_ingredient_id" value="fd0450d0-7998-4e57-b6e6-f11f03e67265"/>
+			<column name="role_or_technique_id" value="52024da0-d7af-414a-aa1b-611fe0ac672d"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="895b0c46-3199-4bcc-9d57-d34aa64ca618"/>
+			<column name="rule_id" value="8ea10b07-f5c2-4e85-b945-e961de04f89a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000b"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 by volume for sauté"/>
+			<column name="technique_notes" value="Heat oil first"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="e83a5eb2-3cf7-467e-a78c-65feb6774dc6"/>
+			<column name="rule_id" value="8ea10b07-f5c2-4e85-b945-e961de04f89a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000028"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 by volume for sauté"/>
+			<column name="technique_notes" value="Heat oil first"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="06e2a74b-880c-4f29-a231-926e16072518"/>
+			<column name="rule_id" value="8ea10b07-f5c2-4e85-b945-e961de04f89a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000046"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Still some sat fat"/>
+			<column name="equivalence" value="1:1 by volume for sauté"/>
+			<column name="technique_notes" value="Heat oil first"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="fd0cea8e-6de5-4f05-92ca-6163800513f1"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="trigger_ingredient_id" value="fd0450d0-7998-4e57-b6e6-f11f03e67265"/>
+			<column name="role_or_technique_id" value="11c5ca34-b3a8-4566-973a-30710f6ddc00"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="50b55971-9c0b-4df9-a74a-53c7ce1d696f"/>
+			<column name="rule_id" value="fd0cea8e-6de5-4f05-92ca-6163800513f1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000c"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Texture changes"/>
+			<column name="equivalence" value="100g butter → 75g oil; yogurt swaps vary"/>
+			<column name="technique_notes" value="Adjust liquids and baking time"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="5f1aa6b4-0049-4648-9b83-4c9beb243efc"/>
+			<column name="rule_id" value="fd0cea8e-6de5-4f05-92ca-6163800513f1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000029"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Moisture shift"/>
+			<column name="equivalence" value="100g butter → 75g oil; yogurt swaps vary"/>
+			<column name="technique_notes" value="Adjust liquids and baking time"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f31e5a1c-baf3-4b43-b4e8-c1e27d5751e7"/>
+			<column name="rule_id" value="fd0cea8e-6de5-4f05-92ca-6163800513f1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000047"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Flavor impact"/>
+			<column name="equivalence" value="100g butter → 75g oil; yogurt swaps vary"/>
+			<column name="technique_notes" value="Adjust liquids and baking time"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="353761e8-5bfb-463d-9f33-f98f38214003"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="trigger_ingredient_id" value="97347f0e-15de-4689-9762-21d30f95d423"/>
+			<column name="role_or_technique_id" value="13af976e-e053-4aab-9691-275886aebf61"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="61c52527-25c0-41fc-ae4c-504c106cec9c"/>
+			<column name="rule_id" value="353761e8-5bfb-463d-9f33-f98f38214003"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000d"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Use 1–2 tbsp per 4p"/>
+			<column name="technique_notes" value="Use as finishing oil only"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="d64e1166-15b4-413a-97e6-d06227775e9d"/>
+			<column name="rule_id" value="353761e8-5bfb-463d-9f33-f98f38214003"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002a"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Not for nut allergy"/>
+			<column name="equivalence" value="Use 1–2 tbsp per 4p"/>
+			<column name="technique_notes" value="Use as finishing oil only"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="41d5f0c2-9e01-462a-a986-cf89a6d8ce75"/>
+			<column name="rule_id" value="353761e8-5bfb-463d-9f33-f98f38214003"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000048"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Use cold only"/>
+			<column name="equivalence" value="Use 1–2 tbsp per 4p"/>
+			<column name="technique_notes" value="Use as finishing oil only"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="d4db67a2-014f-4633-8758-a707a98e92f1"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="trigger_ingredient_id" value="5743b9ea-af74-41a5-975d-a61591f2df8e"/>
+			<column name="role_or_technique_id" value="0ec80286-8a15-4e70-8188-5de62032bd66"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="c9f86a5d-b4f0-4c1b-88be-57dc61917f4e"/>
+			<column name="rule_id" value="d4db67a2-014f-4633-8758-a707a98e92f1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000e"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 for cream (watch heat)"/>
+			<column name="technique_notes" value="Blend smooth; avoid boiling yogurt"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="5b699100-5322-4d9a-abdf-d7b12ed7d748"/>
+			<column name="rule_id" value="d4db67a2-014f-4633-8758-a707a98e92f1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002b"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Not vegan"/>
+			<column name="equivalence" value="1:1 for cream (watch heat)"/>
+			<column name="technique_notes" value="Blend smooth; avoid boiling yogurt"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="643ff15f-fa0c-4f05-827b-bc7ce85276ef"/>
+			<column name="rule_id" value="d4db67a2-014f-4633-8758-a707a98e92f1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000049"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Vegan only"/>
+			<column name="equivalence" value="1:1 for cream (watch heat)"/>
+			<column name="technique_notes" value="Blend smooth; avoid boiling yogurt"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="cced2b7d-20ef-46a9-9436-29ea329e16a9"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="trigger_ingredient_id" value="728af0fd-f56a-44d0-b2f9-25087934ff26"/>
+			<column name="role_or_technique_id" value="94ee4768-08cb-4bb4-ba7d-b5f4eb6ead85"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="6305ae93-271c-4f83-bdbf-92ec57fbe476"/>
+			<column name="rule_id" value="cced2b7d-20ef-46a9-9436-29ea329e16a9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000f"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Soak brown rice or cook longer"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="0287e78d-ac72-488b-82fb-6daa82039d8b"/>
+			<column name="rule_id" value="cced2b7d-20ef-46a9-9436-29ea329e16a9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002c"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Soak brown rice or cook longer"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f3d53920-9fc9-4a9f-a114-d26c667f22c2"/>
+			<column name="rule_id" value="cced2b7d-20ef-46a9-9436-29ea329e16a9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004a"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Gluten content"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Soak brown rice or cook longer"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="1af76d00-3ce2-4ed1-b4bd-1f62cc47e62a"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="trigger_ingredient_id" value="46f8f2e1-2ad1-4c4f-8983-540840ec7a80"/>
+			<column name="role_or_technique_id" value="aa8763cc-b321-44f8-a156-72f1863f9ad0"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="28263428-7528-4cf7-856a-2d7e62af303a"/>
+			<column name="rule_id" value="1af76d00-3ce2-4ed1-b4bd-1f62cc47e62a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000010"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Hydration adjust minimal"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="b3a2db2e-dc86-4e93-9cf2-2cfcf9cbead9"/>
+			<column name="rule_id" value="1af76d00-3ce2-4ed1-b4bd-1f62cc47e62a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002d"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Hydration adjust minimal"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="5d912cc3-d189-41eb-801c-5a0d7935b86c"/>
+			<column name="rule_id" value="1af76d00-3ce2-4ed1-b4bd-1f62cc47e62a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Allergy seeds"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Hydration adjust minimal"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="73fadee5-254e-430b-82c6-324f12e055a9"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="trigger_ingredient_id" value="da5ee35c-1d75-4019-966f-10e17558f1fb"/>
+			<column name="role_or_technique_id" value="11c5ca34-b3a8-4566-973a-30710f6ddc00"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="10cc078f-0845-4573-a3fa-e6aa91a117bd"/>
+			<column name="rule_id" value="73fadee5-254e-430b-82c6-324f12e055a9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000011"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Check sat fat"/>
+			<column name="equivalence" value="Case-by-case"/>
+			<column name="technique_notes" value="Adjust bake time"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="5b9e6254-0f57-4ccc-afee-c72fedd81b53"/>
+			<column name="rule_id" value="73fadee5-254e-430b-82c6-324f12e055a9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002e"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Texture changes"/>
+			<column name="equivalence" value="Case-by-case"/>
+			<column name="technique_notes" value="Adjust bake time"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="90b65da7-9510-4ed6-b5b7-c0e52b674cb1"/>
+			<column name="rule_id" value="73fadee5-254e-430b-82c6-324f12e055a9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004c"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Flavor shift"/>
+			<column name="equivalence" value="Case-by-case"/>
+			<column name="technique_notes" value="Adjust bake time"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="6e1d7e0e-69f8-4674-87a1-3fde00db1db1"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="trigger_ingredient_id" value="0cbfe219-6450-40ac-8947-58038ab399f4"/>
+			<column name="role_or_technique_id" value="520de1cf-849d-4daf-8de7-cc11badfdd34"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="b7350590-3e4b-40b3-b53b-aae4fb59c765"/>
+			<column name="rule_id" value="6e1d7e0e-69f8-4674-87a1-3fde00db1db1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000012"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Add 20–40g per 4p"/>
+			<column name="technique_notes" value="Toast lightly"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="fb2c2645-c6d3-4e65-8dbf-83b382466636"/>
+			<column name="rule_id" value="6e1d7e0e-69f8-4674-87a1-3fde00db1db1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002f"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Add 20–40g per 4p"/>
+			<column name="technique_notes" value="Toast lightly"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="6f1bea7f-bcdc-4f23-99ca-0ebfc157b80e"/>
+			<column name="rule_id" value="6e1d7e0e-69f8-4674-87a1-3fde00db1db1"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004d"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Not for nut allergy"/>
+			<column name="equivalence" value="Add 20–40g per 4p"/>
+			<column name="technique_notes" value="Toast lightly"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="34da01e0-a3cb-4103-a2fe-c361d2a0b15d"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="trigger_ingredient_id" value="d1a039dc-d4c1-4ace-97a7-f03918df1f8e"/>
+			<column name="role_or_technique_id" value="9c5a8aee-df52-4764-ad8b-9235957028f0"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="6266574d-0b7f-4d7f-8db3-084f710ea843"/>
+			<column name="rule_id" value="34da01e0-a3cb-4103-a2fe-c361d2a0b15d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000013"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Grill/bake"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="7df18df6-436e-499d-9e7a-96bf13b33b2f"/>
+			<column name="rule_id" value="34da01e0-a3cb-4103-a2fe-c361d2a0b15d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000030"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Grill/bake"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="1c284373-e3a3-4748-a4f9-20a769c2271b"/>
+			<column name="rule_id" value="34da01e0-a3cb-4103-a2fe-c361d2a0b15d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004e"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Grill/bake"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="29a0ae17-6496-4bb8-8433-21fcfec1dab9"/>
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="trigger_ingredient_id" value="f23fdc9d-444a-4df1-8ba5-c9231abe4f6f"/>
+			<column name="role_or_technique_id" value="c59d848b-d430-4edf-a4d8-c5f16d595557"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f31a8c7a-1676-4e60-952f-1449b8a60890"/>
+			<column name="rule_id" value="29a0ae17-6496-4bb8-8433-21fcfec1dab9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000014"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" valueComputed="NULL"/>
+			<column name="technique_notes" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="d72e25fc-c431-4cd4-bc45-e92ca06ea11c"/>
+			<column name="rule_id" value="29a0ae17-6496-4bb8-8433-21fcfec1dab9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000031"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" valueComputed="NULL"/>
+			<column name="technique_notes" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="e79df781-011f-4e1d-b158-8a4ec4e531fc"/>
+			<column name="rule_id" value="29a0ae17-6496-4bb8-8433-21fcfec1dab9"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004f"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" valueComputed="NULL"/>
+			<column name="technique_notes" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="729e0c53-ec38-4235-aefb-e3c5a1448805"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="trigger_ingredient_id" value="9ecae8c4-fb67-4935-9dd0-600619f2fc6a"/>
+			<column name="role_or_technique_id" value="9c5a8aee-df52-4764-ad8b-9235957028f0"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="887069c8-d766-4abe-a155-f52440e717fb"/>
+			<column name="rule_id" value="729e0c53-ec38-4235-aefb-e3c5a1448805"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000015"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 volume"/>
+			<column name="technique_notes" value="Cold prep"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="e6cdf3c7-30da-4f33-a792-fbd3bed16be1"/>
+			<column name="rule_id" value="729e0c53-ec38-4235-aefb-e3c5a1448805"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000032"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 volume"/>
+			<column name="technique_notes" value="Cold prep"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="7d0cbf2b-1baa-406d-b344-3ab14ca1750c"/>
+			<column name="rule_id" value="729e0c53-ec38-4235-aefb-e3c5a1448805"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000050"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Not vegan"/>
+			<column name="equivalence" value="1:1 volume"/>
+			<column name="technique_notes" value="Cold prep"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="e360daf9-0f60-4e96-b26b-0694a497c82e"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="trigger_ingredient_id" value="8f0125e5-cfcf-4dca-b4cb-cf13125ceff8"/>
+			<column name="role_or_technique_id" value="c896765e-e7f3-4513-89ac-1975bfd3269a"/>
+			<column name="cuisine" value="Asian stirfry"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="60be7368-fd81-4833-ba76-f20ac9fadfd1"/>
+			<column name="rule_id" value="e360daf9-0f60-4e96-b26b-0694a497c82e"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000016"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Press tofu; wok heet"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="fd66827c-4d2b-4ead-b597-5691fc6790c5"/>
+			<column name="rule_id" value="e360daf9-0f60-4e96-b26b-0694a497c82e"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000033"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Press tofu; wok heet"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="ffe3e621-f7db-4779-aac7-8a44e53e1809"/>
+			<column name="rule_id" value="e360daf9-0f60-4e96-b26b-0694a497c82e"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000051"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Not gluten-free"/>
+			<column name="equivalence" value="1:1 weight"/>
+			<column name="technique_notes" value="Press tofu; wok heet"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="674d85f1-49b8-4e5b-965e-03fd9a8d362a"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="trigger_ingredient_id" value="eb39d54c-11b0-4766-934d-a5bf5112472a"/>
+			<column name="role_or_technique_id" value="7f9e1147-a2de-41fb-a611-79c27da38ed2"/>
+			<column name="cuisine" value="Italian"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="e222b14c-89cf-4c42-a3d4-7817790cf51b"/>
+			<column name="rule_id" value="674d85f1-49b8-4e5b-965e-03fd9a8d362a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000017"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="See note"/>
+			<column name="technique_notes" value="Blanch or sauté veg noodles"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="7a5006f1-6b6e-4324-8f39-fc53e25d514a"/>
+			<column name="rule_id" value="674d85f1-49b8-4e5b-965e-03fd9a8d362a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000034"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="See note"/>
+			<column name="technique_notes" value="Blanch or sauté veg noodles"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f52a0abe-6101-43d8-9996-da1153e10d5b"/>
+			<column name="rule_id" value="674d85f1-49b8-4e5b-965e-03fd9a8d362a"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000052"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="See note"/>
+			<column name="technique_notes" value="Blanch or sauté veg noodles"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="c63dbc46-4de6-43f2-90b2-46416c7603ed"/>
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="trigger_ingredient_id" value="e2a4a35f-37ad-46b6-be35-c11d5a3060ec"/>
+			<column name="role_or_technique_id" value="24b87e27-8d07-4ba6-9989-6b342228f6af"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="0b606207-ff35-46e8-bd93-df30955c9f12"/>
+			<column name="rule_id" value="c63dbc46-4de6-43f2-90b2-46416c7603ed"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000018"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Use 50% sodium"/>
+			<column name="technique_notes" value="Simmer with aromatics"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="b8bb84c0-7010-473e-98b0-58459aa1f8d9"/>
+			<column name="rule_id" value="c63dbc46-4de6-43f2-90b2-46416c7603ed"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000035"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Use 50% sodium"/>
+			<column name="technique_notes" value="Simmer with aromatics"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="6f7e8bbb-b949-4a9c-bb48-da384182dfe7"/>
+			<column name="rule_id" value="c63dbc46-4de6-43f2-90b2-46416c7603ed"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000053"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Use 50% sodium"/>
+			<column name="technique_notes" value="Simmer with aromatics"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="efd2ae9e-73af-494a-bced-5f276a8d3e6e"/>
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="trigger_ingredient_id" value="36786d90-0f4d-40d5-98ca-6561514f0f43"/>
+			<column name="role_or_technique_id" value="17f6b8f6-bf3b-47f9-ab6c-cf1b6b1bd7f3"/>
+			<column name="cuisine" value="Indian"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c"/>
+			<column name="rule_id" value="efd2ae9e-73af-494a-bced-5f276a8d3e6e"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Lower protein"/>
+			<column name="equivalence" value="1:1 by volume"/>
+			<column name="technique_notes" value="Roast aubergine first"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="89ae6ce0-bf2f-4b17-b382-2bc78c8163b7"/>
+			<column name="rule_id" value="efd2ae9e-73af-494a-bced-5f276a8d3e6e"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000036"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Not vegan"/>
+			<column name="equivalence" value="1:1 by volume"/>
+			<column name="technique_notes" value="Roast aubergine first"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="0e489ba0-3f89-4753-8f13-bc162fa0bbf1"/>
+			<column name="rule_id" value="efd2ae9e-73af-494a-bced-5f276a8d3e6e"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000054"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 by volume"/>
+			<column name="technique_notes" value="Roast aubergine first"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="b11ed3ed-5f68-4e68-b7d9-aef470ff7500"/>
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="trigger_ingredient_id" value="c1948f9f-688e-48a8-a6ad-f09e39f7ef42"/>
+			<column name="role_or_technique_id" value="0b850f2d-5183-4876-b783-0ef50fd0788b"/>
+			<column name="cuisine" value="European"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="03812cb8-9a02-449d-b479-ce76ad0ac8bb"/>
+			<column name="rule_id" value="b11ed3ed-5f68-4e68-b7d9-aef470ff7500"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001a"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="Not vegan"/>
+			<column name="equivalence" value="200ml cream → 200ml evap or 150ml skim + roux"/>
+			<column name="technique_notes" value="Simmer gently"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="d86224b9-55e4-4c48-b393-33b4ce03f01f"/>
+			<column name="rule_id" value="b11ed3ed-5f68-4e68-b7d9-aef470ff7500"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000037"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Thinner body"/>
+			<column name="equivalence" value="200ml cream → 200ml evap or 150ml skim + roux"/>
+			<column name="technique_notes" value="Simmer gently"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="ff55543b-cb07-449e-a34a-6994dd1eaf39"/>
+			<column name="rule_id" value="b11ed3ed-5f68-4e68-b7d9-aef470ff7500"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000055"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Not for nut allergy"/>
+			<column name="equivalence" value="200ml cream → 200ml evap or 150ml skim + roux"/>
+			<column name="technique_notes" value="Simmer gently"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="1a2bc6cd-7489-42ec-a273-2815c5c6f5d2"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="trigger_ingredient_id" value="f8491158-ef9f-41a4-9f5d-8fd43724b840"/>
+			<column name="role_or_technique_id" value="6f53e9ea-62a9-492d-9ac3-1f877b8ec067"/>
+			<column name="cuisine" value="Any"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="90dd1a72-20d1-4dc4-9ce5-d5bda7c611fe"/>
+			<column name="rule_id" value="1a2bc6cd-7489-42ec-a273-2815c5c6f5d2"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001b"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" value="May darken sauce"/>
+			<column name="equivalence" value="Replace 25–50%"/>
+			<column name="technique_notes" value="Cook flour well"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="235be467-7de0-4bf2-b67a-3deee39fa561"/>
+			<column name="rule_id" value="1a2bc6cd-7489-42ec-a273-2815c5c6f5d2"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000038"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" value="Gluten different"/>
+			<column name="equivalence" value="Replace 25–50%"/>
+			<column name="technique_notes" value="Cook flour well"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="29377189-eaaf-4061-9780-b75d715a4b2e"/>
+			<column name="rule_id" value="1a2bc6cd-7489-42ec-a273-2815c5c6f5d2"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000056"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" value="Flavor shift"/>
+			<column name="equivalence" value="Replace 25–50%"/>
+			<column name="technique_notes" value="Cook flour well"/>
+		</insert>
+
+		<insert tableName="DW_RULE">
+			<column name="id" value="e4e0d1c6-cd85-48f7-8a6c-cee7e08917b6"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="trigger_ingredient_id" value="fb0f7577-2f21-4c34-835a-3fda6567bc4a"/>
+			<column name="role_or_technique_id" value="94ee4768-08cb-4bb4-ba7d-b5f4eb6ead85"/>
+			<column name="cuisine" value="Middle Eastern"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="e1a8f6fb-3755-4436-a546-1736fbbe44b6"/>
+			<column name="rule_id" value="e4e0d1c6-cd85-48f7-8a6c-cee7e08917b6"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001c"/>
+			<column name="alternative_order" valueNumeric="0"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 volume"/>
+			<column name="technique_notes" value="Hydration per pack"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="f05607bb-a8a4-4e72-a033-b06641ce85b2"/>
+			<column name="rule_id" value="e4e0d1c6-cd85-48f7-8a6c-cee7e08917b6"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000039"/>
+			<column name="alternative_order" valueNumeric="1"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 volume"/>
+			<column name="technique_notes" value="Hydration per pack"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="id" value="ff36aec6-c876-4e7f-9cd1-0910a30e9845"/>
+			<column name="rule_id" value="e4e0d1c6-cd85-48f7-8a6c-cee7e08917b6"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000057"/>
+			<column name="alternative_order" valueNumeric="2"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 volume"/>
+			<column name="technique_notes" value="Hydration per pack"/>
+		</insert>
+	</changeSet>
+</databaseChangeLog>

@@ -1,0 +1,32 @@
+Recommendation,Trigger Ingredient,Role or Technique,Cuisine Context,Alternative 1,Restriction 1,Alternative 2,Restriction 2,Alternative 3,Restriction 3,Equivalence Notes,Technique Notes
+Decrease red meat,Beef,minced in sauce,Italian,Brown lentils (cooked),Not for burgers without binder,Soy mince,Avoid if soy allergy,Mushroom–lentil mix,Use only in sauces,1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms,Finely chop mushrooms; dry sauté before adding
+Decrease red meat,Beef,cubes stew,Any,Seitan chunks,Avoid if gluten-free,Firm tofu cubes,Not suitable for quick stir-fry,Young jackfruit chunks,Lower protein content,1:1 by weight,Simmer longer for seitan; coat tofu in starch before braise
+Decrease red meat,Beef,steak centerpiece,Any,Seitan steak,Avoid if gluten-free,Tofu steak,Press 20 min before searing,Grilled portobello,Lower protein/iron,1:1 piece count (approx. 150–200g),High-heat sear for crust
+Decrease red meat,Pork,minced in sauce,Any,Soy mince,Avoid if soy allergy,Brown lentils (cooked),Texture softer,Mushroom–lentil mix,Use only in sauces,1:1 by weight,Pre-brown
+Decrease red meat,Pork,cubes stew,Any,Seitan chunks,Avoid if gluten-free,Firm tofu cubes,Press first,Jackfruit chunks,Lower protein,1:1 by weight,Simmer gently
+Decrease processed meat,Bacon/lardons,flavoring,Any,Smoked tofu cubes,Vegan only,Olive oil + smoked paprika,Not suitable for vegan if anchovy used,Mushroom + soy sauce,Use small amounts,Replace 50–100g bacon with 120g smoked tofu,Render tofu to crisp
+Decrease processed meat,Luncheon meat,sandwich fill,Any,Hummus + walnut,Not for nut allergy,Mackerel,If fish allowed,Roasted chickpea spread,Lower protein than meat,1 slice → 40–60g spread,Spread on wholegrain bread
+Diet low in whole grains,White flour,bread pizza,Italian,Whole grain flour (blend 50%),Hydration + proofing adjust,Pulse flour blend (20–30%),Texture changes,Spelt (partial),Gluten content differs,Start 30–50% blend,Increase hydration +5–10%
+Diet low in whole grains,White pasta,pasta,Italian,Wholegrain pasta,None,Pulse pasta,None,50/50 mix (white+wholegrain),None,1:1 weight,Track cook time (firmer bite)
+Decrease sodium,Canned tuna,brine pack,Any,Fresh tuna,None,Canned in spring water,Rinse before use,Half tuna + half beans,Texture mix,1:1 weight,Rinse canned tuna to reduce salt
+Decrease sodium,Soy sauce,seasoning,Asian stirfry,Low-sodium soy sauce,None,Coconut aminos,Sweeter profile,Miso paste + water,Not 1:1 in stir-fries,Use 50–75% of original sodium,Add gradually
+Diet low in vegetables,Any meat sauce,sauce addin,Italian,Mushrooms + carrot + pepper,None,Spinach (chopped),Water down risk,Courgette (grated),Watch dilution,+150–250g extra veg per 4p,sweat veg before adding
+Diet low in legumes,Minced meat,chili burgers,Any,+50–100% beans/lentils,None,Replace 50–100% with soy mince,Check soy allergy,Lentil–oat burger mix,Needs binder,1:1 replacement or add 80–150g beans per 200g meat,Add binder (oats/egg/flax)
+Decrease trans fatty acids,Butter,sauté fat,Any,Olive oil,None,Rapeseed oil,None,Half butter/half oil,Still some sat fat,1:1 by volume for sauté,Heat oil first
+Decrease trans fatty acids,Butter,baking fat,Any,Neutral oil (75% of butter weight),Texture changes,Greek yogurt (30–50% swap),Moisture shift,Apple sauce (up to 30%),Flavor impact,100g butter → 75g oil; yogurt swaps vary,Adjust liquids and baking time
+Diet low in omega-6 polyunsaturated fatty acids,General fat choice,finish oil,Any,Extra virgin rapeseed oil,None,Walnut oil,Not for nut allergy,Flaxseed oil,Use cold only,Use 1–2 tbsp per 4p,Use as finishing oil only
+Diet low in calcium,Low-dairy sauce,cream swap,Any,Fortified oat drink,None,Low-fat yogurt,Not vegan,Silken tofu cream,Vegan only,1:1 for cream (watch heat),Blend smooth; avoid boiling yogurt
+Diet low in fiber,White rice,staple,Any,Brown rice,None,Half brown/half white,None,Add barley (soup/stews),Gluten content,1:1 weight,Soak brown rice or cook longer
+Diet low in fiber,Refined bread,bread,Any,Wholegrain bread,None,Sourdough wholegrain,None,Add seeds mix,Allergy seeds,1:1 weight,Hydration adjust minimal
+Decrease trans fatty acids,Margarine (non-HO),baking fat,Any,Butter or HO margarine,Check sat fat,Olive oil swap (partial),Texture changes,Avocado purée (partial),Flavor shift,Case-by-case,Adjust bake time
+Diet low in nuts and seeds,Salad topping,topping,Any,Sunflower seeds,None,Pumpkin seeds,None,Walnuts,Not for nut allergy,Add 20–40g per 4p,Toast lightly
+Diet low in seafood omega-3 fatty acids,Protein choice,swap in,Any,Mackerel,None,Sardines,None,Salmon,None,1:1 weight,Grill/bake
+Decrease sugar-sweetened beverages,SSB,beverage,Any,Water + fruit infusion,None,Unsweetened tea,None,Sparkling water,None,N/A,N/A
+Diet low in milk,Low-dairy breakfast,swap in,Any,Low-fat milk,None,Fortified plant drink,None,Skyr/yogurt,Not vegan,1:1 volume,Cold prep
+Diet low in legumes,Roerbak proteïne,stirfry protein,Asian stirfry,Tempeh,None,Firm tofu,None,Seitan,Not gluten-free,1:1 weight,Press tofu; wok heet
+Diet low in vegetables,Pasta dishes,veg boost,Italian,Add 150–250g veg per 4p,None,Swap 50% pasta → veg noodles,None,Add legumes to sauce,None,See note,Blanch or sauté veg noodles
+Decrease sodium,Stock cube,broth base,Any,Low-salt stock,None,Homemade veg stock,None,Half cube + extra herbs,None,Use 50% sodium,Simmer with aromatics
+Decrease red meat,Lamb,curry cubes,Indian,Chickpea + aubergine mix,Lower protein,Paneer (if dairy ok),Not vegan,Tofu cubes,None,1:1 by volume,Roast aubergine first
+Decrease trans fatty acids,Cream,sauce enricher,European,Evaporated milk,Not vegan,Skimmed milk + roux,Thinner body,Cashew cream,Not for nut allergy,200ml cream → 200ml evap or 150ml skim + roux,Simmer gently
+Diet low in whole grains,White flour,roux binder,Any,Wholemeal flour (25–50%),May darken sauce,Oat flour (partial),Gluten different,Chickpea flour (partial),Flavor shift,Replace 25–50%,Cook flour well
+Diet low in fiber,White couscous,staple,Middle Eastern,Wholewheat couscous,None,Bulgur,None,Quinoa,None,1:1 volume,Hydration per pack
