@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers
@@ -28,8 +28,7 @@ public class UserDaoImplTest {
 	private static final UUID USER_IDM_ID = UUID.fromString("716e038e-9f28-4f67-a797-2cb297818546");
 
 	@Container
-	private static final PostgreSQLContainer<?> postgres =
-			new PostgreSQLContainer<>(POSTGRES_IMAGE);
+	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
 
 	@RegisterExtension
 	@SuppressWarnings("unused")

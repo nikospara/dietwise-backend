@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers
@@ -39,8 +39,7 @@ public class RecommendationDaoImplTest {
 	private static final UUID AGE_GROUP_1_ID = UUID.fromString("c661e7c6-e4ad-4b88-bf40-fd581f537cb2");
 
 	@Container
-	private static final PostgreSQLContainer<?> postgres =
-			new PostgreSQLContainer<>(POSTGRES_IMAGE);
+	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
 
 	@RegisterExtension
 	@SuppressWarnings("unused")
