@@ -10,5 +10,9 @@ import io.smallrye.mutiny.Uni;
 public interface ReactivePersistenceContextFactory extends AutoCloseable {
 	<T> Uni<T> withTransaction(Function<ReactivePersistenceTxContext, Uni<T>> work);
 
+	default Uni<ReactivePersistenceTxContext> withTransaction2() {
+		return withTransaction(tx -> Uni.createFrom().item(tx));
+	}
+
 	<T> Uni<T> withoutTransaction(Function<ReactivePersistenceContext, Uni<T>> work);
 }
