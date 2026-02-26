@@ -84,27 +84,27 @@ public class UserSuggestionStatsEntityDaoImplTest {
 
 		Integer value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(1);
+		assertThat(value).isEqualTo(0);
 		value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(2);
+		assertThat(value).isEqualTo(1);
 
 		value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(1);
+		assertThat(value).isEqualTo(0);
 		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(0);
+		assertThat(value).isEqualTo(1);
 		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
 
 		value = factory.withTransaction(tx -> sut.increaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(1);
+		assertThat(value).isEqualTo(0);
 		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(0);
+		assertThat(value).isEqualTo(1);
 		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);

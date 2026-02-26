@@ -7,22 +7,27 @@ import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import eu.dietwise.dao.jpa.UserEntity;
 
 @Entity
 @Table(name = "DW_USER_STATS")
+@IdClass(UserStatsId.class)
 public class UserStatsEntity {
 	@Id
+	@Column(name = "user_id")
 	private UUID userId;
 
-	@MapsId
-	@OneToOne(fetch = LAZY, optional = false)
-	@JoinColumn(name = "user_id")
+	@Id
+	@Column(name = "application_id")
+	private String applicationId;
+
+	@ManyToOne(fetch = LAZY, optional = false)
+	@JoinColumn(name = "user_id", insertable = false, updatable = false)
 	private UserEntity user;
 
 	@Column(name = "last_launched")
@@ -43,6 +48,14 @@ public class UserStatsEntity {
 
 	public void setUserId(UUID userId) {
 		this.userId = userId;
+	}
+
+	public String getApplicationId() {
+		return applicationId;
+	}
+
+	public void setApplicationId(String applicationId) {
+		this.applicationId = applicationId;
 	}
 
 	public UserEntity getUser() {

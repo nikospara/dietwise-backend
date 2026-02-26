@@ -13,6 +13,9 @@
 			<column name="user_id" type="UUID" remarks="The primary key, also FK to DW_USER">
 				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_STATS" />
 			</column>
+			<column name="application_id" type="VARCHAR(30)" remarks="Application id">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_STATS" />
+			</column>
 			<column name="last_launched" type="TIMESTAMP" remarks="The time the application was last launched" />
 			<column name="last_seen" type="TIMESTAMP" remarks="The time the user was last seen, i.e. performed an activity; could be same as last_launched" />
 			<column name="days_launched" type="INT" remarks="Number of days the user launched the app" />

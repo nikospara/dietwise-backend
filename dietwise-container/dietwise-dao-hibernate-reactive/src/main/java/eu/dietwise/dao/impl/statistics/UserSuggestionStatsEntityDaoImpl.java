@@ -24,6 +24,7 @@ import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
 
 @ApplicationScoped
 public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEntityDao {
@@ -91,41 +92,41 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 	@Override
 	public Uni<Integer> increaseTimesSuggested(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
 		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
-				.invoke(entity -> entity.setTimesSuggested(toIntOr0(entity.getTimesSuggested()) + 1))
-				.flatMap(tx::merge)
-				.map(UserSuggestionStatsEntity::getTimesSuggested);
+				.map(entity -> Tuple2.of(entity, toIntOr0(entity.getTimesSuggested())))
+				.invoke(entityAndVal -> entityAndVal.getItem1().setTimesSuggested(toIntOr0(entityAndVal.getItem1().getTimesSuggested()) + 1))
+				.flatMap(entityAndVal -> tx.merge(entityAndVal.getItem1()).replaceWith(entityAndVal.getItem2()));
 	}
 
 	@Override
 	public Uni<Integer> increaseTimesAccepted(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
 		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
-				.invoke(entity -> entity.setTimesAccepted(toIntOr0(entity.getTimesAccepted()) + 1))
-				.flatMap(tx::merge)
-				.map(UserSuggestionStatsEntity::getTimesAccepted);
+				.map(entity -> Tuple2.of(entity, toIntOr0(entity.getTimesAccepted())))
+				.invoke(entityAndVal -> entityAndVal.getItem1().setTimesAccepted(toIntOr0(entityAndVal.getItem1().getTimesAccepted()) + 1))
+				.flatMap(entityAndVal -> tx.merge(entityAndVal.getItem1()).replaceWith(entityAndVal.getItem2()));
 	}
 
 	@Override
 	public Uni<Integer> decreaseTimesAccepted(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
 		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
-				.invoke(entity -> entity.setTimesAccepted(Math.max(0, toIntOr0(entity.getTimesAccepted()) - 1)))
-				.flatMap(tx::merge)
-				.map(UserSuggestionStatsEntity::getTimesAccepted);
+				.map(entity -> Tuple2.of(entity, toIntOr0(entity.getTimesAccepted())))
+				.invoke(entityAndVal -> entityAndVal.getItem1().setTimesAccepted(Math.max(0, toIntOr0(entityAndVal.getItem1().getTimesAccepted()) - 1)))
+				.flatMap(entityAndVal -> tx.merge(entityAndVal.getItem1()).replaceWith(entityAndVal.getItem2()));
 	}
 
 	@Override
 	public Uni<Integer> increaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
 		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
-				.invoke(entity -> entity.setTimesRejected(toIntOr0(entity.getTimesRejected()) + 1))
-				.flatMap(tx::merge)
-				.map(UserSuggestionStatsEntity::getTimesRejected);
+				.map(entity -> Tuple2.of(entity, toIntOr0(entity.getTimesRejected())))
+				.invoke(entityAndVal -> entityAndVal.getItem1().setTimesRejected(toIntOr0(entityAndVal.getItem1().getTimesRejected()) + 1))
+				.flatMap(entityAndVal -> tx.merge(entityAndVal.getItem1()).replaceWith(entityAndVal.getItem2()));
 	}
 
 	@Override
 	public Uni<Integer> decreaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
 		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
-				.invoke(entity -> entity.setTimesRejected(Math.max(0, toIntOr0(entity.getTimesRejected()) - 1)))
-				.flatMap(tx::merge)
-				.map(UserSuggestionStatsEntity::getTimesRejected);
+				.map(entity -> Tuple2.of(entity, toIntOr0(entity.getTimesRejected())))
+				.invoke(entityAndVal -> entityAndVal.getItem1().setTimesRejected(Math.max(0, toIntOr0(entityAndVal.getItem1().getTimesRejected()) - 1)))
+				.flatMap(entityAndVal -> tx.merge(entityAndVal.getItem1()).replaceWith(entityAndVal.getItem2()));
 	}
 
 	private Predicate in(jakarta.persistence.criteria.CriteriaBuilder cb, Path<UUID> path, Set<SuggestionTemplateId> ids) {

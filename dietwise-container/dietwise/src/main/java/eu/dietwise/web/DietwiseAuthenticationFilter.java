@@ -9,6 +9,7 @@ import eu.dietwise.common.types.authorization.NotAuthenticatedException;
 import eu.dietwise.common.v1.model.ImmutableUser;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.services.nondomain.UserService;
+import eu.dietwise.services.v1.StatisticsService;
 import io.quarkus.oidc.runtime.OidcJwtCallerPrincipal;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.smallrye.mutiny.Uni;
@@ -22,10 +23,12 @@ import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 public class DietwiseAuthenticationFilter {
 	private final UserService userService;
 	private final SecurityIdentity securityIdentity;
+	private final StatisticsService statisticsService;
 
-	public DietwiseAuthenticationFilter(UserService userService, SecurityIdentity securityIdentity) {
+	public DietwiseAuthenticationFilter(UserService userService, SecurityIdentity securityIdentity, StatisticsService statisticsService) {
 		this.userService = userService;
 		this.securityIdentity = securityIdentity;
+		this.statisticsService = statisticsService;
 	}
 
 	@ServerRequestFilter
@@ -52,20 +55,22 @@ public class DietwiseAuthenticationFilter {
 			if (applicationId.filter("recipewatch"::equals).isPresent()) roles.add(Role.CITIZEN);
 			if (applicationId.filter("rca"::equals).isPresent()) roles.add(Role.INFLUENCER);
 			return userService.findOrCreateByIdmId(sub)
-					.invoke(userData -> {
-						var user = ImmutableUser.builder()
-								.id(userData.getId())
-								.name(email)
-								.email(EmailAddress.of(email))
-								.isService(false)
-								.isSystem(false)
-								.isUnauthenticated(false)
-								.roles(roles)
-								.applicationId(applicationId)
-								.build();
-						requestContext.setSecurityContext(new DietwiseSecurityContextImpl(requestContext.getSecurityContext(), user));
-					})
-					// HERE
+					.map(userData ->
+							ImmutableUser.builder()
+									.id(userData.getId())
+									.name(email)
+									.email(EmailAddress.of(email))
+									.isService(false)
+									.isSystem(false)
+									.isUnauthenticated(false)
+									.roles(roles)
+									.applicationId(applicationId)
+									.build()
+					)
+					.invoke(user ->
+							requestContext.setSecurityContext(new DietwiseSecurityContextImpl(requestContext.getSecurityContext(), user))
+					)
+					.flatMap(statisticsService::markUserActivity)
 					.replaceWithVoid();
 		}
 	}
