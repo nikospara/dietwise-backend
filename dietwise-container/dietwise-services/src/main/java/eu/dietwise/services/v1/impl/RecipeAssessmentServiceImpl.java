@@ -11,7 +11,9 @@ import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.utils.UniComprehensions;
+import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.RecipeAssessmentService;
+import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
@@ -44,35 +46,57 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
 	private final RecipeExtractionService recipeExtractionService;
+	private final StatisticsService statisticsService;
 
-	public RecipeAssessmentServiceImpl(RecipeExtractionService recipeExtractionService) {
+	public RecipeAssessmentServiceImpl(RecipeExtractionService recipeExtractionService, StatisticsService statisticsService) {
 		this.recipeExtractionService = recipeExtractionService;
+		this.statisticsService = statisticsService;
 	}
 
 	@Override
-	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(RecipeAssessmentParam param) {
+	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(User user, RecipeAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
 		LOG.info("assessMarkdownRecipe <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
-		return Multi.createFrom().emitter(emitter -> {
-			UniComprehensions.forc(
-					recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
-					emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-					assessSingleRecipe(correlationId, param.getUrl(), emitter)
-			).subscribe().with(x -> emitter.complete(), handleError(emitter));
-		});
+		return Multi.createFrom().emitter(emitter ->
+				Uni.combine().all()
+						.unis(
+								statisticsService.assessedRecipe(user),
+								assessMarkdownRecipeInternal(correlationId, param, emitter)
+						).with((x, message) -> message)
+						.subscribe().with(x -> emitter.complete(), handleError(emitter))
+		);
+	}
+
+	private Uni<? extends RecipeAssessmentMessage> assessMarkdownRecipeInternal(
+			UUID correlationId, RecipeAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+		return UniComprehensions.forc(
+				recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
+				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
+				assessSingleRecipe(correlationId, param.getUrl(), emitter)
+		);
 	}
 
 	@Override
-	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param) {
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(User user, RecipeExtractionAndAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
 		LOG.info("extractAndAssessRecipeFromUrl <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
-		return Multi.createFrom().emitter(emitter -> {
-			UniComprehensions.forc(
-					recipeExtractionService.extractRecipeFromUrl(correlationId, param),
-					emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-					assessSingleRecipe(correlationId, param.getUrl(), emitter)
-			).subscribe().with(x -> emitter.complete(), handleError(emitter));
-		});
+		return Multi.createFrom().emitter(emitter ->
+				Uni.combine().all()
+						.unis(
+								statisticsService.assessedRecipe(user),
+								extractAndAssessRecipeFromUrlInternal(correlationId, param, emitter)
+						).with((x, message) -> message)
+						.subscribe().with(x -> emitter.complete(), handleError(emitter))
+		);
+	}
+
+	private Uni<? extends RecipeAssessmentMessage> extractAndAssessRecipeFromUrlInternal(
+			UUID correlationId, RecipeExtractionAndAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+		return UniComprehensions.forc(
+				recipeExtractionService.extractRecipeFromUrl(correlationId, param),
+				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
+				assessSingleRecipe(correlationId, param.getUrl(), emitter)
+		);
 	}
 
 	private Function<? super RecipeExtractionRecipeAssessmentMessage, Uni<? extends RecipeExtractionRecipeAssessmentMessage>> emitRecipeExtractionMessageOrNoRecipesError(
@@ -107,7 +131,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	@Override
-	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(RecipeExtractionAndAssessmentParam param) {
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(User user, RecipeExtractionAndAssessmentParam param) {
 		var recipe = makeDummyRecipe();
 		var recipeMsg = new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, JSONLD)), "dummy page text");
 		double rating = new Random().nextInt(10) / 2.0;

@@ -48,4 +48,14 @@ public class StatisticsServiceImpl implements StatisticsService {
 			}
 		};
 	}
+
+	@Override
+	public Uni<User> assessedRecipe(User user) {
+		if (user == null || user.getApplicationId().isEmpty()) return Uni.createFrom().item(user);
+		String applicationId = user.getApplicationId().get();
+		UUID userId = UUID.fromString(user.getId().asString());
+		return persistenceContextFactory.withTransaction(tx ->
+				userStatsEntityDao.increaseRecipesAssessed(tx, applicationId, userId).replaceWith(user)
+		);
+	}
 }

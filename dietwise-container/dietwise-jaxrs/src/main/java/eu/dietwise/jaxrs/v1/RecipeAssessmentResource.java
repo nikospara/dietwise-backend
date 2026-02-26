@@ -5,8 +5,11 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
+import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
@@ -23,23 +26,26 @@ public class RecipeAssessmentResource {
 	@Path("markdown")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(RecipeAssessmentParam param) {
-		return RestMulti.fromMultiData(service.assessMarkdownRecipe(param)).encodeAsJsonArray(false).build();
+	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(@Context ContainerRequestContext crc, RecipeAssessmentParam param) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return RestMulti.fromMultiData(service.assessMarkdownRecipe(user, param)).encodeAsJsonArray(false).build();
 	}
 
 	@POST
 	@Path("url")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(RecipeExtractionAndAssessmentParam param) {
-		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrl(param)).encodeAsJsonArray(false).build();
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(@Context ContainerRequestContext crc, RecipeExtractionAndAssessmentParam param) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrl(user, param)).encodeAsJsonArray(false).build();
 	}
 
 	@POST
 	@Path("url-dummy")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(RecipeExtractionAndAssessmentParam param) {
-		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrlDummy(param)).encodeAsJsonArray(false).build();
+	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(@Context ContainerRequestContext crc, RecipeExtractionAndAssessmentParam param) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrlDummy(user, param)).encodeAsJsonArray(false).build();
 	}
 }

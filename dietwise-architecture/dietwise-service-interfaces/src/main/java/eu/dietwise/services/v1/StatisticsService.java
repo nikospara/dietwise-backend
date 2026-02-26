@@ -11,4 +11,6 @@ public interface StatisticsService {
 	 * @return The same user, for convenience
 	 */
 	Uni<User> markUserActivity(User user);
+
+	Uni<User> assessedRecipe(User user);
 }

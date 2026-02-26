@@ -8,11 +8,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
+import eu.dietwise.common.v1.model.ImmutableUser;
+import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.Role;
+import eu.dietwise.common.v1.types.impl.UserIdImpl;
+import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
@@ -38,6 +44,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeAssessmentServiceImplTest {
+	private static final UUID USER_UUID = UUID.fromString("11111111-2222-3333-4444-555555555555");
+	private static final String USER_EMAIL = "user@example.test";
+	private static final String APPLICATION_ID = "recipewatch";
+	private static final User USER = ImmutableUser.builder()
+			.id(new UserIdImpl(USER_UUID.toString()))
+			.name(USER_EMAIL)
+			.email(null)
+			.isService(false)
+			.isSystem(false)
+			.isUnauthenticated(false)
+			.roles(EnumSet.of(Role.CITIZEN))
+			.applicationId(APPLICATION_ID)
+			.build();
 	private static final Recipe RECIPE_SIMPLE_PASTA = recipe(
 			"Simple Pasta",
 			List.of("200g pasta", "salt"),
@@ -63,17 +82,21 @@ class RecipeAssessmentServiceImplTest {
 	@Mock
 	private RecipeExtractionService recipeExtractionService;
 
+	@Mock
+	private StatisticsService statisticsService;
+
 	@Test
 	void assessMarkdownRecipeEmitsExtractionThenSuggestionsOnHappyPath() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, LLM_FROM_TEXT)),
 				MARKDOWN
 		);
 		when(recipeExtractionService.useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any()))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
+		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 
-		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(MARKDOWN_PARAM)
+		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
@@ -97,19 +120,21 @@ class RecipeAssessmentServiceImplTest {
 		assertThat(suggestions.suggestions().getFirst().getText()).contains("placeholder response");
 
 		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
+		verify(statisticsService).assessedRecipe(USER);
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsExtractionThenSuggestionsOnHappyPath() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD)),
 				RENDERED_MARKDOWN
 		);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
+		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 
-		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(URL_EXTRACTION_PARAM)
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
@@ -127,11 +152,12 @@ class RecipeAssessmentServiceImplTest {
 		assertThat(suggestions.suggestions()).hasSize(2);
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
+		verify(statisticsService).assessedRecipe(USER);
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsMoreThanOneRecipesMessageWhenMultipleRecipesExtracted() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(
 						new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD),
@@ -141,8 +167,9 @@ class RecipeAssessmentServiceImplTest {
 		);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
+		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 
-		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(URL_EXTRACTION_PARAM)
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
@@ -153,15 +180,17 @@ class RecipeAssessmentServiceImplTest {
 		assertThat(((MoreThanOneRecipesAssessmentMessage) messages.getLast()).numberOfRecipes()).isEqualTo(2);
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
+		verify(statisticsService).assessedRecipe(USER);
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().failure(new NoRecipesDetectedException()));
+		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 
-		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(URL_EXTRACTION_PARAM)
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
@@ -171,15 +200,17 @@ class RecipeAssessmentServiceImplTest {
 				.containsExactly("No recipes detected on the page");
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
+		verify(statisticsService).assessedRecipe(USER);
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenExtractionFails() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().failure(new RuntimeException("Extraction failed")));
+		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 
-		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(URL_EXTRACTION_PARAM)
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
@@ -189,6 +220,7 @@ class RecipeAssessmentServiceImplTest {
 				.containsExactly("The server failed to assess the recipe");
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
+		verify(statisticsService).assessedRecipe(USER);
 	}
 
 	private static Recipe recipe(String name, List<String> ingredients, List<String> instructions) {
