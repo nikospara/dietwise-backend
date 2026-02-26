@@ -16,20 +16,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class RecipeExtractionServiceImplTest {
+class MarkdownRecipeExtractionServiceImplTest {
 	private static final String MARKDOWN_DUMMY = "ignored Markdown dummy";
 
 	@Mock
 	private RecipeExtractionAiService aiService;
 
-	private RecipeExtractionServiceImpl sut;
+	private MarkdownRecipeExtractionServiceImpl sut;
 
 	@BeforeEach
 	void beforeEach() {
 		var om = ObjectMapperModelUtils.applyDefaultObjectMapperConfiguration(new ObjectMapper());
 		om.registerModule(new Jdk8Module()); // at runtime Quarkus provides this
 		var normalizer = new RecipeJsonNormalizerImpl(om, new CompactJsonCoercionStrategy());
-		sut = new RecipeExtractionServiceImpl(aiService, om, normalizer);
+		sut = new MarkdownRecipeExtractionServiceImpl(aiService, om, normalizer);
 	}
 
 	@Test

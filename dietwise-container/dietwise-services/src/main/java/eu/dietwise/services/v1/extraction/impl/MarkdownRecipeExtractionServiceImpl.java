@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
-import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
 import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
@@ -16,14 +16,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
-public class RecipeExtractionServiceImpl implements RecipeExtractionService {
-	private static final Logger LOG = LoggerFactory.getLogger(RecipeExtractionServiceImpl.class);
+public class MarkdownRecipeExtractionServiceImpl implements MarkdownRecipeExtractionService {
+	private static final Logger LOG = LoggerFactory.getLogger(MarkdownRecipeExtractionServiceImpl.class);
 
 	private final RecipeExtractionAiService extractionAiService;
 	private final ObjectMapper objectMapper;
 	private final RecipeJsonNormalizer jsonNormalizer;
 
-	public RecipeExtractionServiceImpl(RecipeExtractionAiService extractionAiService, ObjectMapper objectMapper, RecipeJsonNormalizer jsonNormalizer) {
+	public MarkdownRecipeExtractionServiceImpl(RecipeExtractionAiService extractionAiService, ObjectMapper objectMapper, RecipeJsonNormalizer jsonNormalizer) {
 		this.extractionAiService = extractionAiService;
 		this.objectMapper = objectMapper;
 		this.jsonNormalizer = jsonNormalizer;

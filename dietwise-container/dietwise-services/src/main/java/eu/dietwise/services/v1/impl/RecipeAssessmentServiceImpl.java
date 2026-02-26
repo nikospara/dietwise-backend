@@ -23,7 +23,7 @@ import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
-import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
 import eu.dietwise.services.v1.filtering.MarkdownBlockCoalescer;
 import eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter;
 import eu.dietwise.services.v1.filtering.RecipeFilterAiService;
@@ -63,10 +63,10 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
 	private final RecipeFilterAiService filterAiService;
-	private final RecipeExtractionService extractionService;
+	private final MarkdownRecipeExtractionService extractionService;
 	private final RendererClient rendererClient;
 
-	public RecipeAssessmentServiceImpl(RecipeFilterAiService filterAiService, RecipeExtractionService extractionService, @RestClient RendererClient rendererClient) {
+	public RecipeAssessmentServiceImpl(RecipeFilterAiService filterAiService, MarkdownRecipeExtractionService extractionService, @RestClient RendererClient rendererClient) {
 		this.filterAiService = filterAiService;
 		this.extractionService = extractionService;
 		this.rendererClient = rendererClient;

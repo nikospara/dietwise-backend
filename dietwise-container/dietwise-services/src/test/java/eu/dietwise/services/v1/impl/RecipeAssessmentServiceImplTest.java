@@ -18,7 +18,7 @@ import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
-import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
 import eu.dietwise.services.v1.filtering.RecipeFilterAiService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
@@ -78,7 +78,7 @@ class RecipeAssessmentServiceImplTest {
 	private RecipeFilterAiService filterAiService;
 
 	@Mock
-	private RecipeExtractionService extractionService;
+	private MarkdownRecipeExtractionService extractionService;
 
 	@Mock
 	private RendererClient rendererClient;

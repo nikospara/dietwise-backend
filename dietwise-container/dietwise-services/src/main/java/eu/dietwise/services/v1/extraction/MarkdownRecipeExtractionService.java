@@ -3,7 +3,7 @@ package eu.dietwise.services.v1.extraction;
 import eu.dietwise.services.model.RecipeExtractedFromInput;
 import io.smallrye.mutiny.Uni;
 
-public interface RecipeExtractionService {
+public interface MarkdownRecipeExtractionService {
 	/**
 	 * Extract a recipe from the given Markdown, or emit a failure with {@link NoRecipesDetectedException} if none found.
 	 *
