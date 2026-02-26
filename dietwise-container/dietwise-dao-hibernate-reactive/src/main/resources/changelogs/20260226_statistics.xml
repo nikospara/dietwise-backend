@@ -24,6 +24,9 @@
 			<column name="user_id" type="UUID" remarks="Reference to the user">
 				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_SUGGESTION_STATS" />
 			</column>
+			<column name="application_id" type="VARCHAR(30)" remarks="Application id">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_SUGGESTION_STATS" />
+			</column>
 			<column name="suggestion_template_id" type="UUID" remarks="Reference to the suggestion template">
 				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_SUGGESTION_STATS" />
 			</column>

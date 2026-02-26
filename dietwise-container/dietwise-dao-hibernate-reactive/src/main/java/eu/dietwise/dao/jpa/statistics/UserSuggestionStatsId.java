@@ -11,6 +11,8 @@ public class UserSuggestionStatsId implements Serializable {
 
 	private UUID userId;
 
+	private String applicationId;
+
 	private UUID suggestionTemplateId;
 
 	public UUID getUserId() {
@@ -19,6 +21,14 @@ public class UserSuggestionStatsId implements Serializable {
 
 	public void setUserId(UUID userId) {
 		this.userId = userId;
+	}
+
+	public String getApplicationId() {
+		return applicationId;
+	}
+
+	public void setApplicationId(String applicationId) {
+		this.applicationId = applicationId;
 	}
 
 	public UUID getSuggestionTemplateId() {
@@ -37,11 +47,11 @@ public class UserSuggestionStatsId implements Serializable {
 		if (!(obj instanceof UserSuggestionStatsId other)) {
 			return false;
 		}
-		return Objects.equals(userId, other.userId) && Objects.equals(suggestionTemplateId, other.suggestionTemplateId);
+		return Objects.equals(userId, other.userId) && Objects.equals(applicationId, other.applicationId) && Objects.equals(suggestionTemplateId, other.suggestionTemplateId);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(userId, suggestionTemplateId);
+		return Objects.hash(userId, applicationId, suggestionTemplateId);
 	}
 }

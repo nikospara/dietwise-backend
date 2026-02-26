@@ -5,4 +5,5 @@ public record SuggestionStats(
 		int timesAccepted,
 		int timesRejected
 ) {
+	public static final SuggestionStats ALL_ZEROES = new SuggestionStats(0, 0, 0);
 }

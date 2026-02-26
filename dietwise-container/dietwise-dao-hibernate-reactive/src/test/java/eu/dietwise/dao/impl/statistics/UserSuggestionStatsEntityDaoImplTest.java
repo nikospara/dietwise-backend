@@ -40,6 +40,8 @@ public class UserSuggestionStatsEntityDaoImplTest {
 	private static final SuggestionTemplateId SUGGESTION_ID_2 =
 			new GenericSuggestionTemplateId("ce09b981-0d78-499a-9430-42a324d665a4");
 
+	private static final String APPLICATION_ID = "recipewatch";
+
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
 
@@ -70,49 +72,49 @@ public class UserSuggestionStatsEntityDaoImplTest {
 			return tx.persist(user);
 		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
-		var totalStats = factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, ids))
+		var totalStats = factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, APPLICATION_ID, ids))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertZeroStats(totalStats.get(SUGGESTION_ID_1));
 		assertZeroStats(totalStats.get(SUGGESTION_ID_2));
 
-		var userStats = factory.withTransaction(tx -> sut.retrieveUserSuggestionStats(tx, userId, ids))
+		var userStats = factory.withTransaction(tx -> sut.retrieveUserSuggestionStats(tx, APPLICATION_ID, userId, ids))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertZeroStats(userStats.get(SUGGESTION_ID_1));
 		assertZeroStats(userStats.get(SUGGESTION_ID_2));
 
-		Integer value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, userId, SUGGESTION_ID_1))
+		Integer value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(1);
-		value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(2);
 
-		value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(1);
-		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
-		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
 
-		value = factory.withTransaction(tx -> sut.increaseTimesRejected(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.increaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(1);
-		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
-		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, userId, SUGGESTION_ID_1))
+		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
 
-		userStats = factory.withTransaction(tx -> sut.retrieveUserSuggestionStats(tx, userId, ids))
+		userStats = factory.withTransaction(tx -> sut.retrieveUserSuggestionStats(tx, APPLICATION_ID, userId, ids))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(userStats.get(SUGGESTION_ID_1)).isEqualTo(new SuggestionStats(2, 0, 0));
 		assertZeroStats(userStats.get(SUGGESTION_ID_2));
 
-		totalStats = factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, ids))
+		totalStats = factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, APPLICATION_ID, ids))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(totalStats.get(SUGGESTION_ID_1)).isEqualTo(new SuggestionStats(2, 0, 0));
 		assertZeroStats(totalStats.get(SUGGESTION_ID_2));
@@ -128,7 +130,7 @@ public class UserSuggestionStatsEntityDaoImplTest {
 			ids.add(new GenericSuggestionTemplateId(UUID.randomUUID().toString()));
 		}
 
-		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, ids))
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, APPLICATION_ID, ids))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
 				.hasMessageContaining("Too many suggestion ids");
 	}

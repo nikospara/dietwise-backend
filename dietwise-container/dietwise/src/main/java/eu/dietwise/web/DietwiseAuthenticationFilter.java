@@ -1,6 +1,7 @@
 package eu.dietwise.web;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import jakarta.ws.rs.container.ContainerRequestContext;
 
 import eu.dietwise.common.types.EmailAddress;
@@ -47,8 +48,9 @@ public class DietwiseAuthenticationFilter {
 			if (sub == null) return Uni.createFrom().failure(() -> new NotAuthenticatedException("sub is null"));
 			String email = jwtPrincipal.claim(Claims.email).map(Object::toString).orElse(null);
 			EnumSet<Role> roles = EnumSet.noneOf(Role.class);
-			if (jwtPrincipal.claim(Claims.azp).filter("recipewatch"::equals).isPresent()) roles.add(Role.CITIZEN);
-			if (jwtPrincipal.claim(Claims.azp).filter("rca"::equals).isPresent()) roles.add(Role.INFLUENCER);
+			Optional<String> applicationId = jwtPrincipal.claim(Claims.azp).map(Object::toString);
+			if (applicationId.filter("recipewatch"::equals).isPresent()) roles.add(Role.CITIZEN);
+			if (applicationId.filter("rca"::equals).isPresent()) roles.add(Role.INFLUENCER);
 			return userService.findOrCreateByIdmId(sub)
 					.invoke(userData -> {
 						var user = ImmutableUser.builder()
@@ -59,9 +61,11 @@ public class DietwiseAuthenticationFilter {
 								.isSystem(false)
 								.isUnauthenticated(false)
 								.roles(roles)
+								.applicationId(applicationId)
 								.build();
 						requestContext.setSecurityContext(new DietwiseSecurityContextImpl(requestContext.getSecurityContext(), user));
 					})
+					// HERE
 					.replaceWithVoid();
 		}
 	}

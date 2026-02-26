@@ -2,6 +2,7 @@ package eu.dietwise.common.v1.model;
 
 import java.security.Principal;
 import java.util.EnumSet;
+import java.util.Optional;
 
 import eu.dietwise.common.types.EmailAddress;
 import eu.dietwise.common.types.Nullable;
@@ -56,4 +57,13 @@ public interface User extends Principal, HasUserId {
 	 * @return The set of roles assigned to this user, never {@code null}, will be empty for the anonymous user
 	 */
 	EnumSet<Role> getRoles();
+
+	/**
+	 * The application id through which the user connected. Matches the client id in the IDM, communicated through the
+	 * {@code azp} field of the JWT. See <a href="https://learn.microsoft.com/en-us/entra/identity-platform/access-token-claims-reference">here</a>
+	 * for more information.
+	 *
+	 * @return The application id string; could be empty e.g., for the unauthenticated user
+	 */
+	Optional<String> getApplicationId();
 }

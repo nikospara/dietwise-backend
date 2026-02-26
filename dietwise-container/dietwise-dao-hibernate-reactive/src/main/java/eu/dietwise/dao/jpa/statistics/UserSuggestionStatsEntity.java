@@ -23,6 +23,10 @@ public class UserSuggestionStatsEntity {
 	private UUID userId;
 
 	@Id
+	@Column(name = "application_id")
+	private String applicationId;
+
+	@Id
 	@Column(name = "suggestion_template_id")
 	private UUID suggestionTemplateId;
 
@@ -49,6 +53,14 @@ public class UserSuggestionStatsEntity {
 
 	public void setUserId(UUID userId) {
 		this.userId = userId;
+	}
+
+	public String getApplicationId() {
+		return applicationId;
+	}
+
+	public void setApplicationId(String applicationId) {
+		this.applicationId = applicationId;
 	}
 
 	public UUID getSuggestionTemplateId() {

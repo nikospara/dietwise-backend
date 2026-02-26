@@ -30,7 +30,8 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 	private static final int MAX_SUGGESTION_STATS_IDS = 20;
 
 	@Override
-	public Uni<Map<SuggestionTemplateId, SuggestionStats>> retrieveTotalSuggestionStats(ReactivePersistenceContext em, Set<SuggestionTemplateId> ids) {
+	public Uni<Map<SuggestionTemplateId, SuggestionStats>> retrieveTotalSuggestionStats(
+			ReactivePersistenceContext em, String applicationId, Set<SuggestionTemplateId> ids) {
 		if (ids.isEmpty()) {
 			return Uni.createFrom().item(Map.of());
 		}
@@ -60,7 +61,8 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 	}
 
 	@Override
-	public Uni<Map<SuggestionTemplateId, SuggestionStats>> retrieveUserSuggestionStats(ReactivePersistenceContext em, HasUserId userId, Set<SuggestionTemplateId> ids) {
+	public Uni<Map<SuggestionTemplateId, SuggestionStats>> retrieveUserSuggestionStats(
+			ReactivePersistenceContext em, String applicationId, HasUserId userId, Set<SuggestionTemplateId> ids) {
 		if (ids.isEmpty()) {
 			return Uni.createFrom().item(Map.of());
 		}
@@ -87,40 +89,40 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 	}
 
 	@Override
-	public Uni<Integer> increaseTimesSuggested(ReactivePersistenceTxContext tx, HasUserId userId, SuggestionTemplateId suggestionId) {
-		return getOrCreate(tx, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
+	public Uni<Integer> increaseTimesSuggested(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
+		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
 				.invoke(entity -> entity.setTimesSuggested(toIntOr0(entity.getTimesSuggested()) + 1))
 				.flatMap(tx::merge)
 				.map(UserSuggestionStatsEntity::getTimesSuggested);
 	}
 
 	@Override
-	public Uni<Integer> increaseTimesAccepted(ReactivePersistenceTxContext tx, HasUserId userId, SuggestionTemplateId suggestionId) {
-		return getOrCreate(tx, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
+	public Uni<Integer> increaseTimesAccepted(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
+		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
 				.invoke(entity -> entity.setTimesAccepted(toIntOr0(entity.getTimesAccepted()) + 1))
 				.flatMap(tx::merge)
 				.map(UserSuggestionStatsEntity::getTimesAccepted);
 	}
 
 	@Override
-	public Uni<Integer> decreaseTimesAccepted(ReactivePersistenceTxContext tx, HasUserId userId, SuggestionTemplateId suggestionId) {
-		return getOrCreate(tx, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
+	public Uni<Integer> decreaseTimesAccepted(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
+		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
 				.invoke(entity -> entity.setTimesAccepted(Math.max(0, toIntOr0(entity.getTimesAccepted()) - 1)))
 				.flatMap(tx::merge)
 				.map(UserSuggestionStatsEntity::getTimesAccepted);
 	}
 
 	@Override
-	public Uni<Integer> increaseTimesRejected(ReactivePersistenceTxContext tx, HasUserId userId, SuggestionTemplateId suggestionId) {
-		return getOrCreate(tx, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
+	public Uni<Integer> increaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
+		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
 				.invoke(entity -> entity.setTimesRejected(toIntOr0(entity.getTimesRejected()) + 1))
 				.flatMap(tx::merge)
 				.map(UserSuggestionStatsEntity::getTimesRejected);
 	}
 
 	@Override
-	public Uni<Integer> decreaseTimesRejected(ReactivePersistenceTxContext tx, HasUserId userId, SuggestionTemplateId suggestionId) {
-		return getOrCreate(tx, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
+	public Uni<Integer> decreaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId) {
+		return getOrCreate(tx, applicationId, UUID.fromString(userId.getId().asString()), suggestionId.asUuid())
 				.invoke(entity -> entity.setTimesRejected(Math.max(0, toIntOr0(entity.getTimesRejected()) - 1)))
 				.flatMap(tx::merge)
 				.map(UserSuggestionStatsEntity::getTimesRejected);
@@ -134,7 +136,7 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 
 	private Map<SuggestionTemplateId, SuggestionStats> makeEmptyStatsMap(Set<SuggestionTemplateId> ids) {
 		Map<SuggestionTemplateId, SuggestionStats> result = new LinkedHashMap<>();
-		ids.forEach(id -> result.put(id, new SuggestionStats(0, 0, 0)));
+		ids.forEach(id -> result.put(id, SuggestionStats.ALL_ZEROES));
 		return result;
 	}
 
@@ -153,22 +155,24 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 		map.put(suggestionTemplateId, new SuggestionStats(timesSuggested, timesAccepted, timesRejected));
 	}
 
-	private Uni<UserSuggestionStatsEntity> getOrCreate(ReactivePersistenceTxContext tx, UUID userId, UUID suggestionTemplateId) {
+	private Uni<UserSuggestionStatsEntity> getOrCreate(ReactivePersistenceTxContext tx, String applicationId, UUID userId, UUID suggestionTemplateId) {
 		var id = new UserSuggestionStatsId();
 		id.setUserId(userId);
+		id.setApplicationId(applicationId);
 		id.setSuggestionTemplateId(suggestionTemplateId);
 		return tx.find(UserSuggestionStatsEntity.class, id)
 				.flatMap(entity -> entity != null
 						? Uni.createFrom().item(entity)
-						: create(tx, userId, suggestionTemplateId));
+						: create(tx, applicationId, userId, suggestionTemplateId));
 	}
 
-	private Uni<UserSuggestionStatsEntity> create(ReactivePersistenceTxContext tx, UUID userId, UUID suggestionTemplateId) {
+	private Uni<UserSuggestionStatsEntity> create(ReactivePersistenceTxContext tx, String applicationId, UUID userId, UUID suggestionTemplateId) {
 		return tx.find(UserEntity.class, userId)
 				.flatMap(user -> tx.find(SuggestionTemplateEntity.class, suggestionTemplateId)
 						.flatMap(suggestionTemplate -> {
 							UserSuggestionStatsEntity entity = new UserSuggestionStatsEntity();
 							entity.setUserId(userId);
+							entity.setApplicationId(applicationId);
 							entity.setSuggestionTemplateId(suggestionTemplateId);
 							entity.setUser(user);
 							entity.setSuggestionTemplate(suggestionTemplate);
