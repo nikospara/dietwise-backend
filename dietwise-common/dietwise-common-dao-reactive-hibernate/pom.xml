@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>eu.dietwise</groupId>
 		<artifactId>dietwise-common</artifactId>
-		<version>0.3.0</version>
+		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>dietwise-common-dao-reactive-hibernate</artifactId>
@@ -18,7 +18,7 @@
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-common-dao-reactive</artifactId>
-			<version>0.3.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- SPECS -->
