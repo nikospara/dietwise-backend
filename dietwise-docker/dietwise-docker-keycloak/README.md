@@ -28,8 +28,11 @@ Create a new enabled realm, "dietwise". Go to "Configure" from the left menu:
 		- Verify email: **should be On, TODO**
 	- Events: **TODO, for when we implement the user management events**
 	- Sessions: Make sure "Offline session settings" -> "Offline Session Idle" is set to something like 30 Days
+	- User profile:
+		- Row `firstName` -> Edit -> "Required field": No -> Save
+		- Row `lastName`, the same
 - Realm roles:
-    - Create Role: "influencer"
+	- Create Role: "influencer"
 
 ### Create a client for RecipeWatch
 
@@ -43,7 +46,7 @@ Create a new client in the Realm:
 	- Client authentication: Off
 	- Authorization: Off
 	- Authentication flow: Check *only* "Standard flow"
-    - PKCE Method: **TODO** (should be S256 - also in the "Settings" tab, under the "Capability config" section)
+	- PKCE Method: **TODO** (should be S256 - also in the "Settings" tab, under the "Capability config" section)
 - Login settings:
 	- Root URL: **TODO**
 	- Home URL: **TODO**

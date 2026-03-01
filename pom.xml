@@ -27,20 +27,18 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.31.3</version.quarkus.platform>
+		<version.quarkus.platform>3.32.1</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.assertj>3.27.7</version.assertj>
 		<version.h2>2.1.210</version.h2>
 		<version.hibernate-validator-cdi>9.1.0.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
-		<version.kafka>3.2.0</version.kafka><!-- When changing this, also check KafkaTestResource.java -->
-		<version.kafka.scala>2.13</version.kafka.scala>
-		<version.keycloak>26.5.3</version.keycloak>
+		<version.keycloak>26.5.4</version.keycloak>
 		<version.liquibase>5.0.1</version.liquibase>
 		<version.org.immutables>2.12.1</version.org.immutables>
-		<version.postgres>42.7.9</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
-		<version.quarkus-langchain4j>1.7.1</version.quarkus-langchain4j>
+		<version.postgres>42.7.10</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
+		<version.quarkus-langchain4j>1.7.4</version.quarkus-langchain4j>
 		<version.slf4j>2.0.17</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - needed because quarkus-bom only uses slf4j-api, we use other artifacts too -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>
 		<version.weld-junit5>5.0.3.Final</version.weld-junit5>
@@ -97,21 +95,6 @@
 			<!-- Many are defined in Quarkus BOM -->
 
 			<!--  OTHER -->
-			<!--
-			<dependency>
-				<groupId>io.swagger</groupId>
-				<artifactId>swagger-annotations</artifactId>
-				<version>${version.swagger-annotations}</version>
-				<scope>provided</scope>
-			</dependency>
-			-->
-			<!--
-			<dependency>
-				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka-clients</artifactId>
-				<version>${version.kafka}</version>
-			</dependency>
-			-->
 			<dependency>
 				<groupId>org.hibernate.validator</groupId>
 				<artifactId>hibernate-validator-cdi</artifactId>
@@ -201,7 +184,7 @@
 				<plugin>
 					<groupId>io.fabric8</groupId>
 					<artifactId>docker-maven-plugin</artifactId>
-					<version>0.48.0</version>
+					<version>0.48.1</version>
 				</plugin>
 				<plugin>
 					<groupId>io.quarkus.platform</groupId>
@@ -214,7 +197,7 @@
 				</plugin>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.14.1</version>
+					<version>3.15.0</version>
 					<configuration>
 						<release>${version.java}</release>
 						<source>${version.java}</source>
@@ -295,7 +278,7 @@
 				</plugin>
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.5.4</version>
+					<version>3.5.5</version>
 					<!-- TODO The configuration is from Quarkus. Double check if it is needed at this level, or just in the Quarkus modules. -->
 					<configuration>
 						<systemPropertyVariables>
@@ -307,7 +290,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>versions-maven-plugin</artifactId>
-					<version>2.20.1</version>
+					<version>2.21.0</version>
 					<configuration>
 						<ruleSet>
 							<ignoreVersions>
