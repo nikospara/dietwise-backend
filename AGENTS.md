@@ -38,7 +38,7 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
   - `docker build -t dietwise .`
 - Dockerfile POM copy block is auto-generated for cache-friendly dependency resolution.
 - After adding/removing Maven modules, regenerate the block:
-  - `./scripts/update-dockerfile-pom-copy.sh`
+  - `./dietwise-architecture/src/scripts/update-dockerfile-pom-copy.sh`
 
 ## Liquibase
 - Runtime Liquibase migrations are enabled in the Quarkus app.
@@ -68,5 +68,5 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
 - For Quarkus app changes:
   - Confirm app module packages.
 - For Docker-related changes:
-  - Re-run `./scripts/update-dockerfile-pom-copy.sh` if modules changed.
+  - Re-run `./dietwise-architecture/src/scripts/update-dockerfile-pom-copy.sh` if modules changed.
   - Rebuild image.

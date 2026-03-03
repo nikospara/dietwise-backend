@@ -36,6 +36,7 @@
 			<column name="name" type="VARCHAR(200)" remarks="Name of this alternative ingredient, English">
 				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT__NAME" unique="true" uniqueConstraintName="UQ_DW_ALTERNATIVE_INGREDIENT__NAME" />
 			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" remarks="Explanation of this alternative ingredient for the LLM, English" />
 		</createTable>
 
 		<createTable tableName="DW_RULE" remarks="A substitution rule triggered by an ingredient and mapping it to alternatives and some related information">

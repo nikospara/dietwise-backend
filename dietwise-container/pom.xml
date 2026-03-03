@@ -16,9 +16,10 @@
 
 	<modules>
 		<module>dietwise</module>
-		<module>dietwise-jaxrs</module>
-		<module>dietwise-services</module>
 		<module>dietwise-dao</module>
 		<module>dietwise-dao-hibernate-reactive</module>
+		<module>dietwise-jaxrs</module>
+		<module>dietwise-services</module>
+		<module>dietwise-services-model</module>
 	</modules>
 </project>

@@ -36,6 +36,11 @@
 			<artifactId>dietwise-service-interfaces</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-services-model</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<!-- FRAMEWORK -->
 		<dependency>

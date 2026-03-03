@@ -8,7 +8,10 @@ import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.Path;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
+import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity_;
+import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity_;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
@@ -32,16 +35,16 @@ public class RecommendationDaoImpl implements RecommendationDao {
 			var cb = em.getCriteriaBuilder();
 			var q = cb.createTupleQuery();
 			var recommendationValue = q.from(RecommendationValueEntity.class);
-			var recommendation = recommendationValue.join("recommendation");
-			var ageGroup = recommendationValue.join("ageGroup");
-			Path<BigDecimal> value = recommendationValue.get("value");
+			var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
+			var ageGroup = recommendationValue.join(RecommendationValueEntity_.ageGroup);
+			Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
 
-			q.select(cb.tuple(recommendation.get("name"), value));
+			q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), value));
 			q.where(
 					cb.and(
-							cb.lessThanOrEqualTo(ageGroup.get("min"), age),
-							cb.greaterThanOrEqualTo(ageGroup.get("max"), age),
-							cb.equal(recommendationValue.get("gender"), gender)
+							cb.lessThanOrEqualTo(ageGroup.get(AgeGroupEntity_.min), age),
+							cb.greaterThanOrEqualTo(ageGroup.get(AgeGroupEntity_.max), age),
+							cb.equal(recommendationValue.get(RecommendationValueEntity_.gender), gender)
 					)
 			);
 

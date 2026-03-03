@@ -19,8 +19,9 @@ COPY dietwise-common/pom.xml dietwise-common/pom.xml
 COPY dietwise-container/dietwise-dao-hibernate-reactive/pom.xml dietwise-container/dietwise-dao-hibernate-reactive/pom.xml
 COPY dietwise-container/dietwise-dao/pom.xml dietwise-container/dietwise-dao/pom.xml
 COPY dietwise-container/dietwise-jaxrs/pom.xml dietwise-container/dietwise-jaxrs/pom.xml
-COPY dietwise-container/dietwise-services/pom.xml dietwise-container/dietwise-services/pom.xml
 COPY dietwise-container/dietwise/pom.xml dietwise-container/dietwise/pom.xml
+COPY dietwise-container/dietwise-services-model/pom.xml dietwise-container/dietwise-services-model/pom.xml
+COPY dietwise-container/dietwise-services/pom.xml dietwise-container/dietwise-services/pom.xml
 COPY dietwise-container/pom.xml dietwise-container/pom.xml
 COPY dietwise-docker/dietwise-docker-keycloak/pom.xml dietwise-docker/dietwise-docker-keycloak/pom.xml
 COPY dietwise-docker/dietwise-docker-postgres/pom.xml dietwise-docker/dietwise-docker-postgres/pom.xml

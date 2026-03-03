@@ -16,6 +16,7 @@ import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
@@ -47,10 +48,13 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	private final RecipeExtractionService recipeExtractionService;
 	private final StatisticsService statisticsService;
+	private final RecipeSuggestionsService recipeSuggestionsService;
 
-	public RecipeAssessmentServiceImpl(RecipeExtractionService recipeExtractionService, StatisticsService statisticsService) {
+	public RecipeAssessmentServiceImpl(
+			RecipeExtractionService recipeExtractionService, StatisticsService statisticsService, RecipeSuggestionsService recipeSuggestionsService) {
 		this.recipeExtractionService = recipeExtractionService;
 		this.statisticsService = statisticsService;
+		this.recipeSuggestionsService = recipeSuggestionsService;
 	}
 
 	@Override
@@ -61,18 +65,18 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				Uni.combine().all()
 						.unis(
 								statisticsService.assessedRecipe(user),
-								assessMarkdownRecipeInternal(correlationId, param, emitter)
+								assessMarkdownRecipeInternal(correlationId, user, param, emitter)
 						).with((x, message) -> message)
 						.subscribe().with(x -> emitter.complete(), handleError(emitter))
 		);
 	}
 
 	private Uni<? extends RecipeAssessmentMessage> assessMarkdownRecipeInternal(
-			UUID correlationId, RecipeAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+			UUID correlationId, User user, RecipeAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return UniComprehensions.forc(
 				recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-				assessSingleRecipe(correlationId, param.getUrl(), emitter)
+				assessSingleRecipe(correlationId, user, param.getUrl(), emitter)
 		);
 	}
 
@@ -84,18 +88,18 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				Uni.combine().all()
 						.unis(
 								statisticsService.assessedRecipe(user),
-								extractAndAssessRecipeFromUrlInternal(correlationId, param, emitter)
+								extractAndAssessRecipeFromUrlInternal(correlationId, user, param, emitter)
 						).with((x, message) -> message)
 						.subscribe().with(x -> emitter.complete(), handleError(emitter))
 		);
 	}
 
 	private Uni<? extends RecipeAssessmentMessage> extractAndAssessRecipeFromUrlInternal(
-			UUID correlationId, RecipeExtractionAndAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+			UUID correlationId, User user, RecipeExtractionAndAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return UniComprehensions.forc(
 				recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-				assessSingleRecipe(correlationId, param.getUrl(), emitter)
+				assessSingleRecipe(correlationId, user, param.getUrl(), emitter)
 		);
 	}
 
@@ -113,7 +117,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private Function<? super RecipeExtractionRecipeAssessmentMessage, Uni<? extends SuggestionsRecipeAssessmentMessage>> assessSingleRecipe(
-			UUID correlationId, String url, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+			UUID correlationId, User user, String url, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return recipeExtractionRecipeAssessmentMessage -> {
 			int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
 			if (numberOfRecipes != 1) {
@@ -121,11 +125,10 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				// this signals handleError to emit MoreThanOneRecipesAssessmentMessage
 				return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
 			} else {
-				// TODO Call the actual assessment service here - probably use a separate helper service
 				Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
-				return Uni.createFrom().item(makeDummySuggestionsRecipeAssessmentMessage(recipe))
-						.onItem().delayIt().by(Duration.ofSeconds(2L)) // DUMMY for initial testing/demos
+				return recipeSuggestionsService.makeSuggestions(user, recipe)
 						.invoke(emitter::emit);
+						// TODO Update suggestion statistics
 			}
 		};
 	}
@@ -165,18 +168,6 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				.build();
 	}
 
-	private SuggestionsRecipeAssessmentMessage makeDummySuggestionsRecipeAssessmentMessage(Recipe recipe) {
-		double rating = new Random().nextInt(10) / 2.0;
-		List<Suggestion> suggestions = List.of(
-				dummyFromTextOnly(recipe, "Coming from the server - this is just a dummy, placeholder response"),
-//				dummyFromTextOnly(recipe, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
-//				dummyFromTextOnly(recipe, "Ed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"),
-				dummyFromTextOnly(recipe, "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.")
-		);
-//		throw new RuntimeException("Testing exception");
-		return new SuggestionsRecipeAssessmentMessage(rating, suggestions);
-	}
-
 	private Suggestion dummyFromTextOnly(Recipe recipe, String text) {
 		var rand = new Random();
 		var ingredient = recipe.getRecipeIngredients().get(rand.nextInt(recipe.getRecipeIngredients().size()));
@@ -197,6 +188,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			} else if (error instanceof MoreThanOneRecipesDetectedException mto) {
 				emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
 			} else {
+				// TODO Create dedicated exceptions for extraction failures, suggestion failures
 				LOG.error("The server failed to assess the recipe", error);
 				emitter.emit(new RecipeAssessmentErrorMessage(List.of("The server failed to assess the recipe")));
 			}

@@ -4,6 +4,7 @@ import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,21 +22,29 @@ import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
+import eu.dietwise.v1.model.AppliesTo.AppliesToIngredient;
 import eu.dietwise.v1.model.ImmutableIngredient;
 import eu.dietwise.v1.model.ImmutableRecipe;
 import eu.dietwise.v1.model.ImmutableRecipeAssessmentParam;
 import eu.dietwise.v1.model.ImmutableRecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
+import eu.dietwise.v1.types.impl.GenericRuleId;
+import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
+import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,6 +87,11 @@ class RecipeAssessmentServiceImplTest {
 			.pageContent(MARKDOWN)
 			.build();
 	private static final String RENDERED_MARKDOWN = "rendered markdown";
+	private static final String SUGGESTION_ID = "00000000-2222-3333-4444-555555555555";
+	private static final String ALTERNATIVE_INGREDIENT = "Onion";
+	private static final String RULE_ID = "22222222-2222-3333-4444-555555555555";
+	private static final String RECOMMENDATION = "Recommendation";
+	private static final String SUGGESTION_TEXT = "Suggestion text";
 
 	@Mock
 	private RecipeExtractionService recipeExtractionService;
@@ -85,9 +99,12 @@ class RecipeAssessmentServiceImplTest {
 	@Mock
 	private StatisticsService statisticsService;
 
+	@Mock
+	private RecipeSuggestionsService recipeSuggestionsService;
+
 	@Test
 	void assessMarkdownRecipeEmitsExtractionThenSuggestionsOnHappyPath() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, LLM_FROM_TEXT)),
 				MARKDOWN
@@ -95,6 +112,8 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any()))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
+		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
+				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
 				.collect().asList()
@@ -115,17 +134,18 @@ class RecipeAssessmentServiceImplTest {
 
 		assertThat(messages.getLast()).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
 		var suggestions = (SuggestionsRecipeAssessmentMessage) messages.getLast();
-		assertThat(suggestions.rating()).isNotNull().isBetween(0.0, 4.5);
-		assertThat(suggestions.suggestions()).hasSize(2);
-		assertThat(suggestions.suggestions().getFirst().getText()).contains("placeholder response");
+		assertThat(suggestions.rating()).isEqualTo(2.5);
+		assertThat(suggestions.suggestions()).hasSize(1);
+		assertThat(suggestions.suggestions().getFirst().getText()).contains(SUGGESTION_TEXT);
 
 		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
 		verify(statisticsService).assessedRecipe(USER);
+		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsExtractionThenSuggestionsOnHappyPath() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD)),
 				RENDERED_MARKDOWN
@@ -133,6 +153,8 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
+		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
+				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
@@ -148,16 +170,18 @@ class RecipeAssessmentServiceImplTest {
 
 		assertThat(messages.getLast()).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
 		var suggestions = (SuggestionsRecipeAssessmentMessage) messages.getLast();
-		assertThat(suggestions.rating()).isNotNull().isBetween(0.0, 4.5);
-		assertThat(suggestions.suggestions()).hasSize(2);
+		assertThat(suggestions.rating()).isEqualTo(2.5);
+		assertThat(suggestions.suggestions()).hasSize(1);
+		assertThat(suggestions.suggestions().getFirst().getText()).contains(SUGGESTION_TEXT);
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
+		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsMoreThanOneRecipesMessageWhenMultipleRecipesExtracted() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(
 						new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD),
@@ -185,7 +209,7 @@ class RecipeAssessmentServiceImplTest {
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().failure(new NoRecipesDetectedException()));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
@@ -205,7 +229,7 @@ class RecipeAssessmentServiceImplTest {
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenExtractionFails() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService);
+		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().failure(new RuntimeException("Extraction failed")));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
@@ -235,5 +259,17 @@ class RecipeAssessmentServiceImplTest {
 				.recipeIngredients(recipeIngredients)
 				.recipeInstructions(instructions)
 				.build();
+	}
+
+	private static SuggestionsRecipeAssessmentMessage makeSuggestions(Recipe recipe) {
+		Suggestion suggestion = ImmutableSuggestion.builder()
+				.id(new GenericSuggestionTemplateId(SUGGESTION_ID))
+				.alternative(new AlternativeIngredientImpl(ALTERNATIVE_INGREDIENT))
+				.target(new AppliesToIngredient(recipe.getRecipeIngredients().getFirst().getId()))
+				.ruleId(new GenericRuleId(RULE_ID))
+				.recommendation(new RecommendationImpl(RECOMMENDATION))
+				.text(SUGGESTION_TEXT)
+				.build();
+		return new SuggestionsRecipeAssessmentMessage(2.5, List.of(suggestion));
 	}
 }

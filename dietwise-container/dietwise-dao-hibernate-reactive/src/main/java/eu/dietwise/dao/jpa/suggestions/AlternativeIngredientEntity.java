@@ -16,6 +16,9 @@ public class AlternativeIngredientEntity {
 	@Column(name = "name")
 	private String name;
 
+	@Column(name = "explanation_for_llm")
+	private String explanationForLlm;
+
 	public UUID getId() {
 		return id;
 	}
@@ -30,5 +33,13 @@ public class AlternativeIngredientEntity {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public String getExplanationForLlm() {
+		return explanationForLlm;
+	}
+
+	public void setExplanationForLlm(String explanationForLlm) {
+		this.explanationForLlm = explanationForLlm;
 	}
 }
