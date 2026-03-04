@@ -13,8 +13,6 @@ import io.smallrye.mutiny.Uni;
 public interface SuggestionsAiFacade {
 	Uni<Map<String, RoleOrTechnique>> retrieveAllRolesKeyedByNormalizedName(ReactivePersistenceContext em);
 
-	String normalizeRoleName(String roleName);
-
 	String convertRolesToMarkdownList(Collection<RoleOrTechnique> rolesOrTechniques);
 
 	String convertInstructionsToMarkdownList(List<String> instructions);

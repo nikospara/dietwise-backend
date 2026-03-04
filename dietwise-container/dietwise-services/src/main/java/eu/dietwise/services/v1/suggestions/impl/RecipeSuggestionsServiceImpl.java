@@ -24,9 +24,13 @@ import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Suggestion;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
+	private static final Logger LOG = LoggerFactory.getLogger(RecipeSuggestionsServiceImpl.class);
+
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final SuggestionsAiFacade suggestionsAiFacade;
 	private final SuggestionDao suggestionDao;
@@ -84,7 +88,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		String instructionsAsMarkdownList = suggestionsAiFacade.convertInstructionsToMarkdownList(recipe.getRecipeInstructions());
 		return suggestionsAiFacade.assessIngredientRole(rolesMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList)
-				.map(suggestionsAiFacade::normalizeRoleName)
+				.invoke(r -> LOG.debug("assessIngredientRole for {}: {}", ingredientNameInRecipe, r))
 				.map(data.roles()::get);
 	}
 
