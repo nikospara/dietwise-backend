@@ -19,8 +19,6 @@ public interface SuggestionsAiFacade {
 
 	Uni<Map<String, TriggerIngredient>> retrieveAllTriggerIngredientsKeyedByNormalizedName(ReactivePersistenceContext em);
 
-	String normalizeTriggerIngredientName(String triggerIngredientName);
-
 	String convertTriggerIngredientsToMarkdownList(Collection<TriggerIngredient> triggerIngredients);
 
 	Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em);

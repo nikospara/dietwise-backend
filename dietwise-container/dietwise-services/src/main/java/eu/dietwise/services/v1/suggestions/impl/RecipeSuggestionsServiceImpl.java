@@ -96,16 +96,25 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		String availableTriggerIngredientsAsMarkdownList = suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(data.triggerIngredients().values());
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		return role -> suggestionsAiFacade.matchIngredientToTrigger(availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role)
-				.map(suggestionsAiFacade::normalizeTriggerIngredientName)
+				.invoke(r -> LOG.debug("matchIngredientToTrigger for {}: {}", ingredientNameInRecipe, r))
 				.map(data.triggerIngredients()::get);
 	}
 
 	private BiFunction<? super RoleOrTechnique, ? super TriggerIngredient, Uni<? extends List<Suggestion>>> extractRuleAndAlternativesFromDb(
 			ReactivePersistenceTxContext tx, Ingredient ingredient) {
 		return (role, triggerIngredient) -> {
+			LOG.debug("Rule matching coordinates for {}: {} / {}", ingredient.getNameInRecipe(), toLogString(role), toLogString(triggerIngredient));
 			if (role == null || triggerIngredient == null) return Uni.createFrom().item(Collections.emptyList());
 			else return suggestionDao.findByRoleAndTriggerIngredient(tx, role, triggerIngredient, ingredient);
 		};
+	}
+
+	private String toLogString(RoleOrTechnique role) {
+		return role == null ? "null" : role.getName() + " (" + role.getId().asString() + ")";
+	}
+
+	private String toLogString(TriggerIngredient triggerIngredient) {
+		return triggerIngredient == null ? "null" : triggerIngredient.getName() + " (" + triggerIngredient.getId().asString() + ")";
 	}
 
 	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> suggestAlternatives(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {

@@ -17,6 +17,7 @@ import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.v1.suggestions.IngredientRoleAiService;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
+import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
@@ -28,6 +29,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final TriggerIngredientDao triggerIngredientDao;
 	private final AlternativeIngredientDao alternativeIngredientDao;
 	private final IngredientRoleAiService ingredientRoleAiService;
+	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
 
 	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
 	private final CachedUniValue<Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniValue<>();
@@ -37,12 +39,14 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			RoleOrTechniqueDao roleOrTechniqueDao,
 			TriggerIngredientDao triggerIngredientDao,
 			AlternativeIngredientDao alternativeIngredientDao,
-			IngredientRoleAiService ingredientRoleAiService
+			IngredientRoleAiService ingredientRoleAiService,
+			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
 		this.alternativeIngredientDao = alternativeIngredientDao;
 		this.ingredientRoleAiService = ingredientRoleAiService;
+		this.triggerIngredientMatcherAiService = triggerIngredientMatcherAiService;
 	}
 
 	@Override
@@ -82,8 +86,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 				.map(Map::copyOf));
 	}
 
-	@Override
-	public String normalizeTriggerIngredientName(String triggerIngredientName) {
+	private String normalizeTriggerIngredientName(String triggerIngredientName) {
 		return triggerIngredientName == null ? "" : triggerIngredientName.trim().toLowerCase();
 	}
 
@@ -107,18 +110,23 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<String> assessIngredientRole(String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList) {
 		Context callerContext = Vertx.currentContext();
-		Uni<String> resultUni = Uni.createFrom().item(() -> ingredientRoleAiService.assessIngredientRole(availableRolesAsMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList))
+		Uni<String> resultUni = Uni.createFrom().item(() -> ingredientRoleAiService.assessIngredientRole(
+						availableRolesAsMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
-				.map(result -> result == null ? "" : normalizeRoleName(result.trim()));
+				.map(this::normalizeRoleName);
 		if (callerContext == null) return resultUni;
 		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
 	}
 
 	@Override
 	public Uni<String> matchIngredientToTrigger(String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role) {
-		// TODO Dummy for now, implement
-		var rnd = Math.random();
-		return Uni.createFrom().item(rnd > 0.75 ? "Beef" : (rnd < 0.25 ? "Pork" : ""));
+		Context callerContext = Vertx.currentContext();
+		Uni<String> resultUni = Uni.createFrom().item(() -> triggerIngredientMatcherAiService.matchIngredientToTrigger(
+						availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role != null ? role.getName() : null))
+				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
+				.map(this::normalizeTriggerIngredientName);
+		if (callerContext == null) return resultUni;
+		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
 	}
 
 	@Override
