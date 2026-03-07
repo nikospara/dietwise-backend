@@ -18,6 +18,7 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
+import eu.dietwise.v1.types.RecommendationWeight;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import org.assertj.core.data.Percentage;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -178,10 +179,14 @@ public class RecommendationDaoImplTest {
 		factory.withTransaction(tx -> {
 			var rec1 = new RecommendationEntity();
 			rec1.setId(RECOMMENDATION_1_ID);
-			rec1.setName("Increase milk");
+			rec1.setName("Increase healthy thing 1");
+			rec1.setComponentForScoring("healthy thing 1");
+			rec1.setWeight(RecommendationWeight.ENCOURAGED);
 			var rec2 = new RecommendationEntity();
 			rec2.setId(RECOMMENDATION_2_ID);
-			rec2.setName("Eat legumes");
+			rec2.setName("Decrease unhealthy thing 2");
+			rec2.setComponentForScoring("unhealthy thing 2");
+			rec2.setWeight(RecommendationWeight.LIMITED);
 
 			var ageGroup1 = new AgeGroupEntity();
 			ageGroup1.setId(AGE_GROUP_1_ID);
@@ -202,8 +207,8 @@ public class RecommendationDaoImplTest {
 						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(recommendations).hasSize(2);
-		assertThat(recommendations.get(new RecommendationImpl("Increase milk"))).isEqualByComparingTo("1.11");
-		assertThat(recommendations.get(new RecommendationImpl("Eat legumes"))).isEqualByComparingTo("2.22");
+		assertThat(recommendations.get(new RecommendationImpl("Increase healthy thing 1"))).isEqualByComparingTo("1.11");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease unhealthy thing 2"))).isEqualByComparingTo("2.22");
 	}
 
 	private RecommendationValueEntity makeRecValue(UUID id, RecommendationEntity recommendation, AgeGroupEntity ageGroup, BiologicalGender gender, String value) {

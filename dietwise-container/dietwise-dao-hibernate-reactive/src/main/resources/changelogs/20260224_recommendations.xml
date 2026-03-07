@@ -16,6 +16,13 @@
 			<column name="name" type="VARCHAR(200)" remarks="Name of this recommendation, English">
 				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION__NAME" unique="true" uniqueConstraintName="UQ_DW_RECOMMENDATION__NAME" />
 			</column>
+			<column name="component_for_scoring" type="VARCHAR(200)" remarks="Name of the component/ingredient to use for scoring that corresponds to this recommendation, English">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION__COMPONENT_FOR_SCORING" unique="true" uniqueConstraintName="UQ_DW_RECOMMENDATION__COMPONENT_FOR_SCORING" />
+			</column>
+			<column name="weight" type="VARCHAR(16)" remarks="How does the existence of component_for_scoring affect the score">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION__WEIGHT" />
+			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" remarks="Explanation of this component/ingredient to use for scoring for the LLM, English" />
 		</createTable>
 
 		<createTable tableName="DW_AGE_GROUP" remarks="Age group configuration, from the GBD">

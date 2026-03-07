@@ -12,62 +12,92 @@
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
 			<column name="name" value="Decrease processed meat"/>
+			<column name="component_for_scoring" value="processed meat"/>
+			<column name="weight" value="LIMITED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
 			<column name="name" value="Decrease red meat"/>
+			<column name="component_for_scoring" value="red meat"/>
+			<column name="weight" value="LIMITED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
 			<column name="name" value="Decrease sodium"/>
+			<column name="component_for_scoring" value="sodium"/>
+			<column name="weight" value="LIMITED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
 			<column name="name" value="Decrease sugar-sweetened beverages"/>
+			<column name="component_for_scoring" value="sugar-sweetened beverages"/>
+			<column name="weight" value="LIMITED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
 			<column name="name" value="Decrease trans fatty acids"/>
+			<column name="component_for_scoring" value="trans fatty acids"/>
+			<column name="weight" value="LIMITED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
 			<column name="name" value="Diet low in calcium"/>
+			<column name="component_for_scoring" value="calcium"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 			<column name="name" value="Diet low in fiber"/>
+			<column name="component_for_scoring" value="fiber"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
 			<column name="name" value="Diet low in fruits"/>
+			<column name="component_for_scoring" value="fruits"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
 			<column name="name" value="Diet low in legumes"/>
+			<column name="component_for_scoring" value="legumes"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
 			<column name="name" value="Diet low in milk"/>
+			<column name="component_for_scoring" value="milk"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
 			<column name="name" value="Diet low in nuts and seeds"/>
+			<column name="component_for_scoring" value="nuts and seeds"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
 			<column name="name" value="Diet low in omega-6 polyunsaturated fatty acids"/>
+			<column name="component_for_scoring" value="omega-6 polyunsaturated fatty acids"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
 			<column name="name" value="Diet low in seafood omega-3 fatty acids"/>
+			<column name="component_for_scoring" value="seafood omega-3 fatty acids"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
 			<column name="name" value="Diet low in vegetables"/>
+			<column name="component_for_scoring" value="vegetables"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 		<insert tableName="DW_RECOMMENDATION">
 			<column name="id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
 			<column name="name" value="Diet low in whole grains"/>
+			<column name="component_for_scoring" value="whole grains"/>
+			<column name="weight" value="ENCOURAGED"/>
 		</insert>
 
 		<insert tableName="DW_AGE_GROUP">
