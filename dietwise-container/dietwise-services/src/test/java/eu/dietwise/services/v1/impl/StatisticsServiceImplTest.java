@@ -25,6 +25,7 @@ import eu.dietwise.services.nondomain.DateTimeService;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,9 +34,11 @@ class StatisticsServiceImplTest {
 	private static final String APPLICATION_ID = "recipewatch";
 	private static final LocalDateTime NOW = LocalDateTime.of(2026, 2, 26, 12, 30);
 
+	@RegisterExtension
+	private final MockReactivePersistenceContextFactory persistenceContextFactory = new MockReactivePersistenceContextFactory();
+
 	@Test
 	void markUserActivityReturnsNullWhenUserIsNull() {
-		var persistenceContextFactory = new MockReactivePersistenceContextFactory();
 		var userStatsEntityDao = mock(UserStatsEntityDao.class);
 		var dateTimeService = mock(DateTimeService.class);
 		lenient().when(dateTimeService.getNow()).thenReturn(NOW);
@@ -53,7 +56,6 @@ class StatisticsServiceImplTest {
 
 	@Test
 	void markUserActivityReturnsUserWithoutPersistenceWhenApplicationIdMissing() {
-		var persistenceContextFactory = new MockReactivePersistenceContextFactory();
 		var userStatsEntityDao = mock(UserStatsEntityDao.class);
 		var dateTimeService = mock(DateTimeService.class);
 		lenient().when(dateTimeService.getNow()).thenReturn(NOW);
@@ -72,7 +74,6 @@ class StatisticsServiceImplTest {
 
 	@Test
 	void markUserActivityIncreasesDaysLaunchedWhenLastSeenMoreThanOneDayAgo() {
-		var persistenceContextFactory = new MockReactivePersistenceContextFactory();
 		var userStatsEntityDao = mock(UserStatsEntityDao.class);
 		var dateTimeService = mock(DateTimeService.class);
 		when(dateTimeService.getNow()).thenReturn(NOW);
@@ -93,7 +94,6 @@ class StatisticsServiceImplTest {
 
 	@Test
 	void markUserActivitySkipsDaysLaunchedIncreaseWhenLastSeenWithinOneDay() {
-		var persistenceContextFactory = new MockReactivePersistenceContextFactory();
 		var userStatsEntityDao = mock(UserStatsEntityDao.class);
 		var dateTimeService = mock(DateTimeService.class);
 		when(dateTimeService.getNow()).thenReturn(NOW);

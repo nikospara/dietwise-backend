@@ -62,6 +62,12 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
 - Preserve existing XML/property formatting style.
 - If adding a new Maven module, update the Docker auto-copy block by running the script above.
 
+## Testing Conventions
+- For tests that need `ReactivePersistenceContext`/`ReactivePersistenceTxContext`, prefer `MockReactivePersistenceContextFactory` from:
+  - `dietwise-common/dietwise-common-testutils/src/main/java/eu/dietwise/common/test/jpa/MockReactivePersistenceContextFactory.java`
+- Use `withoutTransaction(...)` when testing read-only paths (session context).
+- Use `withTransaction(...)` when testing transactional paths and assertions on opened transactions/actions.
+
 ## Verification Checklist for Changes
 - For Maven/module changes:
   - Build at least affected module with `-pl ... -am`.

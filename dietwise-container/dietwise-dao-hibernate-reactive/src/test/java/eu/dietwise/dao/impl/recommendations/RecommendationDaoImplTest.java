@@ -19,6 +19,7 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
+import org.assertj.core.data.Percentage;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -55,10 +56,11 @@ public class RecommendationDaoImplTest {
 	@Order(1)
 	void testFindRecommendationsFiltersByAgeAndGender(Mutiny.SessionFactory sessionFactory) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
-		var sut = new RecommendationDaoImpl(factory);
+		var sut = new RecommendationDaoImpl();
 
-		Map<Recommendation, BigDecimal> recommendations = sut.findRecommendations(30, FEMALE)
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		Map<Recommendation, BigDecimal> recommendations =
+				factory.withoutTransaction(em -> sut.findRecommendations(em, 30, FEMALE))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		// according to the test data
 		assertThat(recommendations).hasSize(15);
@@ -79,12 +81,99 @@ public class RecommendationDaoImplTest {
 		assertThat(recommendations.get(new RecommendationImpl("Diet low in whole grains"))).isEqualByComparingTo("1.27");
 	}
 
+	@Test
+	@Order(2)
+	void testFindRecommendationsFiltersByGender(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		Map<Recommendation, BigDecimal> recommendations =
+				factory.withoutTransaction(em -> sut.findRecommendations(em, MALE))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// according to the test data
+		assertThat(recommendations).hasSize(15);
+		assertThat(recommendations.get(new RecommendationImpl("Decrease processed meat"))).isCloseTo(new BigDecimal("0.56333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Decrease red meat"))).isCloseTo(new BigDecimal("0.54333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Decrease sodium"))).isCloseTo(new BigDecimal("3.16666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Decrease sugar-sweetened beverages"))).isEqualByComparingTo("0.34");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease trans fatty acids"))).isCloseTo(new BigDecimal("0.79666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in calcium"))).isEqualByComparingTo("0.11");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in fiber"))).isCloseTo(new BigDecimal("0.85666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in fruits"))).isCloseTo(new BigDecimal("3.32333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in legumes"))).isCloseTo(new BigDecimal("1.07666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in milk"))).isCloseTo(new BigDecimal("0.19333"), Percentage.withPercentage(0.01));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in nuts and seeds"))).isCloseTo(new BigDecimal("1.70666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in omega-6 polyunsaturated fatty acids"))).isCloseTo(new BigDecimal("1.04333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in seafood omega-3 fatty acids"))).isCloseTo(new BigDecimal("0.92666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in vegetables"))).isCloseTo(new BigDecimal("1.57666"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in whole grains"))).isEqualByComparingTo("2.16");
+	}
+
+	@Test
+	@Order(3)
+	void testFindRecommendationsFiltersByAge(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		Map<Recommendation, BigDecimal> recommendations =
+				factory.withoutTransaction(em -> sut.findRecommendations(em, 50))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// according to the test data
+		assertThat(recommendations).hasSize(15);
+		assertThat(recommendations.get(new RecommendationImpl("Decrease processed meat"))).isEqualByComparingTo("0.655");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease red meat"))).isEqualByComparingTo("0.81");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease sodium"))).isEqualByComparingTo("3.6");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease sugar-sweetened beverages"))).isEqualByComparingTo("0.355");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease trans fatty acids"))).isEqualByComparingTo("0.875");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in calcium"))).isEqualByComparingTo("0.195");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in fiber"))).isEqualByComparingTo("0.9");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in fruits"))).isEqualByComparingTo("3.92");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in legumes"))).isEqualByComparingTo("1.2");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in milk"))).isEqualByComparingTo("0.38");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in nuts and seeds"))).isEqualByComparingTo("1.87");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in omega-6 polyunsaturated fatty acids"))).isEqualByComparingTo("1.19");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in seafood omega-3 fatty acids"))).isEqualByComparingTo("1.08");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in vegetables"))).isEqualByComparingTo("1.925");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in whole grains"))).isEqualByComparingTo("2.6");
+	}
+
+	@Test
+	@Order(4)
+	void testFindRecommendationsFiltersWhenNoPersonalInfo(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		Map<Recommendation, BigDecimal> recommendations =
+				factory.withoutTransaction(sut::findRecommendations)
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// according to the test data
+		assertThat(recommendations).hasSize(15);
+		assertThat(recommendations.get(new RecommendationImpl("Decrease processed meat"))).isCloseTo(new BigDecimal("0.49666"), Percentage.withPercentage(0.01));
+		assertThat(recommendations.get(new RecommendationImpl("Decrease red meat"))).isCloseTo(new BigDecimal("0.62833"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Decrease sodium"))).isCloseTo(new BigDecimal("2.575"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Decrease sugar-sweetened beverages"))).isEqualByComparingTo("0.28");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease trans fatty acids"))).isCloseTo(new BigDecimal("0.69"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in calcium"))).isEqualByComparingTo("0.15");
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in fiber"))).isCloseTo(new BigDecimal("0.84833"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in fruits"))).isCloseTo(new BigDecimal("3.10333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in legumes"))).isCloseTo(new BigDecimal("1.00333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in milk"))).isCloseTo(new BigDecimal("0.27833"), Percentage.withPercentage(0.01));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in nuts and seeds"))).isCloseTo(new BigDecimal("1.54833"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in omega-6 polyunsaturated fatty acids"))).isCloseTo(new BigDecimal("0.925"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in seafood omega-3 fatty acids"))).isCloseTo(new BigDecimal("0.92333"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in vegetables"))).isCloseTo(new BigDecimal("1.62833"), Percentage.withPercentage(0.001));
+		assertThat(recommendations.get(new RecommendationImpl("Diet low in whole grains"))).isCloseTo(new BigDecimal("2.03166"), Percentage.withPercentage(0.001));
+	}
+
 	// KEEP THIS LAST! IT MESSES WITH THE DATA
 	@Test
 	@Order(10)
 	void testInsertions(Mutiny.SessionFactory sessionFactory) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
-		var sut = new RecommendationDaoImpl(factory);
+		var sut = new RecommendationDaoImpl();
 
 		factory.withTransaction(tx -> {
 			var rec1 = new RecommendationEntity();
@@ -108,8 +197,9 @@ public class RecommendationDaoImplTest {
 					.flatMap(ignored -> tx.persistAll(recValue1, recValue2, recValue3, recValue4));
 		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
-		Map<Recommendation, BigDecimal> recommendations = sut.findRecommendations(12, FEMALE)
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		Map<Recommendation, BigDecimal> recommendations =
+				factory.withoutTransaction(em -> sut.findRecommendations(em, 12, FEMALE))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(recommendations).hasSize(2);
 		assertThat(recommendations.get(new RecommendationImpl("Increase milk"))).isEqualByComparingTo("1.11");

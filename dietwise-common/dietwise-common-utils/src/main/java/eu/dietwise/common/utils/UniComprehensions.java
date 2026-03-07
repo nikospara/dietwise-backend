@@ -16,6 +16,9 @@ import io.smallrye.mutiny.Uni;
  * </p>
  */
 public interface UniComprehensions {
+
+	//----------- 2 steps + optional mapper -----------
+
 	/**
 	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
 	 */
@@ -35,6 +38,19 @@ public interface UniComprehensions {
 	) {
 		return init.chain(mapper1);
 	}
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}, followed by a single {@code Uni.map} operation.
+	 */
+	static <R1, R2, R> Uni<R> forcm(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			Function<? super R2, ? extends R> finalMapper
+	) {
+		return init.flatMap(mapper1).map(finalMapper);
+	}
+
+	//----------- 3 steps + optional mapper -----------
 
 	/**
 	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
@@ -93,6 +109,8 @@ public interface UniComprehensions {
 	) {
 		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r1, r2).map(r3 -> finalMapper.apply(r1, r2, r3))));
 	}
+
+	//----------- 4 steps + optional mapper -----------
 
 	@FunctionalInterface
 	interface Function3<T1, T2, T3, R> {
@@ -170,6 +188,8 @@ public interface UniComprehensions {
 	) {
 		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r1, r2).flatMap(r3 -> mapper3.apply(r1, r2, r3))));
 	}
+
+	//----------- 5 steps + optional mapper -----------
 
 	/**
 	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.

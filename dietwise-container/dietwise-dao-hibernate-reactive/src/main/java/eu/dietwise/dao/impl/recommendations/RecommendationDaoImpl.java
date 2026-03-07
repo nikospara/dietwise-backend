@@ -5,9 +5,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 
-import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
+import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
@@ -23,35 +24,86 @@ import io.smallrye.mutiny.Uni;
  */
 @ApplicationScoped
 public class RecommendationDaoImpl implements RecommendationDao {
-	private final ReactivePersistenceContextFactory persistenceContextFactory;
+	@Override
+	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em, int age, BiologicalGender gender) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createTupleQuery();
+		var recommendationValue = q.from(RecommendationValueEntity.class);
+		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
+		var ageGroup = recommendationValue.join(RecommendationValueEntity_.ageGroup);
+		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
 
-	public RecommendationDaoImpl(ReactivePersistenceContextFactory persistenceContextFactory) {
-		this.persistenceContextFactory = persistenceContextFactory;
+		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), value));
+		q.where(
+				cb.and(
+						cb.lessThanOrEqualTo(ageGroup.get(AgeGroupEntity_.min), age),
+						cb.greaterThanOrEqualTo(ageGroup.get(AgeGroupEntity_.max), age),
+						cb.equal(recommendationValue.get(RecommendationValueEntity_.gender), gender)
+				)
+		);
+
+		return em.createQuery(q).getResultList()
+				.map(values -> values.stream()
+						.collect(Collectors.toMap(this::toRecommendation, tuple -> tuple.get(value))));
 	}
 
 	@Override
-	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(int age, BiologicalGender gender) {
-		return persistenceContextFactory.withoutTransaction(em -> {
-			var cb = em.getCriteriaBuilder();
-			var q = cb.createTupleQuery();
-			var recommendationValue = q.from(RecommendationValueEntity.class);
-			var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
-			var ageGroup = recommendationValue.join(RecommendationValueEntity_.ageGroup);
-			Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
+	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em, BiologicalGender gender) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createTupleQuery();
+		var recommendationValue = q.from(RecommendationValueEntity.class);
+		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
+		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
+		Expression<Double> average = cb.avg(value);
 
-			q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), value));
-			q.where(
-					cb.and(
-							cb.lessThanOrEqualTo(ageGroup.get(AgeGroupEntity_.min), age),
-							cb.greaterThanOrEqualTo(ageGroup.get(AgeGroupEntity_.max), age),
-							cb.equal(recommendationValue.get(RecommendationValueEntity_.gender), gender)
-					)
-			);
+		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), average));
+		q.where(cb.equal(recommendationValue.get(RecommendationValueEntity_.gender), gender))
+				.groupBy(recommendation);
 
-			return em.createQuery(q).getResultList()
-					.map(values -> values.stream()
-							.collect(Collectors.toMap(this::toRecommendation, tuple -> tuple.get(value))));
-		});
+		return em.createQuery(q).getResultList()
+				.map(values -> values.stream()
+						.collect(Collectors.toMap(this::toRecommendation, tuple -> BigDecimal.valueOf(tuple.get(average)))));
+	}
+
+	@Override
+	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em, int age) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createTupleQuery();
+		var recommendationValue = q.from(RecommendationValueEntity.class);
+		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
+		var ageGroup = recommendationValue.join(RecommendationValueEntity_.ageGroup);
+		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
+		Expression<Double> average = cb.avg(value);
+
+		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), average));
+		q.where(
+				cb.and(
+						cb.lessThanOrEqualTo(ageGroup.get(AgeGroupEntity_.min), age),
+						cb.greaterThanOrEqualTo(ageGroup.get(AgeGroupEntity_.max), age)
+				)
+		);
+		q.groupBy(recommendation);
+
+		return em.createQuery(q).getResultList()
+				.map(values -> values.stream()
+						.collect(Collectors.toMap(this::toRecommendation, tuple -> BigDecimal.valueOf(tuple.get(average)))));
+	}
+
+	@Override
+	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createTupleQuery();
+		var recommendationValue = q.from(RecommendationValueEntity.class);
+		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
+		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
+		Expression<Double> average = cb.avg(value);
+
+		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), average));
+		q.groupBy(recommendation);
+
+		return em.createQuery(q).getResultList()
+				.map(values -> values.stream()
+						.collect(Collectors.toMap(this::toRecommendation, tuple -> BigDecimal.valueOf(tuple.get(average)))));
 	}
 
 	private Recommendation toRecommendation(Tuple tuple) {

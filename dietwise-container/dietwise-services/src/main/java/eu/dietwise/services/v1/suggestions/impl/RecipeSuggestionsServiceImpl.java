@@ -16,6 +16,7 @@ import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
+import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutableSuggestion;
@@ -34,12 +35,18 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final SuggestionsAiFacade suggestionsAiFacade;
 	private final SuggestionDao suggestionDao;
+	private final SuggestionPrioritizer suggestionPrioritizer;
 
 	public RecipeSuggestionsServiceImpl(
-			ReactivePersistenceContextFactory persistenceContextFactory, SuggestionsAiFacade suggestionsAiFacade, SuggestionDao suggestionDao) {
+			ReactivePersistenceContextFactory persistenceContextFactory,
+			SuggestionsAiFacade suggestionsAiFacade,
+			SuggestionDao suggestionDao,
+			SuggestionPrioritizer suggestionPrioritizer
+	) {
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.suggestionsAiFacade = suggestionsAiFacade;
 		this.suggestionDao = suggestionDao;
+		this.suggestionPrioritizer = suggestionPrioritizer;
 	}
 
 	@Override
@@ -118,7 +125,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	}
 
 	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> suggestAlternatives(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
-		// TODO Dummy for now, implement to (a) filter the suggestions (b) fill-in the text
+		// TODO Dummy for now, implement to (a) filter the alternatives (b) fill-in the text
 		return list -> {
 			List<Suggestion> result = list.stream()
 					.filter(_ -> Math.random() < 0.8)
@@ -129,8 +136,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	}
 
 	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> prioritizeSuggestions(ReactivePersistenceTxContext tx, User user) {
-		// TODO Noop for now, implement
-		return list -> Uni.createFrom().item(list);
+		return list -> suggestionPrioritizer.prioritizeSuggestions(tx, user, list);
 	}
 
 	private Function<? super List<Suggestion>, Uni<? extends SuggestionsRecipeAssessmentMessage>> calculateScore(ReactivePersistenceTxContext tx, Recipe recipe) {

@@ -26,14 +26,27 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * It implements JUnit 5's extension API {@code AfterEachCallback} to clear the list of opened
  * transactions and sessions.
  * <p>
- * Example usage:
+ * Example usage for tests that use CDI:
  * </p>
  * {@snippet :
  * @RegisterExtension
  * @Produces
- * private MockReactivePersistenceContextFactory mockReactivePersistenceContextFactory =
+ * private final MockReactivePersistenceContextFactory mockReactivePersistenceContextFactory =
  * 	new MockReactivePersistenceContextFactory();
  * }
+ * <p>
+ * When testing without CDI, you can just {@code new} it:
+ * </p>
+ * {@snippet :
+ * @Test
+ * void someTestMethod() {
+ * 	var persistenceContextFactory = new MockReactivePersistenceContextFactory();
+ * 	//...
+ * }
+ * }
+ * <p>
+ * Or keep it as in the first example, without the {@code @Produces} annotation.
+ * </p>
  */
 public class MockReactivePersistenceContextFactory implements ReactivePersistenceContextFactory, AfterEachCallback {
 	public sealed interface PersistenceAction {
