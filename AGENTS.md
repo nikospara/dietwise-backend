@@ -67,6 +67,8 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
   - `dietwise-common/dietwise-common-testutils/src/main/java/eu/dietwise/common/test/jpa/MockReactivePersistenceContextFactory.java`
 - Use `withoutTransaction(...)` when testing read-only paths (session context).
 - Use `withTransaction(...)` when testing transactional paths and assertions on opened transactions/actions.
+- When using a value to construct test data and this value will be used again to verify, prefer to make a constant out of it.
+- When creating the same test data in many methods, prefer to make a constant; if the creation is parametric, prefer a factory method.
 
 ## Verification Checklist for Changes
 - For Maven/module changes:

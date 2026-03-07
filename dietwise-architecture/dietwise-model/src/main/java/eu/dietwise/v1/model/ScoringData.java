@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import eu.dietwise.v1.types.IngredientId;
-import eu.dietwise.v1.types.Recommendation;
+import eu.dietwise.v1.types.RecommendationComponentName;
 import eu.dietwise.v1.types.RecommendationWeight;
 import org.immutables.value.Value;
 
@@ -12,7 +12,7 @@ import org.immutables.value.Value;
 public interface ScoringData {
 	int getTotalNumberOfRecomendations();
 
-	Map<Recommendation, RecommendationWeight> getRecommendationWeights();
+	Map<RecommendationComponentName, RecommendationWeight> getRecommendationWeights();
 
-	Map<IngredientId, Set<Recommendation>> getRecommendationsPerIngredient();
+	Map<IngredientId, Set<RecommendationComponentName>> getRecommendationsPerIngredient();
 }

@@ -45,8 +45,8 @@ public class SuggestionPrioritizerImpl implements SuggestionPrioritizer {
 
 	private Function<? super PersonalInfo, Uni<? extends Map<Recommendation, BigDecimal>>> calculateWeights(ReactivePersistenceContext em) {
 		return personalInfo -> {
-			Integer age = Optional.ofNullable(personalInfo.getYearOfBirth()).map(yob -> dateTimeService.getNow().getYear() - yob).orElse(null);
-			BiologicalGender gender = personalInfo.getGender();
+			Integer age = Optional.ofNullable(personalInfo).map(PersonalInfo::getYearOfBirth).map(yob -> dateTimeService.getNow().getYear() - yob).orElse(null);
+			BiologicalGender gender = Optional.ofNullable(personalInfo).map(PersonalInfo::getGender).orElse(null);
 			// TODO Introduce a RecommendationService that caches
 			if (age != null && gender != null) {
 				return recommendationDao.findRecommendations(em, age, gender);

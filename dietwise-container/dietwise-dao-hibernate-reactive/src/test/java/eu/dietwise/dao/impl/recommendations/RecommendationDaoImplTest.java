@@ -185,7 +185,7 @@ public class RecommendationDaoImplTest {
 		assertThat(recommendations).hasSize(15);
 		assertThat(recommendations).anyMatch(rc ->
 				rc.getRecommendation().asString().equals("Decrease processed meat")
-						&& rc.getComponentForScoring().equals("processed meat")
+						&& rc.getComponentForScoring().asString().equals("processed meat")
 						&& rc.getWeight() == RecommendationWeight.LIMITED);
 	}
 

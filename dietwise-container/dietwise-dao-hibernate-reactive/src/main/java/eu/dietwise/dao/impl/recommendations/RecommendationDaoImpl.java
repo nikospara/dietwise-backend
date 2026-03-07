@@ -21,6 +21,7 @@ import eu.dietwise.services.model.recommendations.ImmutableRecommendationCompone
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
+import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
 
@@ -127,7 +128,7 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	private RecommendationComponent toRecommendationComponent(RecommendationEntity e) {
 		return ImmutableRecommendationComponent.builder()
 				.recommendation(new RecommendationImpl(e.getName()))
-				.componentForScoring(e.getComponentForScoring())
+				.componentForScoring(new RecommendationComponentNameImpl(e.getComponentForScoring()))
 				.weight(e.getWeight())
 				.explanationForLlm(Optional.ofNullable(e.getExplanationForLlm()))
 				.build();

@@ -10,7 +10,9 @@ import eu.dietwise.v1.model.Suggestion;
 @JsonTypeInfo(use = JsonTypeInfo.Id.SIMPLE_NAME, property = "type")
 @JsonSubTypes({
 		@JsonSubTypes.Type(value = RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage.class, name = "RECIPES"),
+		@JsonSubTypes.Type(value = RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage.class, name = "MORE_THAN_ONE_RECIPE"),
 		@JsonSubTypes.Type(value = RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage.class, name = "SUGGESTIONS"),
+		@JsonSubTypes.Type(value = RecipeAssessmentMessage.ScoringRecipeAssessmentMessage.class, name = "SCORING"),
 		@JsonSubTypes.Type(value = RecipeAssessmentMessage.RecipeAssessmentErrorMessage.class, name = "ERROR")
 })
 public sealed interface RecipeAssessmentMessage {
@@ -23,9 +25,7 @@ public sealed interface RecipeAssessmentMessage {
 	record MoreThanOneRecipesAssessmentMessage(int numberOfRecipes) implements RecipeAssessmentMessage {
 	}
 
-	record SuggestionsRecipeAssessmentMessage(
-			Double rating, // TODO Remove from here
-			List<Suggestion> suggestions) implements RecipeAssessmentMessage {
+	record SuggestionsRecipeAssessmentMessage(List<Suggestion> suggestions) implements RecipeAssessmentMessage {
 	}
 
 	record ScoringRecipeAssessmentMessage(ScoringData scoringData) implements RecipeAssessmentMessage {

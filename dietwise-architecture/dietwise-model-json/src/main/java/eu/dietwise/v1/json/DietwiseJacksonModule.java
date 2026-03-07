@@ -24,6 +24,7 @@ import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParamBuilderMixin;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParamMixin;
 import eu.dietwise.v1.model.RecipeMixin;
+import eu.dietwise.v1.types.RepresentableAsStringKeySerializer;
 import eu.dietwise.v1.types.RepresentableAsStringSerializer;
 
 public class DietwiseJacksonModule extends SimpleModule {
@@ -42,5 +43,6 @@ public class DietwiseJacksonModule extends SimpleModule {
 		setMixInAnnotation(ImmutableRecipeExtractionAndAssessmentParam.Builder.class, RecipeExtractionAndAssessmentParamBuilderMixin.class);
 
 		addSerializer(RepresentableAsString.class, new RepresentableAsStringSerializer());
+		addKeySerializer(RepresentableAsString.class, new RepresentableAsStringKeySerializer());
 	}
 }

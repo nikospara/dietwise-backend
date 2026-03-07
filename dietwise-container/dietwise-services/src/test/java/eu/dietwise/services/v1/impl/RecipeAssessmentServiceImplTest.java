@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -22,23 +23,27 @@ import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
+import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.AppliesTo.AppliesToIngredient;
 import eu.dietwise.v1.model.ImmutableIngredient;
 import eu.dietwise.v1.model.ImmutableRecipe;
 import eu.dietwise.v1.model.ImmutableRecipeAssessmentParam;
 import eu.dietwise.v1.model.ImmutableRecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.model.ImmutableScoringData;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.model.ScoringData;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
@@ -46,6 +51,7 @@ import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -102,9 +108,18 @@ class RecipeAssessmentServiceImplTest {
 	@Mock
 	private RecipeSuggestionsService recipeSuggestionsService;
 
+	@Mock
+	private RecipeScoringService recipeScoringService;
+
+	private RecipeAssessmentServiceImpl sut;
+
+	@BeforeEach
+	void beforeEach() {
+		sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService, recipeScoringService);
+	}
+
 	@Test
-	void assessMarkdownRecipeEmitsExtractionThenSuggestionsOnHappyPath() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
+	void assessMarkdownRecipeEmitsExtractionThenSuggestionsThenScoreOnHappyPath() {
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, LLM_FROM_TEXT)),
 				MARKDOWN
@@ -114,12 +129,13 @@ class RecipeAssessmentServiceImplTest {
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
+		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
-		assertThat(messages).hasSize(2);
+		assertThat(messages).hasSize(3);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeExtractionRecipeAssessmentMessage.class);
 		var extraction = (RecipeExtractionRecipeAssessmentMessage) messages.getFirst();
 		assertThat(extraction.pageText()).isEqualTo(MARKDOWN);
@@ -132,20 +148,21 @@ class RecipeAssessmentServiceImplTest {
 		assertThat(extraction.recipes().getFirst().recipe().getRecipeInstructions())
 				.containsExactly("Boil water", "Cook pasta");
 
-		assertThat(messages.getLast()).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
-		var suggestions = (SuggestionsRecipeAssessmentMessage) messages.getLast();
-		assertThat(suggestions.rating()).isEqualTo(2.5);
+		assertThat(messages.get(1)).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
+		var suggestions = (SuggestionsRecipeAssessmentMessage) messages.get(1);
 		assertThat(suggestions.suggestions()).hasSize(1);
 		assertThat(suggestions.suggestions().getFirst().getText()).contains(SUGGESTION_TEXT);
+
+		assertThat(messages.get(2)).isInstanceOf(ScoringRecipeAssessmentMessage.class);
 
 		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
 		verify(statisticsService).assessedRecipe(USER);
 		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
+		verify(recipeScoringService).scoreRecipe(any());
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsExtractionThenSuggestionsOnHappyPath() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD)),
 				RENDERED_MARKDOWN
@@ -155,12 +172,13 @@ class RecipeAssessmentServiceImplTest {
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
+		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
 				.await().atMost(Duration.ofSeconds(5L));
 
-		assertThat(messages).hasSize(2);
+		assertThat(messages).hasSize(3);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeExtractionRecipeAssessmentMessage.class);
 		var extraction = (RecipeExtractionRecipeAssessmentMessage) messages.getFirst();
 		assertThat(extraction.pageText()).isEqualTo(RENDERED_MARKDOWN);
@@ -168,20 +186,21 @@ class RecipeAssessmentServiceImplTest {
 		assertThat(extraction.recipes().getFirst().detectionType()).isEqualTo(JSONLD);
 		assertThat(extraction.recipes().getFirst().recipe().getName()).contains("Simple Pasta");
 
-		assertThat(messages.getLast()).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
-		var suggestions = (SuggestionsRecipeAssessmentMessage) messages.getLast();
-		assertThat(suggestions.rating()).isEqualTo(2.5);
+		assertThat(messages.get(1)).isInstanceOf(SuggestionsRecipeAssessmentMessage.class);
+		var suggestions = (SuggestionsRecipeAssessmentMessage) messages.get(1);
 		assertThat(suggestions.suggestions()).hasSize(1);
 		assertThat(suggestions.suggestions().getFirst().getText()).contains(SUGGESTION_TEXT);
+
+		assertThat(messages.get(2)).isInstanceOf(ScoringRecipeAssessmentMessage.class);
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
 		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
+		verify(recipeScoringService).scoreRecipe(any());
 	}
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsMoreThanOneRecipesMessageWhenMultipleRecipesExtracted() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(
 						new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD),
@@ -209,7 +228,6 @@ class RecipeAssessmentServiceImplTest {
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().failure(new NoRecipesDetectedException()));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
@@ -229,7 +247,6 @@ class RecipeAssessmentServiceImplTest {
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenExtractionFails() {
-		var sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService);
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().failure(new RuntimeException("Extraction failed")));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
@@ -270,6 +287,14 @@ class RecipeAssessmentServiceImplTest {
 				.recommendation(new RecommendationImpl(RECOMMENDATION))
 				.text(SUGGESTION_TEXT)
 				.build();
-		return new SuggestionsRecipeAssessmentMessage(2.5, List.of(suggestion));
+		return new SuggestionsRecipeAssessmentMessage(List.of(suggestion));
+	}
+
+	private ScoringData dummyScoringData() {
+		return ImmutableScoringData.builder()
+				.totalNumberOfRecomendations(15)
+				.recommendationWeights(Collections.emptyMap())
+				.recommendationsPerIngredient(Collections.emptyMap())
+				.build();
 	}
 }

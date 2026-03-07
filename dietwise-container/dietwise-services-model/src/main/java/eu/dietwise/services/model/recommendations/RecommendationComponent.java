@@ -3,6 +3,7 @@ package eu.dietwise.services.model.recommendations;
 import java.util.Optional;
 
 import eu.dietwise.v1.types.Recommendation;
+import eu.dietwise.v1.types.RecommendationComponentName;
 import eu.dietwise.v1.types.RecommendationWeight;
 import org.immutables.value.Value;
 
@@ -10,7 +11,7 @@ import org.immutables.value.Value;
 public interface RecommendationComponent {
 	Recommendation getRecommendation();
 
-	String getComponentForScoring();
+	RecommendationComponentName getComponentForScoring();
 
 	RecommendationWeight getWeight();
 

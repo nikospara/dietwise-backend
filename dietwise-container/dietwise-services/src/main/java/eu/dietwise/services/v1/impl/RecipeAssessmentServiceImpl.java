@@ -1,27 +1,30 @@
 package eu.dietwise.services.v1.impl;
 
+import static eu.dietwise.common.utils.UniComprehensions.forc;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import eu.dietwise.common.utils.UniComprehensions;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
+import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableIngredient;
@@ -49,12 +52,18 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private final RecipeExtractionService recipeExtractionService;
 	private final StatisticsService statisticsService;
 	private final RecipeSuggestionsService recipeSuggestionsService;
+	private final RecipeScoringService recipeScoringService;
 
 	public RecipeAssessmentServiceImpl(
-			RecipeExtractionService recipeExtractionService, StatisticsService statisticsService, RecipeSuggestionsService recipeSuggestionsService) {
+			RecipeExtractionService recipeExtractionService,
+			StatisticsService statisticsService,
+			RecipeSuggestionsService recipeSuggestionsService,
+			RecipeScoringService recipeScoringService
+	) {
 		this.recipeExtractionService = recipeExtractionService;
 		this.statisticsService = statisticsService;
 		this.recipeSuggestionsService = recipeSuggestionsService;
+		this.recipeScoringService = recipeScoringService;
 	}
 
 	@Override
@@ -73,11 +82,11 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	private Uni<? extends RecipeAssessmentMessage> assessMarkdownRecipeInternal(
 			UUID correlationId, User user, RecipeAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
-		return UniComprehensions.forc(
+		return forc(
 				recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-				assessSingleRecipe(correlationId, user, param.getUrl(), emitter)
-				// TODO Add score data calculation
+				assessSingleRecipe(correlationId, user, param.getUrl(), emitter),
+				calculateScoreData(emitter)
 		);
 	}
 
@@ -97,11 +106,11 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	private Uni<? extends RecipeAssessmentMessage> extractAndAssessRecipeFromUrlInternal(
 			UUID correlationId, User user, RecipeExtractionAndAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
-		return UniComprehensions.forc(
+		return forc(
 				recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-				assessSingleRecipe(correlationId, user, param.getUrl(), emitter)
-				// TODO Add score data calculation
+				assessSingleRecipe(correlationId, user, param.getUrl(), emitter),
+				calculateScoreData(emitter)
 		);
 	}
 
@@ -135,16 +144,24 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		};
 	}
 
+	private BiFunction<? super RecipeExtractionRecipeAssessmentMessage, ? super SuggestionsRecipeAssessmentMessage, Uni<? extends ScoringRecipeAssessmentMessage>> calculateScoreData(
+			MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+		return (message, _) -> {
+			var recipe = message.recipes().getFirst().recipe(); // guaranteed to have exactly one recipe at this point
+			return recipeScoringService.scoreRecipe(recipe)
+					.invoke(emitter::emit);
+		};
+	}
+
 	@Override
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(User user, RecipeExtractionAndAssessmentParam param) {
 		var recipe = makeDummyRecipe();
 		var recipeMsg = new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, JSONLD)), "dummy page text");
-		double rating = new Random().nextInt(10) / 2.0;
 		List<Suggestion> suggestions = List.of(
 				dummyFromTextOnly(recipe, "Dummy suggestion one"),
 				dummyFromTextOnly(recipe, "Dummy suggestion two")
 		);
-		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(rating, suggestions);
+		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(suggestions);
 		return Multi.createFrom().<RecipeAssessmentMessage>items(recipeMsg, suggestionsMsg)
 				.onItem().call(m -> Uni.createFrom().nullItem().onItem().delayIt().by(Duration.ofSeconds(3L)));
 	}

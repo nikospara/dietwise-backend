@@ -55,11 +55,11 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	}
 
 	private Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(ReactivePersistenceTxContext tx, User user, Recipe recipe) {
-		return forc(
+		return forcm(
 				readAllNecessaryData(tx),
 				extractSuggestionsForRecipe(tx, recipe),
 				prioritizeSuggestions(tx, user),
-				calculateScore(tx, recipe) // TODO Remove from here
+				SuggestionsRecipeAssessmentMessage::new
 		);
 	}
 
@@ -137,10 +137,5 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> prioritizeSuggestions(ReactivePersistenceTxContext tx, User user) {
 		return list -> suggestionPrioritizer.prioritizeSuggestions(tx, user, list);
-	}
-
-	private Function<? super List<Suggestion>, Uni<? extends SuggestionsRecipeAssessmentMessage>> calculateScore(ReactivePersistenceTxContext tx, Recipe recipe) {
-		// TODO Dummy for now, implement
-		return list -> Uni.createFrom().item(new SuggestionsRecipeAssessmentMessage(2.5, list));
 	}
 }
