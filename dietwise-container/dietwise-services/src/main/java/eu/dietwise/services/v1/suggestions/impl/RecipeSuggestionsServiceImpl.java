@@ -59,7 +59,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				readAllNecessaryData(tx),
 				extractSuggestionsForRecipe(tx, recipe),
 				prioritizeSuggestions(tx, user),
-				calculateScore(tx, recipe)
+				calculateScore(tx, recipe) // TODO Remove from here
 		);
 	}
 

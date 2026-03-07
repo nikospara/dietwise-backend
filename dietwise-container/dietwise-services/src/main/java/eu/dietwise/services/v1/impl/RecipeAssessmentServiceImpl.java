@@ -77,6 +77,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
 				assessSingleRecipe(correlationId, user, param.getUrl(), emitter)
+				// TODO Add score data calculation
 		);
 	}
 
@@ -100,6 +101,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
 				assessSingleRecipe(correlationId, user, param.getUrl(), emitter)
+				// TODO Add score data calculation
 		);
 	}
 

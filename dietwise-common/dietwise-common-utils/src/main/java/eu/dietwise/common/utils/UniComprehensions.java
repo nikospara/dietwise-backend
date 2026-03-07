@@ -50,6 +50,17 @@ public interface UniComprehensions {
 		return init.flatMap(mapper1).map(finalMapper);
 	}
 
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}, followed by a single {@code Uni.map} operation.
+	 */
+	static <R1, R2, R> Uni<R> forcm(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			BiFunction<? super R1, ? super R2, ? extends R> finalMapper
+	) {
+		return init.flatMap(r1 -> mapper1.apply(r1).map(r2 -> finalMapper.apply(r1, r2)));
+	}
+
 	//----------- 3 steps + optional mapper -----------
 
 	/**

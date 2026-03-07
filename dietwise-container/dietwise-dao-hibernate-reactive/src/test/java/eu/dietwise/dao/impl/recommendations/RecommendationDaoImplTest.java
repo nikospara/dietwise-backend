@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
+import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecommendationWeight;
@@ -167,6 +169,24 @@ public class RecommendationDaoImplTest {
 		assertThat(recommendations.get(new RecommendationImpl("Diet low in seafood omega-3 fatty acids"))).isCloseTo(new BigDecimal("0.92333"), Percentage.withPercentage(0.001));
 		assertThat(recommendations.get(new RecommendationImpl("Diet low in vegetables"))).isCloseTo(new BigDecimal("1.62833"), Percentage.withPercentage(0.001));
 		assertThat(recommendations.get(new RecommendationImpl("Diet low in whole grains"))).isCloseTo(new BigDecimal("2.03166"), Percentage.withPercentage(0.001));
+	}
+
+	@Test
+	@Order(5)
+	void testListAllRecommendationsForScoring(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		List<RecommendationComponent> recommendations =
+				factory.withoutTransaction(sut::listAllRecommendationsForScoring)
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// according to the test data
+		assertThat(recommendations).hasSize(15);
+		assertThat(recommendations).anyMatch(rc ->
+				rc.getRecommendation().asString().equals("Decrease processed meat")
+						&& rc.getComponentForScoring().equals("processed meat")
+						&& rc.getWeight() == RecommendationWeight.LIMITED);
 	}
 
 	// KEEP THIS LAST! IT MESSES WITH THE DATA
