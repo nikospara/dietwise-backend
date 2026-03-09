@@ -113,4 +113,29 @@
 			referencedColumnNames="id"
 		/>
 	</changeSet>
+
+	<changeSet id="suggestions_relate_to_recommendations" author="nikospara">
+		<createTable tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING" remarks="Ingredients introduced by an alternative">
+			<column name="alternative_ingredient_id" type="UUID" remarks="The alternative ingredient id">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING" />
+			</column>
+			<column name="recommendation_id" type="UUID" remarks="The recommendation id">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING" />
+			</column>
+		</createTable>
+		<addForeignKeyConstraint
+				baseTableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING"
+				baseColumnNames="alternative_ingredient_id"
+				constraintName="FK_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING__ALTERNATIVE_INGREDIENT_ID__ALTERNATIVE_INGREDIENT__ID"
+				referencedTableName="DW_ALTERNATIVE_INGREDIENT"
+				referencedColumnNames="id"
+		/>
+		<addForeignKeyConstraint
+				baseTableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING"
+				baseColumnNames="recommendation_id"
+				constraintName="FK_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING__RECOMMENDATION_ID__RECOMMENDATION__ID"
+				referencedTableName="DW_RECOMMENDATION"
+				referencedColumnNames="id"
+		/>
+	</changeSet>
 </databaseChangeLog>

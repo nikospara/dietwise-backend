@@ -77,7 +77,10 @@ suffix respectively.
 6. Unique constraints: `UQ_<TABLE>__<COLUMN>`, the column name is capitalized
 7. Foreign key columns: name them like `<target_table_without_prefix>_<target_column>`; minuscule as all columns
 8. Foreign key constraints: `FK_<SRC_TABLE>__<SRC_COL>__<TARGET_TABLE>__<TARGET_COL>`; capitals and table names without prefixes
-9. Indexes: `IX_<TABLE>__<COLUMN>`
+9. Join tables: Name the tables like `<SRC_TABLE>_<RELATION_NAME>`, e.g. for a relation between `PlayerEntity` objects called `friendsOrFoes`, the join table name would be `DW_PLAYER_FRIENDS_OR_FOES`.
+	- Use the "Foreign key columns" naming convention for the join table columns.
+	- In the special case where the two ends of the relation are the same entity, use the "Foreign key columns" convention for the column refering to the logical master of the relation and the name of the relation property converted to singular, e.g. `player_id` and `friend_or_foe`.
+10. Indexes: `IX_<TABLE>__<COLUMN>`
 
 **TODO:** How to deal with the name size limit of PostgreSQL? (Which is 61, see the [documentation](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS))
 
