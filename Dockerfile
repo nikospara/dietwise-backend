@@ -1,6 +1,14 @@
 # syntax=docker/dockerfile:1
 
 FROM maven:3.9.11-eclipse-temurin-25 AS build
+
+ARG QUARKUS_LANGCHAIN4J_OLLAMA_CHAT_MODEL_MODEL_ID
+ARG QUARKUS_LANGCHAIN4J_OLLAMA_EXTRACT_CHAT_MODEL_MODEL_ID
+ARG QUARKUS_LANGCHAIN4J_OLLAMA_FILTER_CHAT_MODEL_MODEL_ID
+ARG QUARKUS_LANGCHAIN4J_OLLAMA_ROLEORTECHNIQUE_CHAT_MODEL_MODEL_ID
+ARG QUARKUS_LANGCHAIN4J_OLLAMA_TRIGGERINGREDIENT_CHAT_MODEL_MODEL_ID
+ARG QUARKUS_LANGCHAIN4J_OLLAMA_INGREDIENTMATCHINRECOMMENDATIONS_CHAT_MODEL_MODEL_ID
+
 WORKDIR /workspace
 
 # Copy only POM files first so dependency resolution can be cached.
@@ -32,6 +40,14 @@ COPY pom.xml pom.xml
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -DskipTests dependency:go-offline
 
 COPY . .
+
+# The Quarkus Langchain4j model configurations (see https://docs.quarkiverse.io/quarkus-langchain4j/dev/ollama-chat-model.html#quarkus-langchain4j-ollama_quarkus-langchain4j-ollama-model-name-chat-model-model-id)
+# are build time; since we want to be able to parameterize them per deployment env, we substitute at build time.
+RUN test -n "$QUARKUS_LANGCHAIN4J_OLLAMA_EXTRACT_CHAT_MODEL_MODEL_ID" && sed -i -e "s/\(quarkus.langchain4j.ollama.extract.chat-model.model-id=\).\+$/\1$QUARKUS_LANGCHAIN4J_OLLAMA_EXTRACT_CHAT_MODEL_MODEL_ID/" dietwise-container/dietwise/src/main/resources/application.properties
+RUN test -n "$QUARKUS_LANGCHAIN4J_OLLAMA_FILTER_CHAT_MODEL_MODEL_ID" && sed -i -e "s/\(quarkus.langchain4j.ollama.filter.chat-model.model-id=\).\+$/\1$QUARKUS_LANGCHAIN4J_OLLAMA_FILTER_CHAT_MODEL_MODEL_ID/" dietwise-container/dietwise/src/main/resources/application.properties
+RUN test -n "$QUARKUS_LANGCHAIN4J_OLLAMA_ROLEORTECHNIQUE_CHAT_MODEL_MODEL_ID" && sed -i -e "s/\(quarkus.langchain4j.ollama.roleOrTechnique.chat-model.model-id=\).\+$/\1$QUARKUS_LANGCHAIN4J_OLLAMA_ROLEORTECHNIQUE_CHAT_MODEL_MODEL_ID/" dietwise-container/dietwise/src/main/resources/application.properties
+RUN test -n "$QUARKUS_LANGCHAIN4J_OLLAMA_TRIGGERINGREDIENT_CHAT_MODEL_MODEL_ID" && sed -i -e "s/\(quarkus.langchain4j.ollama.triggerIngredient.chat-model.model-id=\).\+$/\1$QUARKUS_LANGCHAIN4J_OLLAMA_TRIGGERINGREDIENT_CHAT_MODEL_MODEL_ID/" dietwise-container/dietwise/src/main/resources/application.properties
+RUN test -n "$QUARKUS_LANGCHAIN4J_OLLAMA_INGREDIENTMATCHINRECOMMENDATIONS_CHAT_MODEL_MODEL_ID" && sed -i -e "s/\(quarkus.langchain4j.ollama.ingredientMatchInRecommendations.chat-model.model-id=\).\+$/\1$QUARKUS_LANGCHAIN4J_OLLAMA_INGREDIENTMATCHINRECOMMENDATIONS_CHAT_MODEL_MODEL_ID/" dietwise-container/dietwise/src/main/resources/application.properties
 
 # Build the full multi-module project and skip test execution.
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp clean package -DskipTests
