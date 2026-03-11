@@ -197,7 +197,7 @@ You need to make sure the IDE runner resolves workspace artifacts.
 ## Releases
 
 ```bash
-mvn versions:set -DnewVersion=x.y.z -DgenerateBackupPoms=false
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=x.y.z
 git commit -am "Version x.y.z"
 git tag -am "Version x.y.z" vx.y.z
 git push --tags

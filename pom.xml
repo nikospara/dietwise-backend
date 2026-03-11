@@ -27,7 +27,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.32.1</version.quarkus.platform>
+		<version.quarkus.platform>3.32.2</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.assertj>3.27.7</version.assertj>
@@ -35,7 +35,7 @@
 		<version.hibernate-validator-cdi>9.1.0.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
 		<version.keycloak>26.5.4</version.keycloak>
-		<version.liquibase>5.0.1</version.liquibase>
+		<version.liquibase>5.0.2</version.liquibase>
 		<version.org.immutables>2.12.1</version.org.immutables>
 		<version.postgres>42.7.10</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
 		<version.quarkus-langchain4j>1.7.4</version.quarkus-langchain4j>
@@ -219,38 +219,10 @@
 						</annotationProcessorPaths>
 					</configuration>
 				</plugin>
-				<!--
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-dependency-plugin</artifactId>
-					<version>3.2.0</version>
-				</plugin>
-				-->
 				<plugin>
 					<artifactId>maven-deploy-plugin</artifactId>
 					<version>3.1.4</version>
 				</plugin>
-				<!-- TODO The plugin and configuration is from Quarkus. Double check if it is needed, and if the configuration applies at this level, or just in the Quarkus modules.
-				<plugin>
-					<artifactId>maven-failsafe-plugin</artifactId>
-					<version>3.5.3</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>integration-test</goal>
-								<goal>verify</goal>
-							</goals>
-						</execution>
-					</executions>
-					<configuration>
-						<systemPropertyVariables>
-							<native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
-							<java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-							<maven.home>${maven.home}</maven.home>
-						</systemPropertyVariables>
-					</configuration>
-				</plugin>
-				-->
 				<plugin>
 					<artifactId>maven-install-plugin</artifactId>
 					<version>3.1.4</version>
@@ -261,7 +233,7 @@
 				</plugin>
 				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>3.4.0</version>
+					<version>3.5.0</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-site-plugin</artifactId>
