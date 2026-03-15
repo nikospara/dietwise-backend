@@ -13,6 +13,7 @@ import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
@@ -70,22 +71,23 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(User user, RecipeAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
 		LOG.info("assessMarkdownRecipe <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
+		String applicationId = user.getApplicationId().orElseThrow(IllegalStateException::new);
 		return Multi.createFrom().emitter(emitter ->
 				Uni.combine().all()
 						.unis(
 								statisticsService.assessedRecipe(user),
-								assessMarkdownRecipeInternal(correlationId, user, param, emitter)
+								assessMarkdownRecipeInternal(correlationId, applicationId, user, param, emitter)
 						).with((x, message) -> message)
 						.subscribe().with(x -> emitter.complete(), handleError(emitter))
 		);
 	}
 
 	private Uni<? extends RecipeAssessmentMessage> assessMarkdownRecipeInternal(
-			UUID correlationId, User user, RecipeAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+			UUID correlationId, String applicationId, HasUserId hasUserId, RecipeAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return forc(
 				recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-				assessSingleRecipe(correlationId, user, param.getUrl(), emitter),
+				assessSingleRecipe(correlationId, applicationId, hasUserId, param.getUrl(), emitter),
 				calculateScoreData(emitter)
 		);
 	}
@@ -94,22 +96,23 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(User user, RecipeExtractionAndAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
 		LOG.info("extractAndAssessRecipeFromUrl <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
+		String applicationId = user.getApplicationId().orElseThrow(IllegalStateException::new);
 		return Multi.createFrom().emitter(emitter ->
 				Uni.combine().all()
 						.unis(
 								statisticsService.assessedRecipe(user),
-								extractAndAssessRecipeFromUrlInternal(correlationId, user, param, emitter)
+								extractAndAssessRecipeFromUrlInternal(correlationId, applicationId, user, param, emitter)
 						).with((x, message) -> message)
 						.subscribe().with(x -> emitter.complete(), handleError(emitter))
 		);
 	}
 
 	private Uni<? extends RecipeAssessmentMessage> extractAndAssessRecipeFromUrlInternal(
-			UUID correlationId, User user, RecipeExtractionAndAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+			UUID correlationId, String applicationId, HasUserId hasUserId, RecipeExtractionAndAssessmentParam param, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return forc(
 				recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				emitRecipeExtractionMessageOrNoRecipesError(correlationId, param.getUrl(), emitter),
-				assessSingleRecipe(correlationId, user, param.getUrl(), emitter),
+				assessSingleRecipe(correlationId, applicationId, hasUserId, param.getUrl(), emitter),
 				calculateScoreData(emitter)
 		);
 	}
@@ -128,7 +131,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private Function<? super RecipeExtractionRecipeAssessmentMessage, Uni<? extends SuggestionsRecipeAssessmentMessage>> assessSingleRecipe(
-			UUID correlationId, User user, String url, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
+			UUID correlationId, String applicationId, HasUserId hasUserId, String url, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return recipeExtractionRecipeAssessmentMessage -> {
 			int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
 			if (numberOfRecipes != 1) {
@@ -137,9 +140,9 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
 			} else {
 				Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
-				return recipeSuggestionsService.makeSuggestions(user, recipe)
-						.invoke(emitter::emit);
-						// TODO Update suggestion statistics
+				return recipeSuggestionsService.makeSuggestions(hasUserId, recipe)
+						.invoke(emitter::emit)
+						.call(message -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, message));
 			}
 		};
 	}

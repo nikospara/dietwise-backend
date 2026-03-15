@@ -5,13 +5,15 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
-import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.HasUserId;
+import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
@@ -23,6 +25,7 @@ import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.HasSuggestionTemplateIds;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
@@ -36,29 +39,32 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private final SuggestionsAiFacade suggestionsAiFacade;
 	private final SuggestionDao suggestionDao;
 	private final SuggestionPrioritizer suggestionPrioritizer;
+	private final UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
 
 	public RecipeSuggestionsServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
 			SuggestionsAiFacade suggestionsAiFacade,
 			SuggestionDao suggestionDao,
-			SuggestionPrioritizer suggestionPrioritizer
+			SuggestionPrioritizer suggestionPrioritizer,
+			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.suggestionsAiFacade = suggestionsAiFacade;
 		this.suggestionDao = suggestionDao;
 		this.suggestionPrioritizer = suggestionPrioritizer;
+		this.userSuggestionStatsEntityDao = userSuggestionStatsEntityDao;
 	}
 
 	@Override
-	public Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(User user, Recipe recipe) {
-		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, user, recipe));
+	public Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(HasUserId hasUserId, Recipe recipe) {
+		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, hasUserId, recipe));
 	}
 
-	private Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(ReactivePersistenceTxContext tx, User user, Recipe recipe) {
+	private Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, Recipe recipe) {
 		return forcm(
 				readAllNecessaryData(tx),
 				extractSuggestionsForRecipe(tx, recipe),
-				prioritizeSuggestions(tx, user),
+				prioritizeSuggestions(tx, hasUserId),
 				SuggestionsRecipeAssessmentMessage::new
 		);
 	}
@@ -135,7 +141,21 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		};
 	}
 
-	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> prioritizeSuggestions(ReactivePersistenceTxContext tx, User user) {
-		return list -> suggestionPrioritizer.prioritizeSuggestions(tx, user, list);
+	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> prioritizeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
+		return list -> suggestionPrioritizer.prioritizeSuggestions(tx, hasUserId, list);
+	}
+
+	@Override
+	public Uni<Void> increaseTimesSuggested(UUID correlationId, String applicationId, HasUserId hasUserId, HasSuggestionTemplateIds suggestions) {
+		return persistenceContextFactory.withTransaction(tx ->
+				Multi.createFrom().iterable(suggestions.getSuggestionTemplateIds())
+						.onItem().transformToUniAndConcatenate(sid -> userSuggestionStatsEntityDao.increaseTimesSuggested(tx, applicationId, hasUserId, sid))
+						.onItem().ignoreAsUni()
+						.onFailure()
+						.recoverWithItem(t -> {
+							LOG.error("Failed to increase times suggested for user <{}> {}: {}", correlationId, hasUserId, t.getMessage(), t);
+							return null;
+						})
+		);
 	}
 }

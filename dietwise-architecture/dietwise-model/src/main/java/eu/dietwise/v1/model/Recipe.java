@@ -13,7 +13,7 @@ public interface Recipe {
 
 	List<Ingredient> getRecipeIngredients();
 
-	List<String> getRecipeInstructions(); // TODO Must reference ingredient
+	List<String> getRecipeInstructions();
 
 	Optional<String> getText();
 }

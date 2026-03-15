@@ -9,11 +9,13 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.dao.jpa.UserEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
 import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
@@ -39,6 +41,8 @@ public class UserSuggestionStatsEntityDaoImplTest {
 			new GenericSuggestionTemplateId("90984ed6-5e6b-4381-ac0d-92b6dd3cf503");
 	private static final SuggestionTemplateId SUGGESTION_ID_2 =
 			new GenericSuggestionTemplateId("ce09b981-0d78-499a-9430-42a324d665a4");
+	private static final SuggestionTemplateId SUGGESTION_ID_NOT_EXISTING =
+			new GenericSuggestionTemplateId("11111111-0000-2222-3333-444444444444");
 
 	private static final String APPLICATION_ID = "recipewatch";
 
@@ -84,27 +88,27 @@ public class UserSuggestionStatsEntityDaoImplTest {
 
 		Integer value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(0);
+		assertThat(value).isEqualTo(1);
 		value = factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(1);
+		assertThat(value).isEqualTo(2);
 
 		value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(0);
+		assertThat(value).isEqualTo(1);
 		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(1);
+		assertThat(value).isEqualTo(0);
 		value = factory.withTransaction(tx -> sut.decreaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
 
 		value = factory.withTransaction(tx -> sut.increaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(0);
+		assertThat(value).isEqualTo(1);
 		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(value).isEqualTo(1);
+		assertThat(value).isEqualTo(0);
 		value = factory.withTransaction(tx -> sut.decreaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(value).isEqualTo(0);
@@ -133,6 +137,39 @@ public class UserSuggestionStatsEntityDaoImplTest {
 		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.retrieveTotalSuggestionStats(tx, APPLICATION_ID, ids))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
 				.hasMessageContaining("Too many suggestion ids");
+	}
+
+	@Test
+	@Order(3)
+	void testAcceptedPlusRejectedCannotExceedSuggested(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new UserSuggestionStatsEntityDaoImpl();
+		var userId = new UserIdImpl(USER_ID.toString());
+
+		Integer value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(value).isEqualTo(1);
+		value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(value).isEqualTo(2);
+		value = factory.withTransaction(tx -> sut.increaseTimesAccepted(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(value).withFailMessage("Cannot accept + reject more times than suggested").isEqualTo(2);
+		value = factory.withTransaction(tx -> sut.increaseTimesRejected(tx, APPLICATION_ID, userId, SUGGESTION_ID_1))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(value).withFailMessage("Cannot accept + reject more times than suggested").isEqualTo(0);
+	}
+
+	@Test
+	@Order(4)
+	void testNonExistingSuggestionTemplateId(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new UserSuggestionStatsEntityDaoImpl();
+		var userId = new UserIdImpl(USER_ID.toString());
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.increaseTimesSuggested(tx, APPLICATION_ID, userId, SUGGESTION_ID_NOT_EXISTING))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.matches(t -> t instanceof EntityNotFoundException enf && enf.getEntityClass() == SuggestionTemplateEntity.class && enf.getEntityId().equals(SUGGESTION_ID_NOT_EXISTING.asUuid()));
 	}
 
 	private void assertZeroStats(SuggestionStats stats) {

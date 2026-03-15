@@ -18,6 +18,7 @@ import java.util.stream.IntStream;
 
 import eu.dietwise.common.v1.model.ImmutableUser;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.services.v1.StatisticsService;
@@ -45,6 +46,7 @@ import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.ScoringData;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.HasSuggestionTemplateIds;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -54,6 +56,7 @@ import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -129,6 +132,7 @@ class RecipeAssessmentServiceImplTest {
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
+		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
@@ -159,6 +163,13 @@ class RecipeAssessmentServiceImplTest {
 		verify(statisticsService).assessedRecipe(USER);
 		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
 		verify(recipeScoringService).scoreRecipe(any());
+		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
+		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
+		var hasSuggestionTemplateIdsCaptor = ArgumentCaptor.forClass(HasSuggestionTemplateIds.class);
+		verify(recipeSuggestionsService).increaseTimesSuggested(any(), applicationIdCaptor.capture(), hasUserIdCaptor.capture(), hasSuggestionTemplateIdsCaptor.capture());
+		assertThat(applicationIdCaptor.getValue()).isEqualTo(APPLICATION_ID);
+		assertThat(hasUserIdCaptor.getValue().getId().asString()).isEqualTo(USER_UUID.toString());
+		assertThat(hasSuggestionTemplateIdsCaptor.getValue().getSuggestionTemplateIds()).containsExactlyInAnyOrder(new GenericSuggestionTemplateId(SUGGESTION_ID));
 	}
 
 	@Test
@@ -172,6 +183,7 @@ class RecipeAssessmentServiceImplTest {
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
+		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
@@ -197,6 +209,13 @@ class RecipeAssessmentServiceImplTest {
 		verify(statisticsService).assessedRecipe(USER);
 		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
 		verify(recipeScoringService).scoreRecipe(any());
+		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
+		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
+		var hasSuggestionTemplateIdsCaptor = ArgumentCaptor.forClass(HasSuggestionTemplateIds.class);
+		verify(recipeSuggestionsService).increaseTimesSuggested(any(), applicationIdCaptor.capture(), hasUserIdCaptor.capture(), hasSuggestionTemplateIdsCaptor.capture());
+		assertThat(applicationIdCaptor.getValue()).isEqualTo(APPLICATION_ID);
+		assertThat(hasUserIdCaptor.getValue().getId().asString()).isEqualTo(USER_UUID.toString());
+		assertThat(hasSuggestionTemplateIdsCaptor.getValue().getSuggestionTemplateIds()).containsExactlyInAnyOrder(new GenericSuggestionTemplateId(SUGGESTION_ID));
 	}
 
 	@Test

@@ -41,18 +41,18 @@ public interface UserSuggestionStatsEntityDao {
 	Uni<Map<SuggestionTemplateId, SuggestionStats>> retrieveUserSuggestionStats(
 			ReactivePersistenceContext em, String applicationId, HasUserId userId, Set<SuggestionTemplateId> ids);
 
-	/** Increase times, return previous value. */
+	/** Increase times, return new value. */
 	Uni<Integer> increaseTimesSuggested(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId);
 
-	/** Increase times, return previous value. */
+	/** Increase times, return new value, does not increment if times accepted plus times rejected is greater than times suggested. */
 	Uni<Integer> increaseTimesAccepted(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId);
 
-	/** Decrease times, return previous value. */
+	/** Decrease times, return new value, does not decrement below zero. */
 	Uni<Integer> decreaseTimesAccepted(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId);
 
-	/** Increase times, return previous value. */
+	/** Increase times, return new value, does not increment if times accepted plus times rejected is greater than times suggested. */
 	Uni<Integer> increaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId);
 
-	/** Decrease times, return previous value. */
+	/** Decrease times, return new value, does not decrement below zero. */
 	Uni<Integer> decreaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId);
 }

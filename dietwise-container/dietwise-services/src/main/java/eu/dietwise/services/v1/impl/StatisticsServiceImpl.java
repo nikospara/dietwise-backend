@@ -11,20 +11,33 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.statistics.UserStatsEntityDao;
+import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
+import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.nondomain.DateTimeService;
 import eu.dietwise.services.v1.StatisticsService;
+import eu.dietwise.v1.types.SuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class StatisticsServiceImpl implements StatisticsService {
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final UserStatsEntityDao userStatsEntityDao;
+	private final UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
 	private final DateTimeService dateTimeService;
+	private final Authorization authorization;
 
-	public StatisticsServiceImpl(ReactivePersistenceContextFactory persistenceContextFactory, UserStatsEntityDao userStatsEntityDao, DateTimeService dateTimeService) {
+	public StatisticsServiceImpl(
+			ReactivePersistenceContextFactory persistenceContextFactory,
+			UserStatsEntityDao userStatsEntityDao,
+			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao,
+			DateTimeService dateTimeService,
+			Authorization authorization
+	) {
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.userStatsEntityDao = userStatsEntityDao;
+		this.userSuggestionStatsEntityDao = userSuggestionStatsEntityDao;
 		this.dateTimeService = dateTimeService;
+		this.authorization = authorization;
 	}
 
 	@Override
@@ -56,6 +69,42 @@ public class StatisticsServiceImpl implements StatisticsService {
 		UUID userId = UUID.fromString(user.getId().asString());
 		return persistenceContextFactory.withTransaction(tx ->
 				userStatsEntityDao.increaseRecipesAssessed(tx, applicationId, userId).replaceWith(user)
+		);
+	}
+
+	@Override
+	public Uni<Integer> increaseTimesAccepted(User user, SuggestionTemplateId suggestionId) {
+		authorization.requireLogin(user);
+		String applicationId = authorization.requireApplicationId(user);
+		return persistenceContextFactory.withTransaction(tx ->
+				userSuggestionStatsEntityDao.increaseTimesAccepted(tx, applicationId, user, suggestionId)
+		);
+	}
+
+	@Override
+	public Uni<Integer> decreaseTimesAccepted(User user, SuggestionTemplateId suggestionId) {
+		authorization.requireLogin(user);
+		String applicationId = authorization.requireApplicationId(user);
+		return persistenceContextFactory.withTransaction(tx ->
+				userSuggestionStatsEntityDao.decreaseTimesAccepted(tx, applicationId, user, suggestionId)
+		);
+	}
+
+	@Override
+	public Uni<Integer> increaseTimesRejected(User user, SuggestionTemplateId suggestionId) {
+		authorization.requireLogin(user);
+		String applicationId = authorization.requireApplicationId(user);
+		return persistenceContextFactory.withTransaction(tx ->
+				userSuggestionStatsEntityDao.increaseTimesRejected(tx, applicationId, user, suggestionId)
+		);
+	}
+
+	@Override
+	public Uni<Integer> decreaseTimesRejected(User user, SuggestionTemplateId suggestionId) {
+		authorization.requireLogin(user);
+		String applicationId = authorization.requireApplicationId(user);
+		return persistenceContextFactory.withTransaction(tx ->
+				userSuggestionStatsEntityDao.decreaseTimesRejected(tx, applicationId, user, suggestionId)
 		);
 	}
 }

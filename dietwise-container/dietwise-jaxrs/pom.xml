@@ -16,6 +16,12 @@
 	<dependencies>
 		<!-- PROJECT -->
 		<dependency>
+			<!-- Needed to map the DAO exceptions -->
+			<groupId>eu.dietwise</groupId>
+			<artifactId>dietwise-common-dao-reactive</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-model</artifactId>
 			<version>${project.version}</version>

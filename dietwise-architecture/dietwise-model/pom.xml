@@ -23,6 +23,12 @@
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
+		<!-- SPECS -->
+		<dependency>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+		</dependency>
+
 		<!-- OTHER -->
 		<dependency>
 			<groupId>org.immutables</groupId>

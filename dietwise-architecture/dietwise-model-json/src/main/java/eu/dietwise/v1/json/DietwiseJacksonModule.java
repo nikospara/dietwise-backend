@@ -9,6 +9,7 @@ import eu.dietwise.v1.model.ImmutablePersonalInfo;
 import eu.dietwise.v1.model.ImmutableRecipe;
 import eu.dietwise.v1.model.ImmutableRecipeAssessmentParam;
 import eu.dietwise.v1.model.ImmutableRecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.model.ImmutableStatisticsParam;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.IngredientBuilderMixin;
 import eu.dietwise.v1.model.IngredientMixin;
@@ -24,8 +25,13 @@ import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParamBuilderMixin;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParamMixin;
 import eu.dietwise.v1.model.RecipeMixin;
+import eu.dietwise.v1.model.StatisticsParam;
+import eu.dietwise.v1.model.StatisticsParamBuilderMixin;
+import eu.dietwise.v1.model.StatisticsParamMixin;
 import eu.dietwise.v1.types.RepresentableAsStringKeySerializer;
 import eu.dietwise.v1.types.RepresentableAsStringSerializer;
+import eu.dietwise.v1.types.SuggestionTemplateId;
+import eu.dietwise.v1.types.SuggestionTemplateIdMixin;
 
 public class DietwiseJacksonModule extends SimpleModule {
 	public DietwiseJacksonModule() {
@@ -41,6 +47,9 @@ public class DietwiseJacksonModule extends SimpleModule {
 		setMixInAnnotation(ImmutableRecipeAssessmentParam.Builder.class, RecipeAssessmentParamBuilderMixin.class);
 		setMixInAnnotation(RecipeExtractionAndAssessmentParam.class, RecipeExtractionAndAssessmentParamMixin.class);
 		setMixInAnnotation(ImmutableRecipeExtractionAndAssessmentParam.Builder.class, RecipeExtractionAndAssessmentParamBuilderMixin.class);
+		setMixInAnnotation(StatisticsParam.class, StatisticsParamMixin.class);
+		setMixInAnnotation(ImmutableStatisticsParam.Builder.class, StatisticsParamBuilderMixin.class);
+		setMixInAnnotation(SuggestionTemplateId.class, SuggestionTemplateIdMixin.class);
 
 		addSerializer(RepresentableAsString.class, new RepresentableAsStringSerializer());
 		addKeySerializer(RepresentableAsString.class, new RepresentableAsStringKeySerializer());

@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.dao.PersonalInfoDao;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.nondomain.DateTimeService;
@@ -35,9 +36,9 @@ public class SuggestionPrioritizerImpl implements SuggestionPrioritizer {
 	}
 
 	@Override
-	public Uni<List<Suggestion>> prioritizeSuggestions(ReactivePersistenceContext em, User user, List<Suggestion> suggestions) {
+	public Uni<List<Suggestion>> prioritizeSuggestions(ReactivePersistenceContext em, HasUserId hasUserId, List<Suggestion> suggestions) {
 		return forcm(
-				personalInfoDao.findByUser(em, user),
+				personalInfoDao.findByUser(em, hasUserId),
 				calculateWeights(em),
 				orderSuggestionsAccordingToWeights(suggestions)
 		);
