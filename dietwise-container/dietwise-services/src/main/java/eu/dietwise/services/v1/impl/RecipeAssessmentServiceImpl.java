@@ -141,8 +141,9 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			} else {
 				Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
 				return recipeSuggestionsService.makeSuggestions(hasUserId, recipe)
-						.invoke(emitter::emit)
-						.call(message -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, message));
+						.call(message -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, message))
+						.flatMap(message -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, message))
+						.invoke(emitter::emit);
 			}
 		};
 	}

@@ -8,6 +8,7 @@ import eu.dietwise.v1.types.IngredientId;
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecommendationComponentName;
 import eu.dietwise.v1.types.RuleId;
+import eu.dietwise.v1.types.SuggestionStats;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -21,6 +22,12 @@ public interface Suggestion extends SuggestionTemplate {
 	Optional<String> getRationale();
 
 	Set<RecommendationComponentName> getAlternativeComponentNames();
+
+	@Nullable
+	SuggestionStats getTotalSuggestionStats();
+
+	@Nullable
+	SuggestionStats getUserSuggestionStats();
 
 	@Nullable
 	String getText();

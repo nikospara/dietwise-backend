@@ -5,6 +5,8 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -26,6 +28,8 @@ import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
+import eu.dietwise.v1.types.SuggestionStats;
+import eu.dietwise.v1.types.SuggestionTemplateId;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
@@ -134,7 +138,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		// TODO Dummy for now, implement to (a) filter the alternatives (b) fill-in the text
 		return list -> {
 			List<Suggestion> result = list.stream()
-					.filter(_ -> Math.random() < 0.8)
+//					.filter(_ -> Math.random() < 0.8)
 					.map(s -> (Suggestion) ImmutableSuggestion.copyOf(s).withText("We suggest: " + s.getAlternative().asString() + " instead of: " + ingredient.getNameInRecipe()))
 					.toList();
 			return Uni.createFrom().item(result);
@@ -157,5 +161,30 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 							return null;
 						})
 		);
+	}
+
+	@Override
+	public Uni<SuggestionsRecipeAssessmentMessage> enrichWithStatistics(UUID correlationId, String applicationId, HasUserId hasUserId, SuggestionsRecipeAssessmentMessage message) {
+		Set<SuggestionTemplateId> suggestionIds = message.getSuggestionTemplateIds();
+		return persistenceContextFactory.withoutTransaction(em ->
+				forcm(
+						userSuggestionStatsEntityDao.retrieveUserSuggestionStats(em, applicationId, hasUserId, suggestionIds),
+						_ -> userSuggestionStatsEntityDao.retrieveTotalSuggestionStats(em, applicationId, suggestionIds),
+						(u, t) -> enrichWithStatistics(message, u, t)
+				)
+		);
+	}
+
+	private SuggestionsRecipeAssessmentMessage enrichWithStatistics(
+			SuggestionsRecipeAssessmentMessage message,
+			Map<SuggestionTemplateId, SuggestionStats> userStats,
+			Map<SuggestionTemplateId, SuggestionStats> totalStats
+	) {
+		List<Suggestion> enrichedSuggestions = message.suggestions().stream().map(s -> {
+			SuggestionStats userStatsForSuggestion = userStats.getOrDefault(s.getId(), SuggestionStats.ALL_ZEROES);
+			SuggestionStats totalStatsForSuggestion = totalStats.getOrDefault(s.getId(), SuggestionStats.ALL_ZEROES);
+			return (Suggestion) ImmutableSuggestion.builder().from(s).userSuggestionStats(userStatsForSuggestion).totalSuggestionStats(totalStatsForSuggestion).build();
+		}).toList();
+		return new SuggestionsRecipeAssessmentMessage(enrichedSuggestions);
 	}
 }

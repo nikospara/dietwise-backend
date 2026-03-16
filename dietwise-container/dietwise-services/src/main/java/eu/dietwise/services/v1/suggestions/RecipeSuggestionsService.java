@@ -15,4 +15,6 @@ public interface RecipeSuggestionsService {
 	 * Try to increase the times each suggestion was offered. Will log any failures silently.
 	 */
 	Uni<Void> increaseTimesSuggested(UUID correlationId, String applicationId, HasUserId hasUserId, HasSuggestionTemplateIds suggestions);
+
+	Uni<SuggestionsRecipeAssessmentMessage> enrichWithStatistics(UUID correlationId, String applicationId, HasUserId hasUserId, SuggestionsRecipeAssessmentMessage message);
 }
