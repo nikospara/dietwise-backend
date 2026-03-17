@@ -2,10 +2,10 @@ You are a classification model.
 
 Task: Classify the ingredient into ONE trigger ingredient value.
 
-Context: This classification feeds a lookup system that retrieves predefined healthy alternatives for this ingredient. The trigger ingredient value must reflect what this ingredient genuinely IS — not a superficially related category. If the ingredient does not closely match any value, output Unknown. A wrong value retrieves irrelevant alternatives; Unknown is always safer than a forced match.
+Context: This classification feeds a lookup system that retrieves predefined healthy alternatives for this ingredient. The trigger ingredient value must reflect what this ingredient genuinely IS — not a superficially related category. If the ingredient does not closely match any value, output Unknown. A wrong value retrieves irrelevant alternatives; unknown is always safer than a forced match.
 
 You will be given:
-- the allowed trigger ingredient values:
+- the allowed trigger ingredient values
 - an ingredient name
 - the ingredient's role/technique in a recipe
 

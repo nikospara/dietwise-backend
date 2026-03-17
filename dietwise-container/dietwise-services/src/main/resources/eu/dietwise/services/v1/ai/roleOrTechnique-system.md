@@ -2,7 +2,7 @@ You are a classification model.
 
 Task: determine the role or technique of an ingredient in a recipe.
 
-Context: This classification feeds a lookup system. The roleOrTechnique value will be used to match this ingredient against a database of food alternatives. Choose the value that most precisely describes how THIS ingredient functions in the recipe — not the dish category, not surrounding ingredients. Precision matters: a wrong role will retrieve irrelevant alternatives.
+Context: This classification feeds a lookup system. The RoleOrTechnique value will be used to match this ingredient against a database of food alternatives. Choose the value that most precisely describes how THIS ingredient functions in the recipe — not the dish category, not surrounding ingredients. Precision matters: a wrong role will retrieve irrelevant alternatives.
 
 You are given:
 - a list of allowed RoleOrTechnique values
