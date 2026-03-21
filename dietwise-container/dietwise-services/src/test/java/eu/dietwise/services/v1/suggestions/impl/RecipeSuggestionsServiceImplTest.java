@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,6 +18,8 @@ import eu.dietwise.common.v1.types.UserId;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
+import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
+import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
@@ -28,12 +31,14 @@ import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
+import eu.dietwise.v1.types.RecommendationWeight;
 import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
+import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
@@ -60,6 +65,10 @@ class RecipeSuggestionsServiceImplTest {
 			.addRecipeIngredients(ImmutableIngredient.builder().id(new GenericIngredientId("ingredient-1")).nameInRecipe(INGREDIENT_NAME).build())
 			.addRecipeInstructions("Mix ingredients")
 			.build();
+	private static final Map<String, RecommendationComponent> RECOMMENDATIONS = Map.of(
+			"fiber", recommendationComponent("Fiber", RecommendationWeight.ENCOURAGED, "High-fiber foods"),
+			"sodium", recommendationComponent("Sodium", RecommendationWeight.LIMITED, null)
+	);
 
 	@Mock
 	private SuggestionsAiFacade suggestionsAiFacade;
@@ -84,6 +93,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
 		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
 		when(suggestionsAiFacade.convertInstructionsToMarkdownList(eq(RECIPE.getRecipeInstructions()))).thenReturn(INSTRUCTIONS_MARKDOWN);
 		when(suggestionsAiFacade.assessIngredientRole(ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
@@ -121,6 +131,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
 		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("flour", triggerIngredient)));
 		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
 		when(suggestionsAiFacade.convertInstructionsToMarkdownList(eq(RECIPE.getRecipeInstructions()))).thenReturn(INSTRUCTIONS_MARKDOWN);
 		when(suggestionsAiFacade.assessIngredientRole(ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
@@ -209,6 +220,16 @@ class RecipeSuggestionsServiceImplTest {
 				.ruleId(new GenericRuleId("rule-" + suffix))
 				.recommendation(new RecommendationImpl("recommendation-" + suffix))
 				.text("text-" + suffix)
+				.build();
+	}
+
+	private static RecommendationComponent recommendationComponent(
+			String componentName, RecommendationWeight weight, String explanationForLlm) {
+		return ImmutableRecommendationComponent.builder()
+				.recommendation(new RecommendationImpl(componentName + "-recommendation"))
+				.componentForScoring(new RecommendationComponentNameImpl(componentName))
+				.weight(weight)
+				.explanationForLlm(Optional.ofNullable(explanationForLlm))
 				.build();
 	}
 }

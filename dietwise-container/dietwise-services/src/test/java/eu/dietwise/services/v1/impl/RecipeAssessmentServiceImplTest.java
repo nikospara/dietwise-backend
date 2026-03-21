@@ -133,6 +133,7 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
+		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
 		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
@@ -184,6 +185,7 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
+		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
 		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)

@@ -1,5 +1,7 @@
 package eu.dietwise.services.v1.suggestions.impl;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,9 +11,11 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.dao.suggestions.AlternativeIngredientDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
+import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
@@ -28,6 +32,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final RoleOrTechniqueDao roleOrTechniqueDao;
 	private final TriggerIngredientDao triggerIngredientDao;
 	private final AlternativeIngredientDao alternativeIngredientDao;
+	private final RecommendationDao recommendationDao;
 	private final IngredientRoleAiService ingredientRoleAiService;
 	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
 
@@ -39,12 +44,14 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			RoleOrTechniqueDao roleOrTechniqueDao,
 			TriggerIngredientDao triggerIngredientDao,
 			AlternativeIngredientDao alternativeIngredientDao,
+			RecommendationDao recommendationDao,
 			IngredientRoleAiService ingredientRoleAiService,
 			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
 		this.alternativeIngredientDao = alternativeIngredientDao;
+		this.recommendationDao = recommendationDao;
 		this.ingredientRoleAiService = ingredientRoleAiService;
 		this.triggerIngredientMatcherAiService = triggerIngredientMatcherAiService;
 	}
@@ -52,7 +59,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<Map<String, RoleOrTechnique>> retrieveAllRolesKeyedByNormalizedName(ReactivePersistenceContext em) {
 		return cachedRoles.getOrLoad(() -> roleOrTechniqueDao.findAll(em)
-				.map(list -> list.stream().collect(Collectors.toMap(
+				.map(list -> list.stream().collect(toMap(
 						x -> normalizeRoleName(x.getName()),
 						Function.identity(),
 						(existing, _) -> existing,
@@ -78,7 +85,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<Map<String, TriggerIngredient>> retrieveAllTriggerIngredientsKeyedByNormalizedName(ReactivePersistenceContext em) {
 		return cachedTriggerIngredients.getOrLoad(() -> triggerIngredientDao.findAll(em)
-				.map(list -> list.stream().collect(Collectors.toMap(
+				.map(list -> list.stream().collect(toMap(
 						x -> normalizeRoleName(x.getName()),
 						Function.identity(),
 						(existing, _) -> existing,
@@ -99,12 +106,22 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em) {
 		return cachedAlternatives.getOrLoad(() -> alternativeIngredientDao.findAll(em)
-				.map(list -> list.stream().collect(Collectors.toMap(
+				.map(list -> list.stream().collect(toMap(
 						x -> normalizeRoleName(x.getName()),
 						Function.identity(),
 						(existing, _) -> existing,
 						LinkedHashMap::new)))
 				.map(Map::copyOf));
+	}
+
+	@Override
+	public Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em) {
+		return recommendationDao.listAllRecommendationsForScoring(em)
+				.map(list -> list.stream().collect(toMap(this::normalizeRecommendationComponentName, Function.identity())));
+	}
+
+	private String normalizeRecommendationComponentName(RecommendationComponent rc) {
+		return rc.getRecommendation().asString().trim().toLowerCase();
 	}
 
 	@Override

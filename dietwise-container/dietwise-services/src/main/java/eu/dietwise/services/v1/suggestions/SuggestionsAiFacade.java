@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
@@ -22,6 +23,8 @@ public interface SuggestionsAiFacade {
 	String convertTriggerIngredientsToMarkdownList(Collection<TriggerIngredient> triggerIngredients);
 
 	Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em);
+
+	Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em);
 
 	/**
 	 *

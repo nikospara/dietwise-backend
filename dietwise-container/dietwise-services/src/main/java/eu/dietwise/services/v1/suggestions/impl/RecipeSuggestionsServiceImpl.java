@@ -78,6 +78,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(tx),
 				_ -> suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(tx),
 				(_, _) -> suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(tx),
+				(_, _, _) -> suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(tx),
 				RecipeSuggestionNecessaryData::new
 		);
 	}

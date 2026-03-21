@@ -53,12 +53,12 @@ public class RecipeScoringServiceImpl implements RecipeScoringService {
 	private Uni<ScoringRecipeAssessmentMessage> scoreRecipeInternal(ReactivePersistenceContext em, Recipe recipe) {
 		return forcm(
 				recommendationDao.listAllRecommendationsForScoring(em),
-				extractRecommendationsForIngredient(recipe),
+				extractRecommendationsForIngredients(recipe),
 				this::toScoringRecipeAssessmentMessage
 		);
 	}
 
-	private Function<? super List<RecommendationComponent>, Uni<? extends Map<IngredientId, Set<RecommendationComponentName>>>> extractRecommendationsForIngredient(Recipe recipe) {
+	private Function<? super List<RecommendationComponent>, Uni<? extends Map<IngredientId, Set<RecommendationComponentName>>>> extractRecommendationsForIngredients(Recipe recipe) {
 		return recommendationComponents -> Multi.createFrom().iterable(recipe.getRecipeIngredients())
 				.onItem().transformToUniAndConcatenate(processIngredient(recommendationComponents))
 				.collect().asMap(IngredientIdAndRecommendations::ingredientId, IngredientIdAndRecommendations::recommendations);

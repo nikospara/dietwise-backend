@@ -5,6 +5,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Functions.Function3;
+import io.smallrye.mutiny.tuples.Functions.Function4;
 
 /**
  * The {@code UniComprehensions} try to make it easier to work with chains of {@code Uni.flatMap} operations, especially
@@ -135,11 +137,6 @@ public interface UniComprehensions {
 
 	//----------- 4 steps + optional mapper -----------
 
-	@FunctionalInterface
-	interface Function3<T1, T2, T3, R> {
-		R apply(T1 t1, T2 t2, T3 t3);
-	}
-
 	/**
 	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
 	 */
@@ -210,6 +207,19 @@ public interface UniComprehensions {
 			Function3<? super R1, ? super R2, ? super R3, Uni<? extends R>> mapper3
 	) {
 		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r1, r2).flatMap(r3 -> mapper3.apply(r1, r2, r3))));
+	}
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
+	 */
+	static <R1, R2, R3, R4, R> Uni<R> forcm(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			BiFunction<? super R1, ? super R2, Uni<? extends R3>> mapper2,
+			Function3<? super R1, ? super R2, ? super R3, Uni<? extends R4>> mapper3,
+			Function4<R1, R2, R3, R4, R> finalMapper
+	) {
+		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r1, r2).flatMap(r3 -> mapper3.apply(r1, r2, r3).map(r4 -> finalMapper.apply(r1, r2, r3, r4)))));
 	}
 
 	//----------- 5 steps + optional mapper -----------
