@@ -32,7 +32,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers
 public class UserSuggestionStatsEntityDaoImplTest {
-	private static final long ASYNC_WAIT_SECONDS = 300;
+	private static final long ASYNC_WAIT_SECONDS = 5;
 
 	private static final UUID USER_ID = UUID.fromString("509f2670-b04d-4f5e-8a2b-4a08f3c87062");
 	private static final UUID USER_IDM_ID = UUID.fromString("0bc0df44-f71d-43ed-a388-38f04300f452");
@@ -130,7 +130,7 @@ public class UserSuggestionStatsEntityDaoImplTest {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new UserSuggestionStatsEntityDaoImpl();
 		Set<SuggestionTemplateId> ids = new LinkedHashSet<>();
-		for (int i = 0; i < 21; i++) {
+		for (int i = 0; i < 101; i++) {
 			ids.add(new GenericSuggestionTemplateId(UUID.randomUUID().toString()));
 		}
 

@@ -19,6 +19,7 @@ import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
+import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
@@ -130,7 +131,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		};
 	}
 
-	private Function<? super RecipeExtractionRecipeAssessmentMessage, Uni<? extends SuggestionsRecipeAssessmentMessage>> assessSingleRecipe(
+	private Function<? super RecipeExtractionRecipeAssessmentMessage, Uni<? extends MakeSuggestionsResult>> assessSingleRecipe(
 			UUID correlationId, String applicationId, HasUserId hasUserId, String url, MultiEmitter<? super RecipeAssessmentMessage> emitter) {
 		return recipeExtractionRecipeAssessmentMessage -> {
 			int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
@@ -141,20 +142,20 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			} else {
 				Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
 				return recipeSuggestionsService.makeSuggestions(hasUserId, recipe)
-						.call(message -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, message))
-						.flatMap(message -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, message))
-						.invoke(emitter::emit);
+						.call(result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()))
+						.flatMap(result -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message())
+								.map(message -> new MakeSuggestionsResult(message, result.recommendations()))
+						)
+						.invoke(result -> emitter.emit(result.message()));
 			}
 		};
 	}
 
-	private BiFunction<? super RecipeExtractionRecipeAssessmentMessage, ? super SuggestionsRecipeAssessmentMessage, Uni<? extends ScoringRecipeAssessmentMessage>> calculateScoreData(
+	private BiFunction<? super RecipeExtractionRecipeAssessmentMessage, ? super MakeSuggestionsResult, Uni<? extends ScoringRecipeAssessmentMessage>> calculateScoreData(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter) {
-		return (message, _) -> {
-			var recipe = message.recipes().getFirst().recipe(); // guaranteed to have exactly one recipe at this point
-			return recipeScoringService.scoreRecipe(recipe)
-					.invoke(emitter::emit);
-		};
+		return (message, suggestionsResult) ->
+				recipeScoringService.makeScoringMessage(suggestionsResult.recommendations())
+						.invoke(emitter::emit);
 	}
 
 	@Override

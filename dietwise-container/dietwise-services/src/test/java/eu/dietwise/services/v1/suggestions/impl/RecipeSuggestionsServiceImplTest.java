@@ -30,6 +30,7 @@ import eu.dietwise.services.model.suggestions.ImmutableTriggerIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.types.suggestions.TriggerIngredientId;
+import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
@@ -140,10 +141,10 @@ class RecipeSuggestionsServiceImplTest {
 		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(Collections.emptyList()));
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), eq(hasUserId), eq(List.of()))).thenReturn(Uni.createFrom().item(List.of()));
 
-		SuggestionsRecipeAssessmentMessage result = sut.makeSuggestions(hasUserId, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(hasUserId, RECIPE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
-		assertThat(result.suggestions()).isEmpty();
+		assertThat(result.message().suggestions()).isEmpty();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
 		verify(suggestionDao, never()).findByRoleAndTriggerIngredient(any(), any(), any(), any());
 		verify(suggestionPrioritizer).prioritizeSuggestions(any(), eq(hasUserId), eq(List.of()));
@@ -175,11 +176,11 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), eq(hasUserId), any()))
 				.thenReturn(Uni.createFrom().item(List.of(prioritizedSuggestion)));
 
-		SuggestionsRecipeAssessmentMessage result = sut.makeSuggestions(hasUserId, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(hasUserId, RECIPE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
-		assertThat(result.suggestions()).containsExactly(prioritizedSuggestion);
-		assertThat(result.suggestions().getFirst().getText())
+		assertThat(result.message().suggestions()).containsExactly(prioritizedSuggestion);
+		assertThat(result.message().suggestions().getFirst().getText())
 				.isEqualTo("We suggest: alternative-first instead of: " + INGREDIENT_NAME + " [prioritized]");
 		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
 		verify(suggestionPrioritizer).prioritizeSuggestions(

@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -25,6 +26,7 @@ import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
+import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
@@ -136,7 +138,7 @@ class RecipeAssessmentServiceImplTest {
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
-		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
+		when(recipeScoringService.makeScoringMessage(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
 				.collect().asList()
@@ -165,7 +167,7 @@ class RecipeAssessmentServiceImplTest {
 		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
 		verify(statisticsService).assessedRecipe(USER);
 		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
-		verify(recipeScoringService).scoreRecipe(any());
+		verify(recipeScoringService).makeScoringMessage(any());
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
 		var hasSuggestionTemplateIdsCaptor = ArgumentCaptor.forClass(HasSuggestionTemplateIds.class);
@@ -188,7 +190,7 @@ class RecipeAssessmentServiceImplTest {
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
-		when(recipeScoringService.scoreRecipe(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
+		when(recipeScoringService.makeScoringMessage(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
@@ -212,7 +214,7 @@ class RecipeAssessmentServiceImplTest {
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
 		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
-		verify(recipeScoringService).scoreRecipe(any());
+		verify(recipeScoringService).makeScoringMessage(any());
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
 		var hasSuggestionTemplateIdsCaptor = ArgumentCaptor.forClass(HasSuggestionTemplateIds.class);
@@ -301,7 +303,7 @@ class RecipeAssessmentServiceImplTest {
 				.build();
 	}
 
-	private static SuggestionsRecipeAssessmentMessage makeSuggestions(Recipe recipe) {
+	private static MakeSuggestionsResult makeSuggestions(Recipe recipe) {
 		Suggestion suggestion = ImmutableSuggestion.builder()
 				.id(new GenericSuggestionTemplateId(SUGGESTION_ID))
 				.alternative(new AlternativeIngredientImpl(ALTERNATIVE_INGREDIENT))
@@ -310,7 +312,8 @@ class RecipeAssessmentServiceImplTest {
 				.recommendation(new RecommendationImpl(RECOMMENDATION))
 				.text(SUGGESTION_TEXT)
 				.build();
-		return new SuggestionsRecipeAssessmentMessage(List.of(suggestion));
+		var message = new SuggestionsRecipeAssessmentMessage(List.of(suggestion));
+		return new MakeSuggestionsResult(message, Map.of());
 	}
 
 	private ScoringData dummyScoringData() {

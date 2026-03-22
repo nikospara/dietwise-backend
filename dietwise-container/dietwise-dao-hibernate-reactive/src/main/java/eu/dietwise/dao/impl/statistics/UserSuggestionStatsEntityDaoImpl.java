@@ -30,7 +30,7 @@ import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEntityDao {
-	private static final int MAX_SUGGESTION_STATS_IDS = 200;
+	private static final int MAX_SUGGESTION_STATS_IDS = 100;
 
 	@Override
 	public Uni<Map<SuggestionTemplateId, SuggestionStats>> retrieveTotalSuggestionStats(

@@ -3,7 +3,6 @@ package eu.dietwise.services.v1.suggestions.impl;
 import static eu.dietwise.common.utils.UniComprehensions.forc;
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +20,7 @@ import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
@@ -67,16 +67,19 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	}
 
 	@Override
-	public Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(HasUserId hasUserId, Recipe recipe) {
+	public Uni<MakeSuggestionsResult> makeSuggestions(HasUserId hasUserId, Recipe recipe) {
 		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, hasUserId, recipe));
 	}
 
-	private Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, Recipe recipe) {
+	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, Recipe recipe) {
 		return forcm(
 				readAllNecessaryData(tx),
 				extractSuggestionsForRecipePerIngredient(tx, recipe),
 				prioritizeSuggestions(tx, hasUserId),
-				SuggestionsRecipeAssessmentMessage::new
+				data -> new MakeSuggestionsResult(
+						new SuggestionsRecipeAssessmentMessage(data.suggestions()),
+						data.recommendations()
+				)
 		);
 	}
 
@@ -90,7 +93,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		);
 	}
 
-	private Function<? super RecipeSuggestionNecessaryData, Uni<? extends List<Suggestion>>> extractSuggestionsForRecipePerIngredient(
+	private Function<? super RecipeSuggestionNecessaryData, Uni<? extends SuggestionsAndRecommendationsPerIngredient>> extractSuggestionsForRecipePerIngredient(
 			ReactivePersistenceTxContext tx,
 			Recipe recipe
 	) {
@@ -100,12 +103,20 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 					.collect(Collectors.joining("\n"));
 			return Multi.createFrom().iterable(recipe.getRecipeIngredients())
 					.onItem().transformToUniAndConcatenate(processIngredient(tx, recipe, data, availableRecommendationsAsMarkdownList))
-					.onItem().transformToMultiAndConcatenate(Multi.createFrom()::iterable)
-					.collect().asList();
+					.collect()
+					.in(
+							SuggestionsAndRecommendationsPerIngredient::emptyMutable,
+							(acc, cur) -> {
+								if (cur.ingredient() != null && !cur.suggestions().isEmpty()) {
+									acc.suggestions().addAll(cur.suggestions());
+									acc.recommendations().put(cur.ingredient().getId(), cur.components());
+								}
+							}
+					);
 		};
 	}
 
-	private Function<? super Ingredient, Uni<? extends List<Suggestion>>> processIngredient(
+	private Function<? super Ingredient, Uni<? extends SuggestionsAndComponents>> processIngredient(
 			ReactivePersistenceTxContext tx,
 			Recipe recipe,
 			RecipeSuggestionNecessaryData data,
@@ -120,7 +131,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				postProcessAlternatives(recipe, data, ingredient)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
 			LOG.warn("Failed to process ingredient {}: {}", ingredient.getNameInRecipe(), t.getMessage());
-			return Collections.emptyList();
+			return SuggestionsAndComponents.empty();
 		});
 	}
 
@@ -206,18 +217,23 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		return triggerIngredient == null ? "null" : triggerIngredient.getName() + " (" + triggerIngredient.getId().asString() + ")";
 	}
 
-	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> postProcessAlternatives(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
+	private Function3<? super RulesAndComponents, ? super Rule, ? super List<Suggestion>, Uni<? extends SuggestionsAndComponents>> postProcessAlternatives(
+			Recipe recipe,
+			RecipeSuggestionNecessaryData data,
+			Ingredient ingredient
+	) {
 		// TODO Dummy for now, implement to fill-in the text - filtering happens in loadAlternativesFromDbAndSelectBest
-		return list -> {
+		return (rulesAndComponents, _, list) -> {
 			List<Suggestion> result = list.stream()
 					.map(s -> (Suggestion) ImmutableSuggestion.copyOf(s).withText("We suggest: " + s.getAlternative().asString() + " instead of: " + ingredient.getNameInRecipe()))
 					.toList();
-			return Uni.createFrom().item(result);
+			return Uni.createFrom().item(new SuggestionsAndComponents(ingredient, result, rulesAndComponents.components()));
 		};
 	}
 
-	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> prioritizeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
-		return list -> suggestionPrioritizer.prioritizeSuggestions(tx, hasUserId, list);
+	private Function<? super SuggestionsAndRecommendationsPerIngredient, Uni<? extends SuggestionsAndRecommendationsPerIngredient>> prioritizeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
+		return data -> suggestionPrioritizer.prioritizeSuggestions(tx, hasUserId, data.suggestions())
+				.map(data::withSuggestions);
 	}
 
 	@Override

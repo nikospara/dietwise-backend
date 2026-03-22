@@ -9,7 +9,7 @@ import eu.dietwise.v1.types.HasSuggestionTemplateIds;
 import io.smallrye.mutiny.Uni;
 
 public interface RecipeSuggestionsService {
-	Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(HasUserId hasUserId, Recipe recipe);
+	Uni<MakeSuggestionsResult> makeSuggestions(HasUserId hasUserId, Recipe recipe);
 
 	/**
 	 * Try to increase the times each suggestion was offered. Will log any failures silently.

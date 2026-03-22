@@ -1,0 +1,19 @@
+package eu.dietwise.services.v1.suggestions.impl;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import eu.dietwise.services.model.recommendations.RecommendationComponent;
+import eu.dietwise.v1.model.Ingredient;
+import eu.dietwise.v1.model.Suggestion;
+
+public record SuggestionsAndComponents(
+		Ingredient ingredient,
+		List<Suggestion> suggestions,
+		Set<RecommendationComponent> components
+) {
+	public static SuggestionsAndComponents empty() {
+		return new SuggestionsAndComponents(null, Collections.emptyList(), Collections.emptySet());
+	}
+}
