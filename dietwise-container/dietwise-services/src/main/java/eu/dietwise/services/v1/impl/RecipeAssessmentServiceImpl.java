@@ -141,7 +141,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
 			} else {
 				Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
-				return recipeSuggestionsService.makeSuggestions(hasUserId, recipe)
+				return recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, recipe)
 						.call(result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()))
 						.flatMap(result -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message())
 								.map(message -> new MakeSuggestionsResult(message, result.recommendations()))

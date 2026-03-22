@@ -141,7 +141,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(Collections.emptyList()));
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), eq(hasUserId), eq(List.of()))).thenReturn(Uni.createFrom().item(List.of()));
 
-		MakeSuggestionsResult result = sut.makeSuggestions(hasUserId, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RECIPE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.message().suggestions()).isEmpty();
@@ -176,7 +176,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), eq(hasUserId), any()))
 				.thenReturn(Uni.createFrom().item(List.of(prioritizedSuggestion)));
 
-		MakeSuggestionsResult result = sut.makeSuggestions(hasUserId, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RECIPE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.message().suggestions()).containsExactly(prioritizedSuggestion);

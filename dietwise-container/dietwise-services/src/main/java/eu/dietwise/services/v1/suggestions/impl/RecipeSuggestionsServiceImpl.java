@@ -67,7 +67,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	}
 
 	@Override
-	public Uni<MakeSuggestionsResult> makeSuggestions(HasUserId hasUserId, Recipe recipe) {
+	public Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, Recipe recipe) {
 		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, hasUserId, recipe));
 	}
 
@@ -107,7 +107,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 					.in(
 							SuggestionsAndRecommendationsPerIngredient::emptyMutable,
 							(acc, cur) -> {
-								if (cur.ingredient() != null && !cur.suggestions().isEmpty()) {
+								if (cur.ingredient() != null) {
 									acc.suggestions().addAll(cur.suggestions());
 									acc.recommendations().put(cur.ingredient().getId(), cur.components());
 								}
@@ -130,8 +130,8 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				loadAlternativesFromDbAndSelectBest(tx, ingredient),
 				postProcessAlternatives(recipe, data, ingredient)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
-			LOG.warn("Failed to process ingredient {}: {}", ingredient.getNameInRecipe(), t.getMessage());
-			return SuggestionsAndComponents.empty();
+			LOG.warn("Failed to process ingredient <{}>: {}", ingredient.getNameInRecipe(), t.getMessage());
+			return SuggestionsAndComponents.empty(ingredient);
 		});
 	}
 
@@ -140,7 +140,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		String instructionsAsMarkdownList = suggestionsAiFacade.convertInstructionsToMarkdownList(recipe.getRecipeInstructions());
 		return suggestionsAiFacade.assessIngredientRole(rolesMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList)
-				.invoke(r -> LOG.debug("assessIngredientRole for {}: {}", ingredientNameInRecipe, r))
+				.invoke(r -> LOG.debug("assessIngredientRole for <{}>: {}", ingredientNameInRecipe, r))
 				.map(data.roles()::get);
 	}
 
@@ -149,7 +149,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		return role -> suggestionsAiFacade.matchIngredientToTrigger(availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role)
 				.flatMap(triggerIngredientFromAi -> {
-					LOG.debug("matchIngredientToTrigger for {}: {}", ingredientNameInRecipe, triggerIngredientFromAi);
+					LOG.debug("matchIngredientToTrigger for <{}>: {}", ingredientNameInRecipe, triggerIngredientFromAi);
 					TriggerIngredient triggerIngredient = data.triggerIngredients().get(triggerIngredientFromAi);
 					return triggerIngredient == null
 							? Uni.createFrom().failure(() -> new TriggerIngredientFromAiNotInDbException(ingredient, triggerIngredientFromAi))

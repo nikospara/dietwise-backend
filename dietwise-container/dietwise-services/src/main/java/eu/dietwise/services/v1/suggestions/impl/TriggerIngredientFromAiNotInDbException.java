@@ -7,7 +7,7 @@ class TriggerIngredientFromAiNotInDbException extends NonFatalIngredientProcessi
 	private final String triggerIngredientFromAi;
 
 	public TriggerIngredientFromAiNotInDbException(Ingredient ingredient, String triggerIngredientFromAi) {
-		super("The AI returned a trigger ingredient name that cannot be found in the DB for " + ingredient.getNameInRecipe() + ": " + triggerIngredientFromAi);
+		super("The AI returned a trigger ingredient name that cannot be found in the DB for <" + ingredient.getNameInRecipe() + ">: " + triggerIngredientFromAi);
 		this.ingredient = ingredient;
 		this.triggerIngredientFromAi = triggerIngredientFromAi;
 	}

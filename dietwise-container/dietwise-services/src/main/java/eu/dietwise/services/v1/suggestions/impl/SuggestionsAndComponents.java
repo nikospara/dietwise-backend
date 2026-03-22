@@ -13,7 +13,7 @@ public record SuggestionsAndComponents(
 		List<Suggestion> suggestions,
 		Set<RecommendationComponent> components
 ) {
-	public static SuggestionsAndComponents empty() {
-		return new SuggestionsAndComponents(null, Collections.emptyList(), Collections.emptySet());
+	public static SuggestionsAndComponents empty(Ingredient ingredient) {
+		return new SuggestionsAndComponents(ingredient, Collections.emptyList(), Collections.emptySet());
 	}
 }

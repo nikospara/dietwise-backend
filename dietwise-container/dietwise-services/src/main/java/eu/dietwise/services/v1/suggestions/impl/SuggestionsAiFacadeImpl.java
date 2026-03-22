@@ -132,7 +132,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	private String normalizeRecommendationComponentName(RecommendationComponent rc) {
-		return rc.getRecommendation().asString().trim().toLowerCase();
+		return rc.getComponentForScoring().asString().trim().toLowerCase();
 	}
 
 	@Override

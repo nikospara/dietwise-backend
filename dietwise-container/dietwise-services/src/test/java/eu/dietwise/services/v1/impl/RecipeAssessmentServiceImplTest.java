@@ -134,8 +134,8 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any()))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
-		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
-				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
+		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), any(Recipe.class)))
+				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(2))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
 		when(recipeScoringService.makeScoringMessage(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
@@ -166,7 +166,7 @@ class RecipeAssessmentServiceImplTest {
 
 		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
 		verify(statisticsService).assessedRecipe(USER);
-		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
+		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), any(Recipe.class));
 		verify(recipeScoringService).makeScoringMessage(any());
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
@@ -186,8 +186,8 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
-		when(recipeSuggestionsService.makeSuggestions(eq(USER), any(Recipe.class)))
-				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(1))));
+		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), any(Recipe.class)))
+				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(2))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
 		when(recipeScoringService.makeScoringMessage(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
@@ -213,7 +213,7 @@ class RecipeAssessmentServiceImplTest {
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
-		verify(recipeSuggestionsService).makeSuggestions(eq(USER), any(Recipe.class));
+		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), any(Recipe.class));
 		verify(recipeScoringService).makeScoringMessage(any());
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
