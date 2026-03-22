@@ -17,6 +17,7 @@ import eu.dietwise.common.test.jpa.MockReactivePersistenceContextFactory;
 import eu.dietwise.common.v1.types.UserId;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
+import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
@@ -41,6 +42,7 @@ import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -75,6 +77,8 @@ class RecipeSuggestionsServiceImplTest {
 	@Mock
 	private SuggestionDao suggestionDao;
 	@Mock
+	private RuleDao ruleDao;
+	@Mock
 	private SuggestionPrioritizer suggestionPrioritizer;
 	@Mock
 	private UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
@@ -83,12 +87,17 @@ class RecipeSuggestionsServiceImplTest {
 	private final MockReactivePersistenceContextFactory persistenceContextFactory =
 			new MockReactivePersistenceContextFactory();
 
+	private RecipeSuggestionsServiceImpl sut;
+
+	@BeforeEach
+	void beforeEach() {
+		sut = new RecipeSuggestionsServiceImpl(
+				persistenceContextFactory, suggestionsAiFacade, suggestionDao, ruleDao, suggestionPrioritizer, userSuggestionStatsEntityDao);
+	}
+
 	@Test
 	void makeSuggestionsReturnsEmptyMessageWhenNoRuleMatches() {
-		var sut = new RecipeSuggestionsServiceImpl(
-				persistenceContextFactory, suggestionsAiFacade, suggestionDao, suggestionPrioritizer, userSuggestionStatsEntityDao);
 		var hasUserId = hasUserId();
-
 		RoleOrTechnique role = org.mockito.Mockito.mock(RoleOrTechnique.class);
 		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
 		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
@@ -113,8 +122,6 @@ class RecipeSuggestionsServiceImplTest {
 
 	@Test
 	void makeSuggestionsReturnsPrioritizedSuggestionsWithGeneratedTextWhenRuleMatches() {
-		var sut = new RecipeSuggestionsServiceImpl(
-				persistenceContextFactory, suggestionsAiFacade, suggestionDao, suggestionPrioritizer, userSuggestionStatsEntityDao);
 		var hasUserId = hasUserId();
 		RoleOrTechnique role = org.mockito.Mockito.mock(RoleOrTechnique.class);
 		var triggerIngredient = org.mockito.Mockito.mock(eu.dietwise.services.model.suggestions.TriggerIngredient.class);
@@ -164,8 +171,6 @@ class RecipeSuggestionsServiceImplTest {
 
 	@Test
 	void increaseTimesSuggestedIncreasesEverySuggestionIdInSingleTransaction() {
-		var sut = new RecipeSuggestionsServiceImpl(
-				persistenceContextFactory, suggestionsAiFacade, suggestionDao, suggestionPrioritizer, userSuggestionStatsEntityDao);
 		var hasUserId = hasUserId();
 		HasSuggestionTemplateIds suggestions = () -> Set.of(FIRST_SUGGESTION_ID, SECOND_SUGGESTION_ID);
 
@@ -183,8 +188,6 @@ class RecipeSuggestionsServiceImplTest {
 
 	@Test
 	void enrichWithStatisticsAppliesRetrievedStatsAndDefaultsMissingOnesToZero() {
-		var sut = new RecipeSuggestionsServiceImpl(
-				persistenceContextFactory, suggestionsAiFacade, suggestionDao, suggestionPrioritizer, userSuggestionStatsEntityDao);
 		var hasUserId = hasUserId();
 		var message = new SuggestionsRecipeAssessmentMessage(List.of(FIRST_SUGGESTION, SECOND_SUGGESTION));
 		SuggestionStats userStats = new SuggestionStats(3, 2, 1);
@@ -199,7 +202,7 @@ class RecipeSuggestionsServiceImplTest {
 				.await().indefinitely();
 
 		assertThat(result.suggestions()).hasSize(2);
-		assertThat(result.suggestions().get(0).getId()).isEqualTo(FIRST_SUGGESTION_ID);
+		assertThat(result.suggestions().getFirst().getId()).isEqualTo(FIRST_SUGGESTION_ID);
 		assertThat(result.suggestions().get(0).getUserSuggestionStats()).isEqualTo(userStats);
 		assertThat(result.suggestions().get(0).getTotalSuggestionStats()).isEqualTo(SuggestionStats.ALL_ZEROES);
 		assertThat(result.suggestions().get(1).getId()).isEqualTo(SECOND_SUGGESTION_ID);

@@ -16,6 +16,7 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
+import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
@@ -42,19 +43,21 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final SuggestionsAiFacade suggestionsAiFacade;
 	private final SuggestionDao suggestionDao;
+	private final RuleDao ruleDao;
 	private final SuggestionPrioritizer suggestionPrioritizer;
 	private final UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
 
 	public RecipeSuggestionsServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
 			SuggestionsAiFacade suggestionsAiFacade,
-			SuggestionDao suggestionDao,
+			SuggestionDao suggestionDao, RuleDao ruleDao,
 			SuggestionPrioritizer suggestionPrioritizer,
 			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.suggestionsAiFacade = suggestionsAiFacade;
 		this.suggestionDao = suggestionDao;
+		this.ruleDao = ruleDao;
 		this.suggestionPrioritizer = suggestionPrioritizer;
 		this.userSuggestionStatsEntityDao = userSuggestionStatsEntityDao;
 	}
@@ -96,6 +99,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		return ingredient -> forc(
 				assessIngredientRole(recipe, data, ingredient),
 				matchIngredientToTrigger(data, ingredient),
+				// HERE
 				extractRuleAndAlternativesFromDb(tx, ingredient),
 				suggestAlternatives(recipe, data, ingredient)
 		);

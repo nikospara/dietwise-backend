@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Functions.Function3;
 import io.smallrye.mutiny.tuples.Functions.Function4;
+import io.smallrye.mutiny.tuples.Functions.Function5;
 
 /**
  * The {@code UniComprehensions} try to make it easier to work with chains of {@code Uni.flatMap} operations, especially
@@ -235,5 +236,19 @@ public interface UniComprehensions {
 			Function<? super R4, Uni<? extends R>> mapper4
 	) {
 		return init.flatMap(mapper1).flatMap(mapper2).flatMap(mapper3).flatMap(mapper4);
+	}
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
+	 */
+	static <R1, R2, R3, R4, R5, R> Uni<R> forcm(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			Function<? super R2, Uni<? extends R3>> mapper2,
+			Function<? super R3, Uni<? extends R4>> mapper3,
+			Function<? super R4, Uni<? extends R5>> mapper4,
+			Function5<R1, R2, R3, R4, R5, R> finalMapper
+	) {
+		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r2).flatMap(r3 -> mapper3.apply(r3).flatMap(r4 -> mapper4.apply(r4).map(r5 -> finalMapper.apply(r1, r2, r3, r4, r5))))));
 	}
 }
