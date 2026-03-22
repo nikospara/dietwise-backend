@@ -1,12 +1,17 @@
 package eu.dietwise.services.v1.suggestions.impl;
 
+import static eu.dietwise.common.test.model.HasRuleIdArgumentMatcher.hasRuleId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,18 +26,24 @@ import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
+import eu.dietwise.services.model.suggestions.ImmutableTriggerIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
+import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.services.types.suggestions.TriggerIngredientId;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableIngredient;
 import eu.dietwise.v1.model.ImmutableRecipe;
+import eu.dietwise.v1.model.ImmutableRule;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Recipe;
+import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
 import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.RuleId;
 import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
@@ -41,6 +52,8 @@ import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
+import eu.dietwise.v1.types.impl.RoleOrTechniqueImpl;
+import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +64,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeSuggestionsServiceImplTest {
+	private static final long ASYNC_WAIT_SECONDS = 5;
+
 	private static final String APPLICATION_ID = "dietwise-web";
 	private static final UUID CORRELATION_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");
 	private static final UserId USER_ID = new UserIdImpl("user-1");
@@ -68,9 +83,22 @@ class RecipeSuggestionsServiceImplTest {
 			.addRecipeInstructions("Mix ingredients")
 			.build();
 	private static final Map<String, RecommendationComponent> RECOMMENDATIONS = Map.of(
-			"fiber", recommendationComponent("Fiber", RecommendationWeight.ENCOURAGED, "High-fiber foods"),
+			"fiber", recommendationComponent("Fiber", RecommendationWeight.ENCOURAGED, "explanation of Fiber"),
 			"sodium", recommendationComponent("Sodium", RecommendationWeight.LIMITED, null)
 	);
+	private static final RuleId RULE1_ID = new GenericRuleId("rule-1");
+	private static final Rule RULE1 = ImmutableRule.builder()
+			.id(RULE1_ID)
+			.recommendation(new RecommendationImpl("fiber"))
+			.triggerIngredient(new TriggerIngredientImpl("trigger ingredient 1"))
+			.roleOrTechnique(new RoleOrTechniqueImpl("role 1"))
+			.build();
+	private static final String TRIGGER_INGREDIENT_NAME_FIBER = "fiber trigger ingredient";
+	private static final String TRIGGER_INGREDIENT_NAME_FLOUR = "flour trigger ingredient";
+	private static final TriggerIngredient TRIGGER_INGREDIENT_FIBER = ImmutableTriggerIngredient.builder()
+			.id(mock(TriggerIngredientId.class))
+			.name(TRIGGER_INGREDIENT_NAME_FIBER)
+			.build();
 
 	@Mock
 	private SuggestionsAiFacade suggestionsAiFacade;
@@ -98,9 +126,9 @@ class RecipeSuggestionsServiceImplTest {
 	@Test
 	void makeSuggestionsReturnsEmptyMessageWhenNoRuleMatches() {
 		var hasUserId = hasUserId();
-		RoleOrTechnique role = org.mockito.Mockito.mock(RoleOrTechnique.class);
+		RoleOrTechnique role = mock(RoleOrTechnique.class);
 		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
-		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_NAME_FIBER, TRIGGER_INGREDIENT_FIBER)));
 		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
@@ -108,11 +136,12 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.assessIngredientRole(ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
 				.thenReturn(Uni.createFrom().item("missing-role"));
 		when(suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(any())).thenReturn("");
-		when(suggestionsAiFacade.matchIngredientToTrigger("", INGREDIENT_NAME, null)).thenReturn(Uni.createFrom().item("missing-trigger"));
+		when(suggestionsAiFacade.matchIngredientToTrigger("", INGREDIENT_NAME, null)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FIBER));
+		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(Collections.emptyList()));
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), eq(hasUserId), eq(List.of()))).thenReturn(Uni.createFrom().item(List.of()));
 
 		SuggestionsRecipeAssessmentMessage result = sut.makeSuggestions(hasUserId, RECIPE)
-				.await().indefinitely();
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.suggestions()).isEmpty();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
@@ -123,20 +152,11 @@ class RecipeSuggestionsServiceImplTest {
 	@Test
 	void makeSuggestionsReturnsPrioritizedSuggestionsWithGeneratedTextWhenRuleMatches() {
 		var hasUserId = hasUserId();
-		RoleOrTechnique role = org.mockito.Mockito.mock(RoleOrTechnique.class);
-		var triggerIngredient = org.mockito.Mockito.mock(eu.dietwise.services.model.suggestions.TriggerIngredient.class);
-		var roleId = org.mockito.Mockito.mock(eu.dietwise.services.types.suggestions.RoleOrTechniqueId.class);
-		var triggerIngredientId = org.mockito.Mockito.mock(eu.dietwise.services.types.suggestions.TriggerIngredientId.class);
-
-		when(role.getId()).thenReturn(roleId);
-		when(role.getName()).thenReturn("binder");
-		when(roleId.asString()).thenReturn("role-1");
-		when(triggerIngredient.getId()).thenReturn(triggerIngredientId);
-		when(triggerIngredient.getName()).thenReturn("flour");
-		when(triggerIngredientId.asString()).thenReturn("trigger-1");
+		RoleOrTechnique role = mock(RoleOrTechnique.class);
+		var triggerIngredient = mock(eu.dietwise.services.model.suggestions.TriggerIngredient.class);
 
 		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
-		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("flour", triggerIngredient)));
+		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_NAME_FLOUR, triggerIngredient)));
 		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
@@ -144,8 +164,10 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.assessIngredientRole(ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
 				.thenReturn(Uni.createFrom().item("binder"));
 		when(suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(any())).thenReturn("- flour");
-		when(suggestionsAiFacade.matchIngredientToTrigger("- flour", INGREDIENT_NAME, role)).thenReturn(Uni.createFrom().item("flour"));
-		when(suggestionDao.findByRoleAndTriggerIngredient(any(), eq(role), eq(triggerIngredient), eq(RECIPE.getRecipeIngredients().getFirst())))
+		when(suggestionsAiFacade.matchIngredientToTrigger("- flour", INGREDIENT_NAME, role)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FLOUR));
+		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(List.of(RULE1)));
+		when(suggestionsAiFacade.matchIngredientsWithRecommendations(any(), any())).thenAnswer(ion -> Uni.createFrom().item(Set.of("fiber")));
+		when(suggestionDao.findByRule(any(), argThat(hasRuleId(RULE1_ID)), eq(RECIPE.getRecipeIngredients().getFirst())))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 
 		Suggestion prioritizedSuggestion = ImmutableSuggestion.copyOf(FIRST_SUGGESTION)
@@ -154,13 +176,12 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item(List.of(prioritizedSuggestion)));
 
 		SuggestionsRecipeAssessmentMessage result = sut.makeSuggestions(hasUserId, RECIPE)
-				.await().indefinitely();
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.suggestions()).containsExactly(prioritizedSuggestion);
 		assertThat(result.suggestions().getFirst().getText())
 				.isEqualTo("We suggest: alternative-first instead of: " + INGREDIENT_NAME + " [prioritized]");
 		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
-		verify(suggestionDao).findByRoleAndTriggerIngredient(any(), eq(role), eq(triggerIngredient), eq(RECIPE.getRecipeIngredients().getFirst()));
 		verify(suggestionPrioritizer).prioritizeSuggestions(
 				any(),
 				eq(hasUserId),
@@ -178,7 +199,7 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item(1));
 
 		Void result = sut.increaseTimesSuggested(CORRELATION_ID, APPLICATION_ID, hasUserId, suggestions)
-				.await().indefinitely();
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result).isNull();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
@@ -199,7 +220,7 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item(Map.of(SECOND_SUGGESTION_ID, totalStats)));
 
 		SuggestionsRecipeAssessmentMessage result = sut.enrichWithStatistics(CORRELATION_ID, APPLICATION_ID, hasUserId, message)
-				.await().indefinitely();
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.suggestions()).hasSize(2);
 		assertThat(result.suggestions().getFirst().getId()).isEqualTo(FIRST_SUGGESTION_ID);

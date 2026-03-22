@@ -6,10 +6,11 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
@@ -27,12 +28,15 @@ import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAs
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Recipe;
+import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
 import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Functions.Function3;
+import io.smallrye.mutiny.tuples.Functions.Function4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +74,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private Uni<SuggestionsRecipeAssessmentMessage> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, Recipe recipe) {
 		return forcm(
 				readAllNecessaryData(tx),
-				extractSuggestionsForRecipe(tx, recipe),
+				extractSuggestionsForRecipePerIngredient(tx, recipe),
 				prioritizeSuggestions(tx, hasUserId),
 				SuggestionsRecipeAssessmentMessage::new
 		);
@@ -86,26 +90,41 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		);
 	}
 
-	private Function<? super RecipeSuggestionNecessaryData, Uni<? extends List<Suggestion>>> extractSuggestionsForRecipe(
-			ReactivePersistenceTxContext tx, Recipe recipe) {
-		return data -> Multi.createFrom().iterable(recipe.getRecipeIngredients())
-				.onItem().transformToUniAndConcatenate(processIngredient(tx, recipe, data))
-				.onItem().transformToMultiAndConcatenate(Multi.createFrom()::iterable)
-				.collect().asList();
+	private Function<? super RecipeSuggestionNecessaryData, Uni<? extends List<Suggestion>>> extractSuggestionsForRecipePerIngredient(
+			ReactivePersistenceTxContext tx,
+			Recipe recipe
+	) {
+		return data -> {
+			String availableRecommendationsAsMarkdownList = data.recommendations().values().stream()
+					.map(c -> "- " + c.getComponentForScoring().asString() + c.getExplanationForLlm().map(e -> " (" + e + ')').orElse(""))
+					.collect(Collectors.joining("\n"));
+			return Multi.createFrom().iterable(recipe.getRecipeIngredients())
+					.onItem().transformToUniAndConcatenate(processIngredient(tx, recipe, data, availableRecommendationsAsMarkdownList))
+					.onItem().transformToMultiAndConcatenate(Multi.createFrom()::iterable)
+					.collect().asList();
+		};
 	}
 
 	private Function<? super Ingredient, Uni<? extends List<Suggestion>>> processIngredient(
-			ReactivePersistenceTxContext tx, Recipe recipe, RecipeSuggestionNecessaryData data) {
+			ReactivePersistenceTxContext tx,
+			Recipe recipe,
+			RecipeSuggestionNecessaryData data,
+			String availableRecommendationsAsMarkdownList
+	) {
 		return ingredient -> forc(
-				assessIngredientRole(recipe, data, ingredient),
-				matchIngredientToTrigger(data, ingredient),
-				// HERE
-				extractRuleAndAlternativesFromDb(tx, ingredient),
-				suggestAlternatives(recipe, data, ingredient)
-		);
+				determineRoleOrTechnique(recipe, data, ingredient),
+				determineTriggerIngredient(data, ingredient),
+				loadMatchingRulesAndDetermineComposition(tx, data, availableRecommendationsAsMarkdownList, ingredient),
+				identifyBestFittingRule(),
+				loadAlternativesFromDbAndSelectBest(tx, ingredient),
+				postProcessAlternatives(recipe, data, ingredient)
+		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
+			LOG.warn("Failed to process ingredient {}: {}", ingredient.getNameInRecipe(), t.getMessage());
+			return Collections.emptyList();
+		});
 	}
 
-	private Uni<RoleOrTechnique> assessIngredientRole(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
+	private Uni<RoleOrTechnique> determineRoleOrTechnique(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
 		String rolesMarkdownList = suggestionsAiFacade.convertRolesToMarkdownList(data.roles().values());
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		String instructionsAsMarkdownList = suggestionsAiFacade.convertInstructionsToMarkdownList(recipe.getRecipeInstructions());
@@ -114,20 +133,68 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				.map(data.roles()::get);
 	}
 
-	private Function<? super RoleOrTechnique, Uni<? extends TriggerIngredient>> matchIngredientToTrigger(RecipeSuggestionNecessaryData data, Ingredient ingredient) {
+	private Function<? super RoleOrTechnique, Uni<? extends TriggerIngredient>> determineTriggerIngredient(RecipeSuggestionNecessaryData data, Ingredient ingredient) {
 		String availableTriggerIngredientsAsMarkdownList = suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(data.triggerIngredients().values());
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		return role -> suggestionsAiFacade.matchIngredientToTrigger(availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role)
-				.invoke(r -> LOG.debug("matchIngredientToTrigger for {}: {}", ingredientNameInRecipe, r))
-				.map(data.triggerIngredients()::get);
+				.flatMap(triggerIngredientFromAi -> {
+					LOG.debug("matchIngredientToTrigger for {}: {}", ingredientNameInRecipe, triggerIngredientFromAi);
+					TriggerIngredient triggerIngredient = data.triggerIngredients().get(triggerIngredientFromAi);
+					return triggerIngredient == null
+							? Uni.createFrom().failure(() -> new TriggerIngredientFromAiNotInDbException(ingredient, triggerIngredientFromAi))
+							: Uni.createFrom().item(triggerIngredient);
+				});
 	}
 
-	private BiFunction<? super RoleOrTechnique, ? super TriggerIngredient, Uni<? extends List<Suggestion>>> extractRuleAndAlternativesFromDb(
-			ReactivePersistenceTxContext tx, Ingredient ingredient) {
-		return (role, triggerIngredient) -> {
-			LOG.debug("Rule matching coordinates for {}: {} / {}", ingredient.getNameInRecipe(), toLogString(role), toLogString(triggerIngredient));
-			if (role == null || triggerIngredient == null) return Uni.createFrom().item(Collections.emptyList());
-			else return suggestionDao.findByRoleAndTriggerIngredient(tx, role, triggerIngredient, ingredient);
+	private Function<? super TriggerIngredient, Uni<? extends RulesAndComponents>> loadMatchingRulesAndDetermineComposition(
+			ReactivePersistenceTxContext tx,
+			RecipeSuggestionNecessaryData data,
+			String availableRecommendationsAsMarkdownList,
+			Ingredient ingredient
+	) {
+		// let's ask the DB and the AI in parallel, they are independent operations
+		return triggerIngredient -> Uni.combine().all().unis(
+				findByTriggerIngredientAndThrowIfNotFound(tx, triggerIngredient),
+				suggestionsAiFacade.matchIngredientsWithRecommendations(availableRecommendationsAsMarkdownList, ingredient.getNameInRecipe())
+		).with((rules, componentNames) -> {
+			var components = componentNames.stream()
+					.filter(Objects::nonNull)
+					.map(name -> name.trim().toLowerCase())
+					.map(key -> data.recommendations().get(key))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toSet());
+			return new RulesAndComponents(rules, components);
+		});
+	}
+
+	private Uni<List<Rule>> findByTriggerIngredientAndThrowIfNotFound(ReactivePersistenceTxContext tx, TriggerIngredient triggerIngredient) {
+		return ruleDao.findByTriggerIngredient(tx, triggerIngredient)
+				.flatMap(rules ->
+						rules.isEmpty()
+								? Uni.createFrom().failure(() -> new NoRulesForTriggerIngredientException(triggerIngredient))
+								: Uni.createFrom().item(rules)
+				);
+	}
+
+	private Function3<? super RoleOrTechnique, ? super TriggerIngredient, ? super RulesAndComponents, Uni<? extends Rule>> identifyBestFittingRule() {
+		return (role, trigger, rulesAndComponents) -> {
+			// TODO Dummy, implement by calling the AI
+			return Uni.createFrom().item(rulesAndComponents.rules().getFirst());
+		};
+	}
+
+	private Function4<? super RoleOrTechnique, ? super TriggerIngredient, ? super RulesAndComponents, ? super Rule, Uni<? extends List<Suggestion>>> loadAlternativesFromDbAndSelectBest(
+			ReactivePersistenceTxContext tx,
+			Ingredient ingredient
+	) {
+		return (role, trigger, rulesAndComponents, rule) -> {
+			return forc(
+					suggestionDao.findByRule(tx, rule, ingredient),
+					suggestions -> {
+						// TODO dummy, implement with AI
+						return Uni.createFrom().item(suggestions);
+					}
+			);
 		};
 	}
 
@@ -139,11 +206,10 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		return triggerIngredient == null ? "null" : triggerIngredient.getName() + " (" + triggerIngredient.getId().asString() + ")";
 	}
 
-	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> suggestAlternatives(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
-		// TODO Dummy for now, implement to (a) filter the alternatives (b) fill-in the text
+	private Function<? super List<Suggestion>, Uni<? extends List<Suggestion>>> postProcessAlternatives(Recipe recipe, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
+		// TODO Dummy for now, implement to fill-in the text - filtering happens in loadAlternativesFromDbAndSelectBest
 		return list -> {
 			List<Suggestion> result = list.stream()
-//					.filter(_ -> Math.random() < 0.8)
 					.map(s -> (Suggestion) ImmutableSuggestion.copyOf(s).withText("We suggest: " + s.getAlternative().asString() + " instead of: " + ingredient.getNameInRecipe()))
 					.toList();
 			return Uni.createFrom().item(result);

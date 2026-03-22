@@ -62,6 +62,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeAssessmentServiceImplTest {
+	private static final long ASYNC_WAIT_SECONDS = 5;
+
 	private static final UUID USER_UUID = UUID.fromString("11111111-2222-3333-4444-555555555555");
 	private static final String USER_EMAIL = "user@example.test";
 	private static final String APPLICATION_ID = "recipewatch";
@@ -138,7 +140,7 @@ class RecipeAssessmentServiceImplTest {
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
 				.collect().asList()
-				.await().atMost(Duration.ofSeconds(5L));
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(messages).hasSize(3);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeExtractionRecipeAssessmentMessage.class);
@@ -190,7 +192,7 @@ class RecipeAssessmentServiceImplTest {
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
-				.await().atMost(Duration.ofSeconds(5L));
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(messages).hasSize(3);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeExtractionRecipeAssessmentMessage.class);
@@ -235,7 +237,7 @@ class RecipeAssessmentServiceImplTest {
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
-				.await().atMost(Duration.ofSeconds(5L));
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(messages).hasSize(2);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeExtractionRecipeAssessmentMessage.class);
@@ -255,7 +257,7 @@ class RecipeAssessmentServiceImplTest {
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
-				.await().atMost(Duration.ofSeconds(5L));
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(messages).hasSize(1);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeAssessmentErrorMessage.class);
@@ -274,7 +276,7 @@ class RecipeAssessmentServiceImplTest {
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
-				.await().atMost(Duration.ofSeconds(5L));
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(messages).hasSize(1);
 		assertThat(messages.getFirst()).isInstanceOf(RecipeAssessmentErrorMessage.class);

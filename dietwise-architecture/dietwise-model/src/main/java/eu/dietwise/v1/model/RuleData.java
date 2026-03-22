@@ -1,5 +1,6 @@
 package eu.dietwise.v1.model;
 
+import eu.dietwise.common.types.Nullable;
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RoleOrTechnique;
 import eu.dietwise.v1.types.TriggerIngredient;
@@ -13,5 +14,6 @@ public interface RuleData {
 
 	RoleOrTechnique getRoleOrTechnique();
 
+	@Nullable
 	String getCuisineContext();
 }

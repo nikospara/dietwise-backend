@@ -3,9 +3,11 @@ package eu.dietwise.services.v1.suggestions.impl;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -19,6 +21,8 @@ import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiService;
+import eu.dietwise.services.v1.scoring.impl.ScoringAiFacadeImpl;
 import eu.dietwise.services.v1.suggestions.IngredientRoleAiService;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
@@ -26,15 +30,20 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
+	private static final Logger LOG = LoggerFactory.getLogger(ScoringAiFacadeImpl.class);
+
 	private final RoleOrTechniqueDao roleOrTechniqueDao;
 	private final TriggerIngredientDao triggerIngredientDao;
 	private final AlternativeIngredientDao alternativeIngredientDao;
 	private final RecommendationDao recommendationDao;
 	private final IngredientRoleAiService ingredientRoleAiService;
 	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
+	private final IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService;
 
 	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
 	private final CachedUniValue<Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniValue<>();
@@ -46,7 +55,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			AlternativeIngredientDao alternativeIngredientDao,
 			RecommendationDao recommendationDao,
 			IngredientRoleAiService ingredientRoleAiService,
-			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService
+			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService,
+			IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
@@ -54,6 +64,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		this.recommendationDao = recommendationDao;
 		this.ingredientRoleAiService = ingredientRoleAiService;
 		this.triggerIngredientMatcherAiService = triggerIngredientMatcherAiService;
+		this.ingredientMatchInRecommendationsAiService = ingredientMatchInRecommendationsAiService;
 	}
 
 	@Override
@@ -144,6 +155,24 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 				.map(this::normalizeTriggerIngredientName);
 		if (callerContext == null) return resultUni;
 		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
+	}
+
+	@Override
+	public Uni<Set<String>> matchIngredientsWithRecommendations(String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe) {
+		Context callerContext = Vertx.currentContext();
+		Uni<Set<String>> resultUni = Uni.createFrom().item(() -> ingredientMatchInRecommendationsAiService.matchIngredientsWithRecommendations(
+						availableRecommendationsAsMarkdownList, ingredientNameInRecipe))
+				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
+				.map(recommendationsFromAi -> postProcessRecommendationsFromAi(ingredientNameInRecipe, recommendationsFromAi));
+		if (callerContext == null) return resultUni;
+		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
+	}
+
+	private Set<String> postProcessRecommendationsFromAi(String ingredientNameInRecipe, String recommendationsFromAi) {
+		LOG.debug("matchIngredientsWithRecommendations responded for ingredient <{}>: {}", ingredientNameInRecipe, recommendationsFromAi);
+		if (recommendationsFromAi == null) return Collections.emptySet();
+		recommendationsFromAi = recommendationsFromAi.trim();
+		return Set.of(recommendationsFromAi.split("\\r?\\n"));
 	}
 
 	@Override

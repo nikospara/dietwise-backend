@@ -251,4 +251,20 @@ public interface UniComprehensions {
 	) {
 		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r2).flatMap(r3 -> mapper3.apply(r3).flatMap(r4 -> mapper4.apply(r4).map(r5 -> finalMapper.apply(r1, r2, r3, r4, r5))))));
 	}
+
+	//----------- 6 steps + optional mapper -----------
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
+	 */
+	static <R1, R2, R3, R4, R5, R> Uni<R> forc(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			Function<? super R2, Uni<? extends R3>> mapper2,
+			Function3<? super R1, ? super R2, ? super R3, Uni<? extends R4>> mapper3,
+			Function4<? super R1, ? super R2, ? super R3, ? super R4, Uni<? extends R5>> mapper4,
+			Function<? super R5, Uni<? extends R>> mapper5
+	) {
+		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r2).flatMap(r3 -> mapper3.apply(r1, r2, r3).flatMap(r4 -> mapper4.apply(r1, r2, r3, r4).flatMap(mapper5)))));
+	}
 }

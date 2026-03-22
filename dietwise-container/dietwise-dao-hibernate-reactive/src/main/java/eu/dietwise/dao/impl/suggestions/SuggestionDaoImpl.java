@@ -5,9 +5,12 @@ import static java.util.stream.Collectors.toSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
@@ -26,6 +29,7 @@ import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.HasRuleId;
 import eu.dietwise.v1.types.RecommendationComponentName;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -39,6 +43,24 @@ public class SuggestionDaoImpl implements SuggestionDao {
 	@Override
 	public Uni<List<Suggestion>> findByRoleAndTriggerIngredient(
 			ReactivePersistenceContext em, HasRoleOrTechniqueId roleId, HasTriggerIngredientId triggerIngredientId, Ingredient ingredient) {
+		return fetchSuggestionsBy(em, ingredient, (cb, suggestionTemplate) -> new Predicate[]{
+				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.roleOrTechnique).get(RoleOrTechniqueEntity_.id), roleId.getId().asUuid()),
+				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid())
+		});
+	}
+
+	@Override
+	public Uni<List<Suggestion>> findByRule(ReactivePersistenceContext em, HasRuleId ruleId, Ingredient ingredient) {
+		return fetchSuggestionsBy(em, ingredient, (cb, suggestionTemplate) -> new Predicate[]{
+				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId.getId().asUuid())
+		});
+	}
+
+	private Uni<List<Suggestion>> fetchSuggestionsBy(
+			ReactivePersistenceContext em,
+			Ingredient ingredient,
+			BiFunction<CriteriaBuilder, Root<SuggestionTemplateEntity>, Predicate[]> makePredicates
+	) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(SuggestionTemplateEntity.class);
 		Root<SuggestionTemplateEntity> suggestionTemplate = q.from(SuggestionTemplateEntity.class);
@@ -46,10 +68,7 @@ public class SuggestionDaoImpl implements SuggestionDao {
 		rule.fetch(RuleEntity_.recommendation);
 		var alternativeIngredient = suggestionTemplate.fetch(SuggestionTemplateEntity_.alternativeIngredient);
 		alternativeIngredient.fetch(AlternativeIngredientEntity_.componentsForScoring, JoinType.LEFT);
-		q.select(suggestionTemplate).where(
-				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.roleOrTechnique).get(RoleOrTechniqueEntity_.id), roleId.getId().asUuid()),
-				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid())
-		);
+		q.select(suggestionTemplate).where(makePredicates.apply(cb, suggestionTemplate));
 		return em.createQuery(q).getResultList().map(list -> toSuggestionList(list, ingredient));
 	}
 
