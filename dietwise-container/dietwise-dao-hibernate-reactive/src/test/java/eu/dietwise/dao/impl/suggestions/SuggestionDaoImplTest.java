@@ -81,6 +81,7 @@ class SuggestionDaoImplTest {
 			assertThat(suggestion.getTechniqueNotes()).contains("Roast aubergine first");
 			assertThat(suggestion.getAlternativeComponentNames()).containsExactlyInAnyOrder(
 					new RecommendationComponentNameImpl("legumes"),
+					new RecommendationComponentNameImpl("fiber"),
 					new RecommendationComponentNameImpl("vegetables")
 			);
 		});

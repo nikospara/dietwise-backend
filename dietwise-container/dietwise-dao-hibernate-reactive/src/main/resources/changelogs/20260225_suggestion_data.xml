@@ -1799,73 +1799,67 @@
 		</insert>
 	</changeSet>
 
-	<changeSet id="suggestions_relate_to_recommendations_data" author="nikospara">
+	<changeSet id="suggestions_relate_to_recommendations_data_v2" author="nikospara">
+		<delete tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING"/>
+
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000004"/>
-			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000005"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000a"/>
 			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000006"/>
-			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000007"/>
-			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000009"/>
-			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
 			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000a"/>
 			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000f"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000041"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000017"/>
 			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000010"/>
-			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000012"/>
-			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000013"/>
-			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000014"/>
-			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000015"/>
-			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
-			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000017"/>
 			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001a"/>
-			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001b"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004a"/>
 			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001c"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000052"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000052"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000047"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004c"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001f"/>
 			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
@@ -1873,19 +1867,199 @@
 			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000026"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000f"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000f"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000039"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000055"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
 			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000056"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000056"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000044"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000044"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001a"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000d"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000d"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000033"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000033"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000020"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000020"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000048"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000048"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000007"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
 			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000029"/>
 			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003b"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003b"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000035"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000004"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003d"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000045"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000015"/>
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000015"/>
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
 			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002b"/>
 			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002d"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000013"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003e"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000009"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000009"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003c"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000038"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000038"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000b"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000021"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002e"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000022"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000022"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000023"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000023"/>
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002f"/>
 			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
@@ -1893,55 +2067,39 @@
 			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000030"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000057"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000057"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000028"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000028"/>
 			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000034"/>
-			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000035"/>
-			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003d"/>
-			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003e"/>
-			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003f"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
 			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003f"/>
 			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
-			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
-			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000045"/>
-			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
-			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004c"/>
-			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
-		</insert>
-		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004d"/>
-			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004e"/>
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
 			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004e"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000030"/>
 			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
@@ -1949,16 +2107,108 @@
 			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000052"/>
-			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002d"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000055"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000026"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000026"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000012"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000012"/>
 			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
 		</insert>
 		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
-			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000056"/>
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000034"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000034"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000016"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000016"/>
 			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002a"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004d"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004d"/>
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004d"/>
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000014"/>
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000005"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000005"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000010"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000010"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000006"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000006"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001b"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001b"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001c"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001c"/>
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003a"/>
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+		</insert>
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_COMPONENTS_FOR_SCORING">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003a"/>
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
 		</insert>
 	</changeSet>
 </databaseChangeLog>
