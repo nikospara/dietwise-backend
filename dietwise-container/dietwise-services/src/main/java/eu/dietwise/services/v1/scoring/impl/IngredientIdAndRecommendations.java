@@ -9,4 +9,7 @@ public record IngredientIdAndRecommendations(
 		IngredientId ingredientId,
 		Set<RecommendationComponentName> recommendations
 ) {
+	public IngredientIdAndRecommendations {
+		recommendations = Set.copyOf(recommendations);
+	}
 }

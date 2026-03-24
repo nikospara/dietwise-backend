@@ -11,4 +11,20 @@ public record MakeSuggestionsResult(
 		SuggestionsRecipeAssessmentMessage message,
 		Map<IngredientId, Set<RecommendationComponent>> recommendations
 ) {
+	public MakeSuggestionsResult {
+		recommendations = recommendations.entrySet().stream()
+				.collect(java.util.stream.Collectors.toUnmodifiableMap(
+						Map.Entry::getKey,
+						entry -> Set.copyOf(entry.getValue())
+				));
+	}
+
+	@Override
+	public Map<IngredientId, Set<RecommendationComponent>> recommendations() {
+		return recommendations.entrySet().stream()
+				.collect(java.util.stream.Collectors.toUnmodifiableMap(
+						Map.Entry::getKey,
+						entry -> Set.copyOf(entry.getValue())
+				));
+	}
 }

@@ -13,6 +13,11 @@ public record SuggestionsAndComponents(
 		List<Suggestion> suggestions,
 		Set<RecommendationComponent> components
 ) {
+	public SuggestionsAndComponents {
+		suggestions = List.copyOf(suggestions);
+		components = Set.copyOf(components);
+	}
+
 	public static SuggestionsAndComponents empty(Ingredient ingredient) {
 		return new SuggestionsAndComponents(ingredient, Collections.emptyList(), Collections.emptySet());
 	}

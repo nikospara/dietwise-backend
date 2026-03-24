@@ -113,7 +113,7 @@ public class MockReactivePersistenceContextFactory implements ReactivePersistenc
 		}
 
 		public List<PersistenceAction> getActions() {
-			return actions;
+			return List.copyOf(actions);
 		}
 	}
 
@@ -172,7 +172,7 @@ public class MockReactivePersistenceContextFactory implements ReactivePersistenc
 		}
 
 		public List<PersistenceAction> getActions() {
-			return actions;
+			return List.copyOf(actions);
 		}
 	}
 
@@ -197,7 +197,7 @@ public class MockReactivePersistenceContextFactory implements ReactivePersistenc
 	}
 
 	public List<MockReactivePersistenceTxContext> getOpenedTransactions() {
-		return openedTransactions;
+		return List.copyOf(openedTransactions);
 	}
 
 	@Override

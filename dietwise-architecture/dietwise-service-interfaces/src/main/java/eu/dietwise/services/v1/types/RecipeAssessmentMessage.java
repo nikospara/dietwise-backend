@@ -25,6 +25,9 @@ public sealed interface RecipeAssessmentMessage {
 			List<RecipeAndDetectionType> recipes,
 			String pageText
 	) implements RecipeAssessmentMessage {
+		public RecipeExtractionRecipeAssessmentMessage {
+			recipes = List.copyOf(recipes);
+		}
 	}
 
 	record MoreThanOneRecipesAssessmentMessage(int numberOfRecipes) implements RecipeAssessmentMessage {
@@ -32,6 +35,10 @@ public sealed interface RecipeAssessmentMessage {
 
 	record SuggestionsRecipeAssessmentMessage(
 			List<Suggestion> suggestions) implements RecipeAssessmentMessage, HasSuggestionTemplateIds {
+		public SuggestionsRecipeAssessmentMessage {
+			suggestions = List.copyOf(suggestions);
+		}
+
 		@Override
 		public Set<SuggestionTemplateId> getSuggestionTemplateIds() {
 			return suggestions.stream().map(HasSuggestionTemplateId::getId).collect(Collectors.toSet());
@@ -42,5 +49,8 @@ public sealed interface RecipeAssessmentMessage {
 	}
 
 	record RecipeAssessmentErrorMessage(List<String> errors) implements RecipeAssessmentMessage {
+		public RecipeAssessmentErrorMessage {
+			errors = List.copyOf(errors);
+		}
 	}
 }

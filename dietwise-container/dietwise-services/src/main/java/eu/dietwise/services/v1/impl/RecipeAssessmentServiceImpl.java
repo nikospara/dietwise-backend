@@ -5,11 +5,11 @@ import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.concurrent.ThreadLocalRandom;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.v1.model.User;
@@ -200,8 +200,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private Suggestion dummyFromTextOnly(Recipe recipe, String text) {
-		var rand = new Random();
-		var ingredient = recipe.getRecipeIngredients().get(rand.nextInt(recipe.getRecipeIngredients().size()));
+		var ingredient = recipe.getRecipeIngredients().get(ThreadLocalRandom.current().nextInt(recipe.getRecipeIngredients().size()));
 		return ImmutableSuggestion.builder()
 				.id(new GenericSuggestionTemplateId(UUID.randomUUID().toString()))
 				.alternative(new AlternativeIngredientImpl("alternative"))

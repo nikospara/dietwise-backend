@@ -204,3 +204,18 @@ git push --tags
 mvn versions:set -DnewVersion=1.0.0-SNAPSHOT -DgenerateBackupPoms=false
 git commit -am "Continue development with 1.0.0-SNAPSHOT"
 ```
+
+
+## Security & code quality
+
+### OWASP library checks
+
+```bash
+mvn verify -Powasp -DskipTests
+```
+
+### SpotBugs + FindSecBugs
+
+```bash
+mvn verify -Pspotbugs -DskipTests
+```

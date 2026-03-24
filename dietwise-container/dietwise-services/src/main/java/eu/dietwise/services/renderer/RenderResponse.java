@@ -10,4 +10,7 @@ public record RenderResponse(
 		String finalUrl,
 		Screenshot screenshot
 ) {
+	public RenderResponse {
+		jsonLdRecipes = jsonLdRecipes == null ? null : List.copyOf(jsonLdRecipes);
+	}
 }

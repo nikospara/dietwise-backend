@@ -10,4 +10,8 @@ public record RecipeExtractedFromInput(
 		List<String> recipeInstructions,
 		Optional<String> text
 ) {
+	public RecipeExtractedFromInput {
+		recipeIngredients = List.copyOf(recipeIngredients);
+		recipeInstructions = List.copyOf(recipeInstructions);
+	}
 }

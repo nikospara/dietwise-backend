@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+	<Match>
+		<Class name="~.*\.Immutable.*"/>
+	</Match>
+	<!--
+		Why? SpotBugs + FindSecBugs incorrectly applies the rules for xxx may expose internal representation by
+		returning yyy to JPA entities and their associations.
+	-->
+	<Match>
+		<Class name="~eu\.dietwise\.dao\.jpa\..*"/>
+		<Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+	</Match>
+	<!-- Why? SpotBugs + FindSecBugs incorrectly applies the rules for the generated JPA metamodel -->
+	<Match>
+		<Class name="~.*\..+Entity_.*"/>
+		<Bug pattern="UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD,UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+	</Match>
+	<Match>
+		<Class name="eu.dietwise.services.v1.extraction.impl.MarkdownRecipeExtractionServiceImpl"/>
+		<Bug pattern="EI_EXPOSE_REP2"/>
+	</Match>
+	<Match>
+		<Class name="eu.dietwise.services.v1.extraction.impl.RecipeJsonNormalizerImpl"/>
+		<Bug pattern="EI_EXPOSE_REP2"/>
+	</Match>
+	<Match>
+		<Class name="eu.dietwise.services.v1.impl.StatisticsServiceImpl"/>
+		<Bug pattern="EI_EXPOSE_REP2"/>
+	</Match>
+	<Match>
+		<Class name="eu.dietwise.services.v1.impl.RecipeAssessmentServiceImpl"/>
+		<Bug pattern="PREDICTABLE_RANDOM"/>
+	</Match>
+</FindBugsFilter>
