@@ -3,6 +3,7 @@ package eu.dietwise.services.v1.impl;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -17,11 +18,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
+import eu.dietwise.common.types.authorization.NotAuthenticatedException;
+import eu.dietwise.common.types.authorization.NotAuthorizedException;
 import eu.dietwise.common.v1.model.ImmutableUser;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
+import eu.dietwise.services.authz.Authorization;
+import eu.dietwise.services.authz.AuthorizationImpl;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
@@ -79,6 +84,8 @@ class RecipeAssessmentServiceImplTest {
 			.roles(EnumSet.of(Role.CITIZEN))
 			.applicationId(APPLICATION_ID)
 			.build();
+	private static final User USER_UNAUTHENTICATED = ImmutableUser.copyOf(USER).withIsUnauthenticated(true);
+	private static final User USER_NO_APPID = ImmutableUser.copyOf(USER).withApplicationId(Optional.empty());
 	private static final Recipe RECIPE_SIMPLE_PASTA = recipe(
 			"Simple Pasta",
 			List.of("200g pasta", "salt"),
@@ -106,6 +113,8 @@ class RecipeAssessmentServiceImplTest {
 	private static final String RECOMMENDATION = "Recommendation";
 	private static final String SUGGESTION_TEXT = "Suggestion text";
 
+	private final Authorization authorization = new AuthorizationImpl();
+
 	@Mock
 	private RecipeExtractionService recipeExtractionService;
 
@@ -122,7 +131,35 @@ class RecipeAssessmentServiceImplTest {
 
 	@BeforeEach
 	void beforeEach() {
-		sut = new RecipeAssessmentServiceImpl(recipeExtractionService, statisticsService, recipeSuggestionsService, recipeScoringService);
+		sut = new RecipeAssessmentServiceImpl(authorization, recipeExtractionService, statisticsService, recipeSuggestionsService, recipeScoringService);
+	}
+
+	@Test
+	void testUnauthorizedUser() {
+		assertThatThrownBy(() ->
+				sut.assessMarkdownRecipe(USER_UNAUTHENTICATED, MARKDOWN_PARAM)
+						.collect().asList()
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS))
+		).isInstanceOf(NotAuthenticatedException.class);
+		assertThatThrownBy(() ->
+				sut.extractAndAssessRecipeFromUrl(USER_UNAUTHENTICATED, URL_EXTRACTION_PARAM)
+						.collect().asList()
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS))
+		).isInstanceOf(NotAuthenticatedException.class);
+	}
+
+	@Test
+	void testNoAppId() {
+		assertThatThrownBy(() ->
+				sut.assessMarkdownRecipe(USER_NO_APPID, MARKDOWN_PARAM)
+						.collect().asList()
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS))
+		).isInstanceOf(NotAuthorizedException.class);
+		assertThatThrownBy(() ->
+				sut.extractAndAssessRecipeFromUrl(USER_NO_APPID, URL_EXTRACTION_PARAM)
+						.collect().asList()
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS))
+		).isInstanceOf(NotAuthorizedException.class);
 	}
 
 	@Test

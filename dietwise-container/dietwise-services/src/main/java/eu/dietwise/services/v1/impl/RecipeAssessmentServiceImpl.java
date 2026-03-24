@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.common.v1.types.HasUserId;
+import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
@@ -52,17 +53,20 @@ import org.slf4j.LoggerFactory;
 public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeAssessmentServiceImpl.class);
 
+	private final Authorization authorization;
 	private final RecipeExtractionService recipeExtractionService;
 	private final StatisticsService statisticsService;
 	private final RecipeSuggestionsService recipeSuggestionsService;
 	private final RecipeScoringService recipeScoringService;
 
 	public RecipeAssessmentServiceImpl(
+			Authorization authorization,
 			RecipeExtractionService recipeExtractionService,
 			StatisticsService statisticsService,
 			RecipeSuggestionsService recipeSuggestionsService,
 			RecipeScoringService recipeScoringService
 	) {
+		this.authorization = authorization;
 		this.recipeExtractionService = recipeExtractionService;
 		this.statisticsService = statisticsService;
 		this.recipeSuggestionsService = recipeSuggestionsService;
@@ -73,7 +77,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(User user, RecipeAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
 		LOG.info("assessMarkdownRecipe <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
-		String applicationId = user.getApplicationId().orElseThrow(IllegalStateException::new);
+		authorization.requireLogin(user);
+		String applicationId = authorization.requireApplicationId(user);
 		return Multi.createFrom().emitter(emitter ->
 				Uni.combine().all()
 						.unis(
@@ -98,7 +103,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(User user, RecipeExtractionAndAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
 		LOG.info("extractAndAssessRecipeFromUrl <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
-		String applicationId = user.getApplicationId().orElseThrow(IllegalStateException::new);
+		authorization.requireLogin(user);
+		String applicationId = authorization.requireApplicationId(user);
 		return Multi.createFrom().emitter(emitter ->
 				Uni.combine().all()
 						.unis(

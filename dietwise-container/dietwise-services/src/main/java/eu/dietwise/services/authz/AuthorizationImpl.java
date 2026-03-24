@@ -7,7 +7,7 @@ import eu.dietwise.common.types.authorization.NotAuthorizedException;
 import eu.dietwise.common.v1.model.User;
 
 @ApplicationScoped
-class AuthorizationImpl implements Authorization {
+public class AuthorizationImpl implements Authorization {
 	@Override
 	public void requireLogin(User user) {
 		if (user == null || user.isUnauthenticated()) {
