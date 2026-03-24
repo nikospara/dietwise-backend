@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8"/>
+	<meta http-equiv="Cache-Control" content="no-store, max-age=0"/>
+	<meta http-equiv="Pragma" content="no-cache"/>
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"/>
+	<meta name="referrer" content="no-referrer"/>
 	<title>Responsible Cooking Alliance</title>
 </head>
 <body>
@@ -9,16 +13,21 @@
 	const params = new URLSearchParams(location.search);
 	const code = params.get('code');
 	const state = params.get('state');
+	const message = {
+		type: 'KEYCLOAK_CALLBACK',
+		source: 'dietwise-extension-callback',
+		code,
+		state,
+	};
 
-	// Send message to extension
-	window.postMessage(
-		{
-			type: 'KEYCLOAK_CALLBACK',
-			code,
-			state,
-		},
-		'*'
-	);
+	if (location.search) {
+		history.replaceState(null, '', location.pathname);
+	}
+
+	// Send the callback data only to this page's origin; the extension content script can observe it there.
+	if (code && state) {
+		window.postMessage(message, location.origin);
+	}
 
 	window.close();
 </script>
