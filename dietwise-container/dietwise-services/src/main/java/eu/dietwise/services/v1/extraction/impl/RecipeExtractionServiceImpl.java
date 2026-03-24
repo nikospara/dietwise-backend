@@ -37,6 +37,7 @@ import eu.dietwise.v1.types.impl.GenericIngredientId;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestResponse;
 import org.slf4j.Logger;
@@ -49,14 +50,17 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	private final RecipeFilterAiService filterAiService;
 	private final MarkdownRecipeExtractionService extractionService;
 	private final RendererClient rendererClient;
+	private final boolean allowCachedTestPages;
 
 	public RecipeExtractionServiceImpl(
 			RecipeFilterAiService filterAiService,
 			MarkdownRecipeExtractionService extractionService,
+			@ConfigProperty(name = "dietwise.renderer.allow-cached-test-pages", defaultValue = "false") boolean allowCachedTestPages,
 			@RestClient RendererClient rendererClient
 	) {
 		this.filterAiService = filterAiService;
 		this.extractionService = extractionService;
+		this.allowCachedTestPages = allowCachedTestPages;
 		this.rendererClient = rendererClient;
 	}
 
@@ -71,6 +75,7 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 
 	@Override
 	public Uni<RecipeExtractionRecipeAssessmentMessage> extractRecipeFromUrl(UUID correlationId, RecipeExtractionAndAssessmentParam param) {
+		RecipeSourceUrlValidator.validateHttpPublicUrl(param.getUrl(), allowCachedTestPages);
 		var renderRequest = new RenderRequest(param.getUrl(), true, true, 30000, param.getViewport().orElse(null), false, true);
 		return UniComprehensions.forc(
 				rendererClient.render(renderRequest),

@@ -18,6 +18,7 @@ import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.StatisticsService;
 import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
+import eu.dietwise.services.v1.extraction.impl.InvalidRecipeSourceUrlException;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
@@ -209,6 +210,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return error -> {
 			if (error instanceof NoRecipesDetectedException) {
 				emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
+			} else if (error instanceof InvalidRecipeSourceUrlException) {
+				emitter.emit(new RecipeAssessmentErrorMessage(List.of("The supplied URL is not allowed")));
 			} else if (error instanceof MoreThanOneRecipesDetectedException mto) {
 				emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
 			} else {

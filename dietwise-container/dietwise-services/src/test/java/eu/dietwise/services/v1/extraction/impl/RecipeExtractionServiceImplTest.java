@@ -3,6 +3,7 @@ package eu.dietwise.services.v1.extraction.impl;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -85,7 +87,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void useAiToExtractRecipeFromMarkdownEmitsExtractionMessage() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 
 		when(filterAiService.filterRecipeBlock(MARKDOWN)).thenReturn("KEEP");
 		when(extractionService.extractRecipeFromMarkdown(MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
@@ -109,7 +111,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsExtractionMessage() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 
@@ -132,9 +134,74 @@ public class RecipeExtractionServiceImplTest {
 	}
 
 	@ParameterizedTest
+	@ValueSource(strings = {
+			"http://localhost/recipe",
+			"http://127.0.0.1/recipe",
+			"http://10.0.0.1/recipe",
+			"http://[::1]/recipe",
+			"file:///tmp/recipe.txt",
+			"https://user:pass@example.test/recipe"
+	})
+	void extractRecipeFromUrlRejectsUnsafeUrls(String url) {
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
+		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
+				.url(url)
+				.langCode("en")
+				.build();
+
+		assertThatThrownBy(() -> sut.extractRecipeFromUrl(CORRELATION_ID, param).await().atMost(Duration.ofSeconds(5L)))
+				.isInstanceOf(InvalidRecipeSourceUrlException.class);
+
+		verifyNoInteractions(rendererClient);
+		verifyNoInteractions(filterAiService);
+		verifyNoInteractions(extractionService);
+	}
+
+	@Test
+	void extractRecipeFromUrlAllowsExactCachedTestPageWhenEnabled() {
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, true, rendererClient);
+		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
+				.url("001.html")
+				.langCode("en")
+				.build();
+		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA));
+		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
+
+		RecipeExtractionRecipeAssessmentMessage extractionMessage =
+				sut.extractRecipeFromUrl(CORRELATION_ID, param).await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(extractionMessage.recipes()).hasSize(1);
+		verify(rendererClient).render(any());
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+			"1.html",
+			"0001.html",
+			"001.HTML",
+			"001.html?x=1",
+			"/001.html",
+			"foo/001.html"
+	})
+	void extractRecipeFromUrlRejectsNearMissCachedTestPagesEvenWhenEnabled(String url) {
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, true, rendererClient);
+		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
+				.url(url)
+				.langCode("en")
+				.build();
+
+		assertThatThrownBy(() -> sut.extractRecipeFromUrl(CORRELATION_ID, param).await().atMost(Duration.ofSeconds(5L)))
+				.isInstanceOf(InvalidRecipeSourceUrlException.class);
+
+		verifyNoInteractions(rendererClient);
+		verifyNoInteractions(filterAiService);
+		verifyNoInteractions(extractionService);
+	}
+
+	@ParameterizedTest
 	@NullAndEmptySource
 	void extractRecipeFromUrlFallsBackToAiWhenNoJsonLdRecipes(List<RecipeExtractedFromInput> recipes) {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(recipes);
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 		when(filterAiService.filterRecipeBlock(RENDERED_MARKDOWN)).thenReturn("KEEP");
@@ -155,7 +222,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsMoreThanOneRecipesMessageWhenMultipleRecipesExtracted() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA, RECIPE_SIMPLE_SALAD));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 
@@ -169,7 +236,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlKeepsOnlyValidJsonLdRecipesWhenInputIsMixed() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA, RECIPE_WITHOUT_INGREDIENTS));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 
@@ -187,7 +254,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 		when(filterAiService.filterRecipeBlock(any())).thenReturn("KEEP");
@@ -206,7 +273,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsErrorWhenAiReturnsRecipeWithoutIngredients() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 		when(filterAiService.filterRecipeBlock(RENDERED_MARKDOWN)).thenReturn("KEEP");
@@ -225,7 +292,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsErrorWhenRendererFails() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, rendererClient);
+		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().failure(new RuntimeException("Renderer failed")));
 
 		UniAssertSubscriber<RecipeExtractionRecipeAssessmentMessage> subscriber =
