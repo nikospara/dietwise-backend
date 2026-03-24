@@ -3,13 +3,16 @@ package eu.dietwise.web;
 import java.security.Principal;
 import jakarta.ws.rs.core.SecurityContext;
 
+import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.Role;
+
 public class DietwiseSecurityContextImpl implements SecurityContext {
 	private final SecurityContext delegate;
-	private final Principal principal;
+	private final User user;
 
-	public DietwiseSecurityContextImpl(SecurityContext delegate, Principal principal) {
+	public DietwiseSecurityContextImpl(SecurityContext delegate, User user) {
 		this.delegate = delegate;
-		this.principal = principal;
+		this.user = user;
 	}
 
 	public SecurityContext getDelegate() {
@@ -18,12 +21,12 @@ public class DietwiseSecurityContextImpl implements SecurityContext {
 
 	@Override
 	public Principal getUserPrincipal() {
-		return principal;
+		return user;
 	}
 
 	@Override
 	public boolean isUserInRole(String s) {
-		return delegate.isUserInRole(s);
+		return Role.ALL_VALUES_AS_STRINGS.contains(s) && user.getRoles().contains(Role.valueOf(s));
 	}
 
 	@Override
