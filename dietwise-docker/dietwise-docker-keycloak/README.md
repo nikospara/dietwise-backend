@@ -55,15 +55,18 @@ Create a new client in the Realm:
 		- http://localhost:5173/recipewatch/authcallback
 		- https://gaia.ispatial.survey.ntua.gr/recipewatch/authcallback
 		- https://gaia.ispatial.survey.ntua.local/recipewatch/authcallback
+        - eu.dietwise.recipewatch://authcallback
 		- **TODO** (more are needed for real usage)
 	- Valid post logout redirect URIs:
 		- http://localhost:5173/endsession
 		- http://localhost:5173/recipewatch/endsession
 		- https://gaia.ispatial.survey.ntua.gr/recipewatch/endsession
 		- https://gaia.ispatial.survey.ntua.local/recipewatch/endsession
+		- eu.dietwise.recipewatch://endsession
 		- **TODO** (more are needed for real usage)
 	- Web origins:
 		- http://localhost:5173
+        - https://localhost
 		- **TODO** (more are needed for real usage)
 - Save & finish the new client wizard
 
