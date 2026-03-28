@@ -7,9 +7,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,11 +27,13 @@ import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiService;
 import eu.dietwise.services.v1.scoring.impl.ScoringAiFacadeImpl;
+import eu.dietwise.services.v1.suggestions.AlternativeSuggestionAiService;
 import eu.dietwise.services.v1.suggestions.FindBestruleAiService;
 import eu.dietwise.services.v1.suggestions.IngredientRoleAiService;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
 import eu.dietwise.v1.model.Rule;
+import eu.dietwise.v1.model.Suggestion;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
@@ -51,6 +53,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
 	private final IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService;
 	private final FindBestruleAiService findBestruleAiService;
+	private final AlternativeSuggestionAiService alternativeSuggestionAiService;
 
 	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
 	private final CachedUniValue<Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniValue<>();
@@ -64,7 +67,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			IngredientRoleAiService ingredientRoleAiService,
 			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService,
 			IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService,
-			FindBestruleAiService findBestruleAiService
+			FindBestruleAiService findBestruleAiService,
+			AlternativeSuggestionAiService alternativeSuggestionAiService
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
@@ -74,6 +78,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		this.triggerIngredientMatcherAiService = triggerIngredientMatcherAiService;
 		this.ingredientMatchInRecommendationsAiService = ingredientMatchInRecommendationsAiService;
 		this.findBestruleAiService = findBestruleAiService;
+		this.alternativeSuggestionAiService = alternativeSuggestionAiService;
 	}
 
 	@Override
@@ -200,13 +205,12 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			Collection<Rule> filteredRules
 	) {
 		String dietaryComponentsMarkdownList = convertRecommendationsToMarkdownList(dietaryComponents);
-//		String filteredRulesMarkdownList = convertRulesToMarkdownList(filteredRules);
 		var mappedRules = mapRules(filteredRules);
 		String filteredRulesMarkdownList = convertMappedRulesToMarkdownList(mappedRules);
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> findBestruleAiService.findBestRule(
 						ingredientNameInRecipe,
-						role.getName(),
+						role == null ? "-" : role.getName(),
 						triggerIngredient.getName(),
 						dietaryComponentsMarkdownList,
 						filteredRulesMarkdownList
@@ -242,21 +246,30 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 				.collect(Collectors.joining("\n"));
 	}
 
-	private String convertRulesToMarkdownList(Collection<Rule> rules) {
-		var index = new AtomicInteger(0);
-		return rules.stream()
-				.flatMap(r -> Stream.of(
-						"- option " + index.incrementAndGet(),
-						"    - id: " + r.getId().asString(),
-						"    - recommendation: " + r.getRecommendation().asString(),
-						"    - role: " + r.getRoleOrTechnique().asString()
+	@Override
+	public Uni<String> suggestAlternatives(String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
+		String alternativesAsMarkdownList = convertSuggestionsToMarkdownList(alternatives);
+		Context callerContext = Vertx.currentContext();
+		Uni<String> resultUni = Uni.createFrom().item(() -> alternativeSuggestionAiService.suggestAlternatives(
+						ingredientNameInRecipe,
+						role == null ? "-" : role.getName(),
+						alternativesAsMarkdownList
 				))
-				.collect(Collectors.joining("\n"));
+				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
+		if (callerContext == null) return resultUni;
+		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
 	}
 
-	@Override
-	public Uni<String> suggestAlternatives(String availableAlternativesAsMarkdownList, String recipeName, String ingredientNameInRecipe, String ingredientRoleOrTechnique) {
-		// TODO Implement
-		return null;
+	private String convertSuggestionsToMarkdownList(List<Suggestion> alternatives) {
+		return alternatives.stream()
+				.flatMap(a -> Stream.of(
+						"- " + a.getAlternative().asString(),
+						a.getRationale().map(r -> "    - Rationale: " + r).orElse(null),
+						a.getRestriction().map(r -> "    - Restrictions: " + r).orElse(null),
+						a.getEquivalence().map(e -> "    - Equivalence: " + e).orElse(null),
+						a.getTechniqueNotes().map(n -> "    - Technique notes: " + n).orElse(null)
+				))
+				.filter(Objects::nonNull)
+				.collect(Collectors.joining("\n"));
 	}
 }

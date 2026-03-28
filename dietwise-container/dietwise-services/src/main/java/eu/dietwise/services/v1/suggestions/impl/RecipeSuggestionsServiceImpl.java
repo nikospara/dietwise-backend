@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.common.types.RepresentableAsString;
 import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.dao.suggestions.RuleDao;
@@ -203,15 +204,18 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			ReactivePersistenceTxContext tx,
 			Ingredient ingredient
 	) {
-		return (role, trigger, rulesAndComponents, rule) -> {
-			return forc(
-					suggestionDao.findByRule(tx, rule, ingredient),
-					suggestions -> {
-						// TODO dummy, implement with AI
-						return Uni.createFrom().item(suggestions);
+		return (role, _, _, rule) -> forc(
+				suggestionDao.findByRule(tx, rule, ingredient),
+				suggestions -> suggestionsAiFacade.suggestAlternatives(ingredient.getNameInRecipe(), role, suggestions),
+				(suggestions, responseFromAi) -> {
+					// TODO dummy, process response from AI
+					if (LOG.isDebugEnabled()) {
+						var suggestionsStr = suggestions.stream().map(Suggestion::getAlternative).map(RepresentableAsString::asString).collect(Collectors.joining(","));
+						LOG.debug("Suggest alternatives for <{}>, initial list is {}:\n{}", ingredient.getNameInRecipe(), suggestionsStr, responseFromAi);
 					}
-			);
-		};
+					return Uni.createFrom().item(suggestions);
+				}
+		);
 	}
 
 	private String toLogString(RoleOrTechnique role) {

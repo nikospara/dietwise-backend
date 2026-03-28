@@ -33,4 +33,35 @@ Classification rules:
 
 Here are a few examples:
 
-tbc
+
+# Example 1
+
+## User message
+We need to substitute the ingredient 4 10-12-inch flour tortillas
+Its role in the recipe is -
+The allowed substitutes are:
+- Whole grain flour (blend 50%)
+  - Restrictions: Hydration + proofing adjust
+  - Equivalence: Start 30–50% blend
+  - Technique notes: Increase hydration +5–10%
+- Pulse flour blend (20–30%)
+  - Restrictions: Texture changes
+  - Equivalence: Start 30–50% blend
+  - Technique notes: Increase hydration +5–10%
+- Spelt (partial)
+  - Restrictions: Gluten content differs
+  - Equivalence: Start 30–50% blend
+  - Technique notes: Increase hydration +5–10%
+
+
+## Assistant message
+
+[
+{
+  "alternative": "Whole grain flour (blend 50%)",
+  "alternativeDisplay": "Whole grain flour (blend 50%)",
+  "equivalenceNotes": "Start 30–50% blend",
+  "techniqueNotes": "Increase hydration +5–10%",
+  "rationale": "EXPERT"
+}
+]
