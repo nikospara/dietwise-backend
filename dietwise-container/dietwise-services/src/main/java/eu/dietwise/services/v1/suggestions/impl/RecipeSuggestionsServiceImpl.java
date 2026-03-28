@@ -98,9 +98,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			Recipe recipe
 	) {
 		return data -> {
-			String availableRecommendationsAsMarkdownList = data.recommendations().values().stream()
-					.map(c -> "- " + c.getComponentForScoring().asString() + c.getExplanationForLlm().map(e -> " (" + e + ')').orElse(""))
-					.collect(Collectors.joining("\n"));
+			String availableRecommendationsAsMarkdownList = suggestionsAiFacade.convertRecommendationsToMarkdownList(data.recommendations().values());
 			return Multi.createFrom().iterable(recipe.getRecipeIngredients())
 					.onItem().transformToUniAndConcatenate(processIngredient(tx, recipe, data, availableRecommendationsAsMarkdownList))
 					.collect()
@@ -126,7 +124,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				determineRoleOrTechnique(recipe, data, ingredient),
 				determineTriggerIngredient(data, ingredient),
 				loadMatchingRulesAndDetermineComposition(tx, data, availableRecommendationsAsMarkdownList, ingredient),
-				identifyBestFittingRule(),
+				identifyBestFittingRule(ingredient),
 				loadAlternativesFromDbAndSelectBest(tx, ingredient),
 				postProcessAlternatives(recipe, data, ingredient)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
@@ -187,10 +185,17 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				);
 	}
 
-	private Function3<? super RoleOrTechnique, ? super TriggerIngredient, ? super RulesAndComponents, Uni<? extends Rule>> identifyBestFittingRule() {
-		return (role, trigger, rulesAndComponents) -> {
-			// TODO Dummy, implement by calling the AI
-			return Uni.createFrom().item(rulesAndComponents.rules().getFirst());
+	private Function3<? super RoleOrTechnique, ? super TriggerIngredient, ? super RulesAndComponents, Uni<? extends Rule>> identifyBestFittingRule(Ingredient ingredient) {
+		return (role, trigger, rulesAndComponents) ->
+				suggestionsAiFacade.findBestRule(ingredient.getNameInRecipe(), role, trigger, rulesAndComponents.components(), rulesAndComponents.rules())
+						.map(determineRuleFromStringId(rulesAndComponents.rules()));
+	}
+
+	private Function<String, Rule> determineRuleFromStringId(List<Rule> rules) {
+		return ruleId -> {
+			String normalizedRuleId = ruleId.trim().toLowerCase();
+			return rules.stream().filter(r -> r.getId().asString().toLowerCase().equals(normalizedRuleId)).findFirst()
+					.orElseThrow(() -> new NoMatchingRuleException(ruleId));
 		};
 	}
 

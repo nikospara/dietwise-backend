@@ -35,4 +35,9 @@ public class UuidRuleId implements RuleId {
 	public int hashCode() {
 		return Objects.hashCode(asString());
 	}
+
+	@Override
+	public String toString() {
+		return "UuidRuleId(" + asString() + ")";
+	}
 }

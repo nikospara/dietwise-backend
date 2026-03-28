@@ -35,4 +35,9 @@ public class UuidRoleOrTechniqueId implements RoleOrTechniqueId {
 	public int hashCode() {
 		return Objects.hashCode(asString());
 	}
+
+	@Override
+	public String toString() {
+		return "UuidRoleOrTechniqueId(" + asString() + ")";
+	}
 }

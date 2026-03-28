@@ -35,4 +35,9 @@ public class UuidTriggerIngredientId implements TriggerIngredientId {
 	public int hashCode() {
 		return Objects.hashCode(asString());
 	}
+
+	@Override
+	public String toString() {
+		return "UuidTriggerIngredientId(" + asString() + ")";
+	}
 }

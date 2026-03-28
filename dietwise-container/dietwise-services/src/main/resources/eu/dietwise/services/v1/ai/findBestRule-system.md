@@ -39,12 +39,10 @@ dietaryComponents:
 - sodium
 
 Filtered db entries:
-- option 1:
-    - id: a1b2c3d4
+- id: 1
     - recommendation: Decrease processed meat
     - role: flavoring
-- option 2:
-    - id: e5f6g7h8
+- id: 2
     - recommendation: 
     - role: 
 
@@ -53,7 +51,7 @@ Output only the id.
 
 ## Assistant message
 
-a1b2c3d4
+1
 
 # Example 2
 
@@ -65,16 +63,13 @@ dietaryComponents:
 - omega-6 polyunsaturated fatty acids
 
 Filtered db entries:
-- option 1:
-    - id: z9y8x7w6
+- id: 1
     - recommendation: Decrease saturated fat
     - role: sauté fat
-- option 2:
-    - id: v5u4t3s2
+- id: 2
     - recommendation: Decrease saturated fat
     - role: baking fat
-- option 3:
-    - id: r1q0p9o8
+- id: 3
     - recommendation: Decrease saturated fat
     - role: sauce enricher
 
@@ -83,4 +78,4 @@ Output only the id.
 
 ## Assistant message
 
-v5u4t3s2
+2

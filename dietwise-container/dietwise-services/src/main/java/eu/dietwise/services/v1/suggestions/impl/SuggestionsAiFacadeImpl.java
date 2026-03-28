@@ -7,12 +7,16 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.common.types.RepresentableAsString;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.dao.suggestions.AlternativeIngredientDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
@@ -23,9 +27,11 @@ import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiService;
 import eu.dietwise.services.v1.scoring.impl.ScoringAiFacadeImpl;
+import eu.dietwise.services.v1.suggestions.FindBestruleAiService;
 import eu.dietwise.services.v1.suggestions.IngredientRoleAiService;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
+import eu.dietwise.v1.model.Rule;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
@@ -44,6 +50,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final IngredientRoleAiService ingredientRoleAiService;
 	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
 	private final IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService;
+	private final FindBestruleAiService findBestruleAiService;
 
 	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
 	private final CachedUniValue<Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniValue<>();
@@ -56,7 +63,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			RecommendationDao recommendationDao,
 			IngredientRoleAiService ingredientRoleAiService,
 			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService,
-			IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService
+			IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService,
+			FindBestruleAiService findBestruleAiService
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
@@ -65,6 +73,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		this.ingredientRoleAiService = ingredientRoleAiService;
 		this.triggerIngredientMatcherAiService = triggerIngredientMatcherAiService;
 		this.ingredientMatchInRecommendationsAiService = ingredientMatchInRecommendationsAiService;
+		this.findBestruleAiService = findBestruleAiService;
 	}
 
 	@Override
@@ -136,6 +145,13 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
+	public String convertRecommendationsToMarkdownList(Collection<RecommendationComponent> recommendations) {
+		return recommendations.stream()
+				.map(c -> "- " + c.getComponentForScoring().asString() + c.getExplanationForLlm().map(e -> " (" + e + ')').orElse(""))
+				.collect(Collectors.joining("\n"));
+	}
+
+	@Override
 	public Uni<String> assessIngredientRole(String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList) {
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> ingredientRoleAiService.assessIngredientRole(
@@ -173,6 +189,69 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		if (recommendationsFromAi == null) return Collections.emptySet();
 		recommendationsFromAi = recommendationsFromAi.trim();
 		return Set.of(recommendationsFromAi.split("\\r?\\n"));
+	}
+
+	@Override
+	public Uni<String> findBestRule(
+			String ingredientNameInRecipe,
+			RoleOrTechnique role,
+			TriggerIngredient triggerIngredient,
+			Collection<RecommendationComponent> dietaryComponents,
+			Collection<Rule> filteredRules
+	) {
+		String dietaryComponentsMarkdownList = convertRecommendationsToMarkdownList(dietaryComponents);
+//		String filteredRulesMarkdownList = convertRulesToMarkdownList(filteredRules);
+		var mappedRules = mapRules(filteredRules);
+		String filteredRulesMarkdownList = convertMappedRulesToMarkdownList(mappedRules);
+		Context callerContext = Vertx.currentContext();
+		Uni<String> resultUni = Uni.createFrom().item(() -> findBestruleAiService.findBestRule(
+						ingredientNameInRecipe,
+						role.getName(),
+						triggerIngredient.getName(),
+						dietaryComponentsMarkdownList,
+						filteredRulesMarkdownList
+				))
+				.map(ruleId -> {
+					if (ruleId == null) return "-AI returned null-";
+					return Optional.ofNullable(mappedRules.get(ruleId.trim()))
+							.map(Rule::getId)
+							.map(RepresentableAsString::asString)
+							.orElse("-AI returned unknown: " + ruleId + "-");
+				})
+				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
+		if (callerContext == null) return resultUni;
+		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
+	}
+
+	private Map<String, Rule> mapRules(Collection<Rule> rules) {
+		int index = 1;
+		var result = new LinkedHashMap<String, Rule>();
+		for (Rule r : rules) {
+			result.put(Integer.toString(index++), r);
+		}
+		return result;
+	}
+
+	private String convertMappedRulesToMarkdownList(Map<String, Rule> rules) {
+		return rules.entrySet().stream()
+				.flatMap(e -> Stream.of(
+						"- id: " + e.getKey(),
+						"    - recommendation: " + e.getValue().getRecommendation().asString(),
+						"    - role: " + e.getValue().getRoleOrTechnique().asString()
+				))
+				.collect(Collectors.joining("\n"));
+	}
+
+	private String convertRulesToMarkdownList(Collection<Rule> rules) {
+		var index = new AtomicInteger(0);
+		return rules.stream()
+				.flatMap(r -> Stream.of(
+						"- option " + index.incrementAndGet(),
+						"    - id: " + r.getId().asString(),
+						"    - recommendation: " + r.getRecommendation().asString(),
+						"    - role: " + r.getRoleOrTechnique().asString()
+				))
+				.collect(Collectors.joining("\n"));
 	}
 
 	@Override

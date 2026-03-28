@@ -168,6 +168,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.matchIngredientToTrigger("- flour", INGREDIENT_NAME, role)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FLOUR));
 		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(List.of(RULE1)));
 		when(suggestionsAiFacade.matchIngredientsWithRecommendations(any(), any())).thenAnswer(ion -> Uni.createFrom().item(Set.of("fiber")));
+		when(suggestionsAiFacade.findBestRule(any(), any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item(RULE1.getId().asString()));
 		when(suggestionDao.findByRule(any(), argThat(hasRuleId(RULE1_ID)), eq(RECIPE.getRecipeIngredients().getFirst())))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 

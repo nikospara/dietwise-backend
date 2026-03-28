@@ -10,6 +10,7 @@ import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.v1.model.Rule;
 import io.smallrye.mutiny.Uni;
 
 public interface SuggestionsAiFacade {
@@ -27,6 +28,8 @@ public interface SuggestionsAiFacade {
 
 	Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em);
 
+	String convertRecommendationsToMarkdownList(Collection<RecommendationComponent> recommendations);
+
 	/**
 	 *
 	 * @param availableRolesAsMarkdownList
@@ -39,6 +42,8 @@ public interface SuggestionsAiFacade {
 	Uni<String> matchIngredientToTrigger(String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role);
 
 	Uni<Set<String>> matchIngredientsWithRecommendations(String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe);
+
+	Uni<String> findBestRule(String ingredientNameInRecipe, RoleOrTechnique role, TriggerIngredient triggerIngredient, Collection<RecommendationComponent> dietaryComponents, Collection<Rule> filteredRules);
 
 	Uni<String> suggestAlternatives(String availableAlternativesAsMarkdownList, String recipeName, String ingredientNameInRecipe, String ingredientRoleOrTechnique);
 }

@@ -35,4 +35,9 @@ public class UuidAlternativeIngredientId implements AlternativeIngredientId {
 	public int hashCode() {
 		return Objects.hashCode(asString());
 	}
+
+	@Override
+	public String toString() {
+		return "UuidAlternativeIngredientId(" + asString() + ")";
+	}
 }
