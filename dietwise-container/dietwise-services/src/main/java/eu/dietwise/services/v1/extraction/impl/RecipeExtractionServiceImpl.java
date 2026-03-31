@@ -19,7 +19,7 @@ import eu.dietwise.services.renderer.RenderRequest;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
-import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
+import eu.dietwise.services.v1.extraction.NoIngredientsInRecipeException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.filtering.MarkdownBlockCoalescer;
 import eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter;
@@ -123,7 +123,7 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 		List<Ingredient> filteredIngredients = recipe.getRecipeIngredients().stream().filter(Ingredient::hasName).toList();
 		if (filteredIngredients.isEmpty()) {
 			LOG.warn("AI extracted recipe without ingredients <{}> in {}", correlationId, url);
-			return Uni.createFrom().failure(new NoRecipesDetectedException());
+			return Uni.createFrom().failure(new NoIngredientsInRecipeException());
 		}
 		var recipeToReturn = filteredIngredients.size() == recipe.getRecipeIngredients().size()
 				? recipe

@@ -20,7 +20,7 @@ import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
 import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
-import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
+import eu.dietwise.services.v1.extraction.NoIngredientsInRecipeException;
 import eu.dietwise.services.v1.filtering.RecipeFilterAiService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutableRecipeAssessmentParam;
@@ -253,25 +253,6 @@ public class RecipeExtractionServiceImplTest {
 	}
 
 	@Test
-	void extractRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
-		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
-		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
-		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
-		when(filterAiService.filterRecipeBlock(any())).thenReturn("KEEP");
-		when(extractionService.extractRecipeFromMarkdown(RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().failure(new NoRecipesDetectedException()));
-
-		UniAssertSubscriber<RecipeExtractionRecipeAssessmentMessage> subscriber =
-				sut.extractRecipeFromUrl(CORRELATION_ID, URL_EXTRACTION_PARAM)
-						.subscribe().withSubscriber(UniAssertSubscriber.create());
-
-		subscriber.awaitFailure().assertFailedWith(NoRecipesDetectedException.class);
-
-		verify(rendererClient).render(any());
-		verify(filterAiService).filterRecipeBlock(any());
-		verify(extractionService).extractRecipeFromMarkdown(RENDERED_MARKDOWN);
-	}
-
-	@Test
 	void extractRecipeFromUrlEmitsErrorWhenAiReturnsRecipeWithoutIngredients() {
 		var sut = new RecipeExtractionServiceImpl(filterAiService, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
@@ -283,7 +264,7 @@ public class RecipeExtractionServiceImplTest {
 				sut.extractRecipeFromUrl(CORRELATION_ID, URL_EXTRACTION_PARAM)
 						.subscribe().withSubscriber(UniAssertSubscriber.create());
 
-		subscriber.awaitFailure().assertFailedWith(NoRecipesDetectedException.class);
+		subscriber.awaitFailure().assertFailedWith(NoIngredientsInRecipeException.class);
 
 		verify(rendererClient).render(any());
 		verify(filterAiService).filterRecipeBlock(RENDERED_MARKDOWN);

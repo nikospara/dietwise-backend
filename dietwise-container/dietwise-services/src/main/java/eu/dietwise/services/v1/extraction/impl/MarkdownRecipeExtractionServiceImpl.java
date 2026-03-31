@@ -2,13 +2,15 @@ package eu.dietwise.services.v1.extraction.impl;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntPredicate;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dietwise.services.model.RecipeExtractedFromInput;
-import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
 import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
+import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
 import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
@@ -82,6 +84,23 @@ public class MarkdownRecipeExtractionServiceImpl implements MarkdownRecipeExtrac
 	}
 
 	private int findFirstCompleteJsonObjectEnd(String text, int start) {
+		var indexAtEarlyCompletion = new AtomicInteger(-1);
+		processJsonCharacters(text, start, index -> {
+			indexAtEarlyCompletion.set(index);
+			return true;
+		});
+		return indexAtEarlyCompletion.get();
+	}
+
+	private String appendMissingClosers(String text) {
+		Deque<Character> stack = processJsonCharacters(text, 0, null);
+		if (stack.isEmpty()) return text;
+		StringBuilder sb = new StringBuilder(text);
+		while (!stack.isEmpty()) sb.append(stack.pop());
+		return sb.toString();
+	}
+
+	private Deque<Character> processJsonCharacters(String text, int start, IntPredicate terminateWhenCompleteObject) {
 		Deque<Character> stack = new ArrayDeque<>();
 		boolean inString = false;
 		boolean escaping = false;
@@ -108,43 +127,9 @@ public class MarkdownRecipeExtractionServiceImpl implements MarkdownRecipeExtrac
 				case '}', ']' -> {
 					if (!stack.isEmpty() && stack.peek() == c) {
 						stack.pop();
-						if (stack.isEmpty()) return i;
 					}
-				}
-				default -> {
-				}
-			}
-		}
-		return -1;
-	}
-
-	private String appendMissingClosers(String text) {
-		Deque<Character> stack = new ArrayDeque<>();
-		boolean inString = false;
-		boolean escaping = false;
-
-		for (int i = 0; i < text.length(); i++) {
-			char c = text.charAt(i);
-			if (escaping) {
-				escaping = false;
-				continue;
-			}
-			if (c == '\\') {
-				escaping = true;
-				continue;
-			}
-			if (c == '"') {
-				inString = !inString;
-				continue;
-			}
-			if (inString) continue;
-
-			switch (c) {
-				case '{' -> stack.push('}');
-				case '[' -> stack.push(']');
-				case '}', ']' -> {
-					if (!stack.isEmpty() && stack.peek() == c) {
-						stack.pop();
+					if (stack.isEmpty() && terminateWhenCompleteObject != null && terminateWhenCompleteObject.test(i)) {
+						return stack;
 					}
 				}
 				default -> {
@@ -152,9 +137,6 @@ public class MarkdownRecipeExtractionServiceImpl implements MarkdownRecipeExtrac
 			}
 		}
 
-		if (stack.isEmpty()) return text;
-		StringBuilder sb = new StringBuilder(text);
-		while (!stack.isEmpty()) sb.append(stack.pop());
-		return sb.toString();
+		return stack;
 	}
 }

@@ -6,10 +6,10 @@ import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.concurrent.ThreadLocalRandom;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.v1.model.User;
@@ -17,7 +17,8 @@ import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.v1.RecipeAssessmentService;
 import eu.dietwise.services.v1.StatisticsService;
-import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
+import eu.dietwise.services.v1.extraction.NoIngredientsInRecipeException;
+import eu.dietwise.services.v1.suggestions.impl.NoRecipesDetectedException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.extraction.impl.InvalidRecipeSourceUrlException;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
@@ -215,6 +216,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return error -> {
 			if (error instanceof NoRecipesDetectedException) {
 				emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
+			} else if (error instanceof NoIngredientsInRecipeException) {
+				emitter.emit(new RecipeAssessmentErrorMessage(List.of("No ingredients could be detected")));
 			} else if (error instanceof InvalidRecipeSourceUrlException) {
 				emitter.emit(new RecipeAssessmentErrorMessage(List.of("The supplied URL is not allowed")));
 			} else if (error instanceof MoreThanOneRecipesDetectedException mto) {

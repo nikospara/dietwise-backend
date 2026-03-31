@@ -28,7 +28,7 @@ import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.authz.AuthorizationImpl;
 import eu.dietwise.services.v1.StatisticsService;
-import eu.dietwise.services.v1.extraction.NoRecipesDetectedException;
+import eu.dietwise.services.v1.extraction.NoIngredientsInRecipeException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
@@ -215,7 +215,7 @@ class RecipeAssessmentServiceImplTest {
 	}
 
 	@Test
-	void extractAndAssessRecipeFromUrlEmitsExtractionThenSuggestionsOnHappyPath() {
+	void extractAndAssessRecipeFromUrlEmitsExtractionThenSuggestionsThenScoreOnHappyPath() {
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, JSONLD)),
 				RENDERED_MARKDOWN
@@ -289,10 +289,32 @@ class RecipeAssessmentServiceImplTest {
 	}
 
 	@Test
-	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
+	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoIngredientsInRecipe() {
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
-				.thenReturn(Uni.createFrom().failure(new NoRecipesDetectedException()));
+				.thenReturn(Uni.createFrom().failure(new NoIngredientsInRecipeException()));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
+
+		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
+				.collect().asList()
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(messages).hasSize(1);
+		assertThat(messages.getFirst()).isInstanceOf(RecipeAssessmentErrorMessage.class);
+		assertThat(((RecipeAssessmentErrorMessage) messages.getFirst()).errors())
+				.containsExactly("No ingredients could be detected");
+
+		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
+		verify(statisticsService).assessedRecipe(USER);
+	}
+
+	@Test
+	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
+		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
+				Collections.emptyList(),
+				RENDERED_MARKDOWN
+		);
+		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
+				.thenReturn(Uni.createFrom().item(extractionMessage));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()

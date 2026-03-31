@@ -36,6 +36,7 @@ class MarkdownRecipeExtractionServiceImplTest {
 	void repairsMissingClosingBraceAndParsesRecipe() {
 		String malformedJson = """
 				```json
+				starts with irrelevant text and the parser skips it
 				{
 				  "name": "Simple Pasta",
 				  "recipeIngredients": ["200g pasta", "salt"],
@@ -43,6 +44,49 @@ class MarkdownRecipeExtractionServiceImplTest {
 				""";
 
 		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJson);
+
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+
+		assertThat(recipe.name()).hasValue("Simple Pasta");
+		assertThat(recipe.recipeIngredients()).containsExactly("200g pasta", "salt");
+		assertThat(recipe.recipeInstructions()).containsExactly("Boil water", "Cook pasta");
+		verify(aiService).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+	}
+
+	@Test
+	void repairsMissingClosingBraceAndParsesRecipeWhenLastFenceExists() {
+		String malformedJson = """
+				```json
+				{
+				  "name": "Simple Pasta",
+				  "recipeIngredients": ["200g pasta", "salt"],
+				  "recipeInstructions": ["Boil water", "Cook pasta"]
+				```
+				""";
+
+		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJson);
+
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+
+		assertThat(recipe.name()).hasValue("Simple Pasta");
+		assertThat(recipe.recipeIngredients()).containsExactly("200g pasta", "salt");
+		assertThat(recipe.recipeInstructions()).containsExactly("Boil water", "Cook pasta");
+		verify(aiService).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+	}
+
+	@Test
+	void repairsExtraClosingBraceOrBracket() {
+		String malformedJsonWithExtraClosingBrace = """
+				```json
+				starts with irrelevant text and the parser skips it
+				{
+				  "name": "Simple Pasta",
+				  "recipeIngredients": ["200g pasta", "salt"],
+				  "recipeInstructions": ["Boil water", "Cook pasta"]
+				}}
+				""";
+
+		when(aiService.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(malformedJsonWithExtraClosingBrace);
 
 		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
 
