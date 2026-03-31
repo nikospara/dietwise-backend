@@ -46,28 +46,25 @@ Create a new client in the Realm:
 	- Client authentication: Off
 	- Authorization: Off
 	- Authentication flow: Check *only* "Standard flow"
-	- PKCE Method: **TODO** (should be S256 - also in the "Settings" tab, under the "Capability config" section)
+	- PKCE Method: S256
 - Login settings:
-	- Root URL: **TODO**
-	- Home URL: **TODO**
+	- Root URL: (empty)
+	- Home URL: (empty)
 	- Valid redirect URIs:
 		- http://localhost:5173/authcallback
 		- http://localhost:5173/recipewatch/authcallback
 		- https://gaia.ispatial.survey.ntua.gr/recipewatch/authcallback
 		- https://gaia.ispatial.survey.ntua.local/recipewatch/authcallback
         - eu.dietwise.recipewatch://authcallback
-		- **TODO** (more are needed for real usage)
 	- Valid post logout redirect URIs:
 		- http://localhost:5173/endsession
 		- http://localhost:5173/recipewatch/endsession
 		- https://gaia.ispatial.survey.ntua.gr/recipewatch/endsession
 		- https://gaia.ispatial.survey.ntua.local/recipewatch/endsession
 		- eu.dietwise.recipewatch://endsession
-		- **TODO** (more are needed for real usage)
 	- Web origins:
 		- http://localhost:5173
         - https://localhost
-		- **TODO** (more are needed for real usage)
 - Save & finish the new client wizard
 
 ### Create a client for Responsible Cooking Alliance
