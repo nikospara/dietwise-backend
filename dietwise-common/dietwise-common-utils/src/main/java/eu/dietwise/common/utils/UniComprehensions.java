@@ -241,6 +241,19 @@ public interface UniComprehensions {
 	/**
 	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
 	 */
+	static <R1, R2, R3, R4, R> Uni<R> forc(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			Function<? super R2, Uni<? extends R3>> mapper2,
+			Function<? super R3, Uni<? extends R4>> mapper3,
+			BiFunction<? super R3, ? super R4, Uni<? extends R>> mapper4
+	) {
+		return init.flatMap(mapper1).flatMap(mapper2).flatMap(r3 -> mapper3.apply(r3).flatMap(r4 -> mapper4.apply(r3, r4)));
+	}
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
+	 */
 	static <R1, R2, R3, R4, R5, R> Uni<R> forcm(
 			Uni<R1> init,
 			Function<? super R1, Uni<? extends R2>> mapper1,
