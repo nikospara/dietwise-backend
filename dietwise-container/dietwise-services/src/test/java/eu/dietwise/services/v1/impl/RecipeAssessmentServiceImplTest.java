@@ -309,6 +309,7 @@ class RecipeAssessmentServiceImplTest {
 
 	@Test
 	void extractAndAssessRecipeFromUrlEmitsErrorWhenNoRecipesDetected() {
+		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		var extractionMessage = new RecipeExtractionRecipeAssessmentMessage(
 				Collections.emptyList(),
 				RENDERED_MARKDOWN
