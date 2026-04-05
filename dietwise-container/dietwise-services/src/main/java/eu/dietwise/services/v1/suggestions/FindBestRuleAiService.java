@@ -11,7 +11,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 		chatMemoryProviderSupplier = RegisterAiService.NoChatMemoryProviderSupplier.class
 )
 @RequestScoped
-public interface FindBestruleAiService {
+public interface FindBestRuleAiService {
 	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/findBestRule-system.md")
 	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/findBestRule-user.md")
 	String findBestRule(String ingredientNameInRecipe, String ingredientRoleOrTechnique, String triggerIngredient, String dietaryComponentsMarkdownList, String filteredRulesMarkdownList);

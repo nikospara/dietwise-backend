@@ -28,7 +28,7 @@ import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiService;
 import eu.dietwise.services.v1.scoring.impl.ScoringAiFacadeImpl;
 import eu.dietwise.services.v1.suggestions.AlternativeSuggestionAiService;
-import eu.dietwise.services.v1.suggestions.FindBestruleAiService;
+import eu.dietwise.services.v1.suggestions.FindBestRuleAiService;
 import eu.dietwise.services.v1.suggestions.IngredientRoleAiService;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
@@ -52,7 +52,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final IngredientRoleAiService ingredientRoleAiService;
 	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
 	private final IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService;
-	private final FindBestruleAiService findBestruleAiService;
+	private final FindBestRuleAiService findBestruleAiService;
 	private final AlternativeSuggestionAiService alternativeSuggestionAiService;
 
 	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
@@ -67,7 +67,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			IngredientRoleAiService ingredientRoleAiService,
 			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService,
 			IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService,
-			FindBestruleAiService findBestruleAiService,
+			FindBestRuleAiService findBestruleAiService,
 			AlternativeSuggestionAiService alternativeSuggestionAiService
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
