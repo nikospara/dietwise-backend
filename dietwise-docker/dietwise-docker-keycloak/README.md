@@ -92,6 +92,7 @@ Create a new client in the Realm:
 		- **TODO**
 	- Web origins:
 		- http://localhost:5173
+        - http://localhost:8180/
 		- **TODO**
 - Save & finish the new client wizard
 

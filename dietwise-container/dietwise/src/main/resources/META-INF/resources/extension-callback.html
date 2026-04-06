@@ -4,15 +4,16 @@
 	<meta charset="utf-8"/>
 	<meta http-equiv="Cache-Control" content="no-store, max-age=0"/>
 	<meta http-equiv="Pragma" content="no-cache"/>
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"/>
 	<meta name="referrer" content="no-referrer"/>
 	<title>Responsible Cooking Alliance</title>
 </head>
 <body>
+<p id="status">Completing sign-in…</p>
 <script>
 	const params = new URLSearchParams(location.search);
 	const code = params.get('code');
 	const state = params.get('state');
+	const status = document.getElementById('status');
 	const message = {
 		type: 'KEYCLOAK_CALLBACK',
 		source: 'dietwise-extension-callback',
@@ -25,12 +26,17 @@
 	}
 
 	// Send the callback data only to this page's origin; the extension content script can observe it there.
-	if (code && state) {
+	if (code) {
 		window.postMessage(message, location.origin);
 	}
 
 	window.close();
+
+	setTimeout(() => {
+		if (status && !window.closed) {
+			status.textContent = 'Sign-in complete. You may close this tab.';
+		}
+	}, 200);
 </script>
-<p>Completing sign-in…</p>
 </body>
 </html>

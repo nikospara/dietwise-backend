@@ -23,7 +23,7 @@ import eu.dietwise.services.v1.extraction.NoIngredientsInRecipeException;
 import eu.dietwise.services.v1.extraction.RecipeExtractionService;
 import eu.dietwise.services.v1.filtering.MarkdownBlockCoalescer;
 import eu.dietwise.services.v1.filtering.MarkdownBlockSegmenter;
-import eu.dietwise.services.v1.filtering.RecipeFilterAiService;
+import eu.dietwise.services.v1.filtering.RecipeFilterAiFacade;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutableIngredient;
@@ -47,18 +47,18 @@ import org.slf4j.LoggerFactory;
 public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeExtractionServiceImpl.class);
 
-	private final RecipeFilterAiService filterAiService;
+	private final RecipeFilterAiFacade filterAiFacade;
 	private final MarkdownRecipeExtractionService extractionService;
 	private final RendererClient rendererClient;
 	private final boolean allowCachedTestPages;
 
 	public RecipeExtractionServiceImpl(
-			RecipeFilterAiService filterAiService,
+			RecipeFilterAiFacade filterAiFacade,
 			MarkdownRecipeExtractionService extractionService,
 			@ConfigProperty(name = "dietwise.renderer.allow-cached-test-pages", defaultValue = "false") boolean allowCachedTestPages,
 			@RestClient RendererClient rendererClient
 	) {
-		this.filterAiService = filterAiService;
+		this.filterAiFacade = filterAiFacade;
 		this.extractionService = extractionService;
 		this.allowCachedTestPages = allowCachedTestPages;
 		this.rendererClient = rendererClient;
@@ -94,8 +94,7 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	}
 
 	private Uni<String> filterRecipeBlock(String block) {
-		return Uni.createFrom().item(() -> filterAiService.filterRecipeBlock(block))
-				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
+		return filterAiFacade.filterRecipeBlock(block)
 				.map(result -> result == null ? "" : result.trim().toUpperCase()) // sanitize
 				.map(result -> "KEEP".equals(result) ? block : "");
 	}

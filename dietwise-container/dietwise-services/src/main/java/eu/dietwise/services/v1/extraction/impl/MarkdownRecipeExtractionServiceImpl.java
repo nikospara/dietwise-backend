@@ -10,10 +10,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
-import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
+import eu.dietwise.services.v1.extraction.RecipeExtractionAiFacade;
 import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,20 +20,23 @@ import org.slf4j.LoggerFactory;
 public class MarkdownRecipeExtractionServiceImpl implements MarkdownRecipeExtractionService {
 	private static final Logger LOG = LoggerFactory.getLogger(MarkdownRecipeExtractionServiceImpl.class);
 
-	private final RecipeExtractionAiService extractionAiService;
+	private final RecipeExtractionAiFacade extractionAiFacade;
 	private final ObjectMapper objectMapper;
 	private final RecipeJsonNormalizer jsonNormalizer;
 
-	public MarkdownRecipeExtractionServiceImpl(RecipeExtractionAiService extractionAiService, ObjectMapper objectMapper, RecipeJsonNormalizer jsonNormalizer) {
-		this.extractionAiService = extractionAiService;
+	public MarkdownRecipeExtractionServiceImpl(
+			RecipeExtractionAiFacade extractionAiFacade,
+			ObjectMapper objectMapper,
+			RecipeJsonNormalizer jsonNormalizer
+	) {
+		this.extractionAiFacade = extractionAiFacade;
 		this.objectMapper = objectMapper;
 		this.jsonNormalizer = jsonNormalizer;
 	}
 
 	@Override
 	public Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(String markdown) {
-		return Uni.createFrom().item(() -> extractionAiService.extractRecipeFromMarkdown(markdown))
-				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
+		return extractionAiFacade.extractRecipeFromMarkdown(markdown)
 				.map(this::parseRecipeWithRepair);
 	}
 
