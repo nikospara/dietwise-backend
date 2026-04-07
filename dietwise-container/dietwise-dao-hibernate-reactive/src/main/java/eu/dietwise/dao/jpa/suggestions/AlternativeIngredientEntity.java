@@ -1,5 +1,7 @@
 package eu.dietwise.dao.jpa.suggestions;
 
+import static jakarta.persistence.FetchType.LAZY;
+
 import java.util.Set;
 import java.util.UUID;
 import jakarta.persistence.Column;
@@ -8,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
@@ -36,6 +39,9 @@ public class AlternativeIngredientEntity {
 			inverseJoinColumns = @JoinColumn(name = "recommendation_id")
 	)
 	private Set<RecommendationEntity> componentsForScoring;
+
+	@OneToMany(mappedBy = "alternativeIngredient", fetch = LAZY)
+	private Set<AlternativeIngredientSeasonalityEntity> seasonalityByCountry;
 
 	public UUID getId() {
 		return id;
@@ -67,5 +73,13 @@ public class AlternativeIngredientEntity {
 
 	public void setComponentsForScoring(Set<RecommendationEntity> componentsForScoring) {
 		this.componentsForScoring = componentsForScoring;
+	}
+
+	public Set<AlternativeIngredientSeasonalityEntity> getSeasonalityByCountry() {
+		return seasonalityByCountry;
+	}
+
+	public void setSeasonalityByCountry(Set<AlternativeIngredientSeasonalityEntity> seasonalityByCountry) {
+		this.seasonalityByCountry = seasonalityByCountry;
 	}
 }

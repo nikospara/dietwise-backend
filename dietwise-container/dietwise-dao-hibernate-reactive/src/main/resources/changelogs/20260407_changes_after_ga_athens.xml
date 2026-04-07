@@ -13,4 +13,28 @@
 			<column name="country" type="VARCHAR(2)" remarks="The ISO 3166-1 alpha-2 country code" />
 		</addColumn>
 	</changeSet>
+
+	<changeSet id="alternative_ingredient_seasonality" author="codex">
+		<createTable tableName="DW_ALTERNATIVE_INGREDIENT_SEASONALITY" remarks="Country-specific in-season months for alternative ingredients">
+			<column name="alternative_ingredient_id" type="UUID" remarks="The alternative ingredient id">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_SEASONALITY" />
+			</column>
+			<column name="country" type="VARCHAR(2)" remarks="The ISO 3166-1 alpha-2 country code">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_SEASONALITY" />
+			</column>
+			<column name="month_from" type="INT" remarks="The first in-season month, inclusive">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_SEASONALITY__MONTH_FROM" />
+			</column>
+			<column name="month_to" type="INT" remarks="The last in-season month, inclusive">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_SEASONALITY__MONTH_TO" />
+			</column>
+		</createTable>
+		<addForeignKeyConstraint
+			baseTableName="DW_ALTERNATIVE_INGREDIENT_SEASONALITY"
+			baseColumnNames="alternative_ingredient_id"
+			constraintName="FK_ALTERNATIVE_INGREDIENT_SEASONALITY__ALTERNATIVE_INGREDIENT_ID__ALTERNATIVE_INGREDIENT__ID"
+			referencedTableName="DW_ALTERNATIVE_INGREDIENT"
+			referencedColumnNames="id"
+		/>
+	</changeSet>
 </databaseChangeLog>

@@ -13,6 +13,7 @@
 		<class>eu.dietwise.dao.jpa.recommendations.RecommendationEntity</class>
 		<class>eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RuleEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity</class>
