@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -16,6 +17,7 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.RepresentableAsString;
 import eu.dietwise.common.v1.types.HasUserId;
+import eu.dietwise.dao.PersonalInfoDao;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
@@ -46,6 +48,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private static final Logger LOG = LoggerFactory.getLogger(RecipeSuggestionsServiceImpl.class);
 
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
+	private final PersonalInfoDao personalInfoDao;
 	private final SuggestionsAiFacade suggestionsAiFacade;
 	private final SuggestionDao suggestionDao;
 	private final RuleDao ruleDao;
@@ -54,12 +57,14 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	public RecipeSuggestionsServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
+			PersonalInfoDao personalInfoDao,
 			SuggestionsAiFacade suggestionsAiFacade,
 			SuggestionDao suggestionDao, RuleDao ruleDao,
 			SuggestionPrioritizer suggestionPrioritizer,
 			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
+		this.personalInfoDao = personalInfoDao;
 		this.suggestionsAiFacade = suggestionsAiFacade;
 		this.suggestionDao = suggestionDao;
 		this.ruleDao = ruleDao;
@@ -74,9 +79,9 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, Recipe recipe) {
 		return forcm(
-				readAllNecessaryData(tx),
+				readAllNecessaryData(tx, hasUserId),
 				extractSuggestionsForRecipePerIngredient(tx, recipe),
-				prioritizeSuggestions(tx, hasUserId),
+				prioritizeSuggestions(tx),
 				data -> new MakeSuggestionsResult(
 						new SuggestionsRecipeAssessmentMessage(data.suggestions()),
 						data.recommendations()
@@ -84,12 +89,13 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		);
 	}
 
-	private Uni<RecipeSuggestionNecessaryData> readAllNecessaryData(ReactivePersistenceTxContext tx) {
+	private Uni<RecipeSuggestionNecessaryData> readAllNecessaryData(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
 		return forcm(
-				suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(tx),
+				personalInfoDao.findByUser(tx, hasUserId),
+				_ -> suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(tx),
 				_ -> suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(tx),
-				(_, _) -> suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(tx),
-				(_, _, _) -> suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(tx),
+				_ -> suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(tx),
+				_ -> suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(tx),
 				RecipeSuggestionNecessaryData::new
 		);
 	}
@@ -126,7 +132,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				determineTriggerIngredient(data, ingredient),
 				loadMatchingRulesAndDetermineComposition(tx, data, availableRecommendationsAsMarkdownList, ingredient),
 				identifyBestFittingRule(ingredient),
-				loadAlternativesFromDbAndSelectBest(tx, ingredient),
+				loadAlternativesFromDbAndSelectBest(tx, data, ingredient),
 				postProcessAlternatives(recipe, data, ingredient)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
 			LOG.warn("Failed to process ingredient <{}>: {}", ingredient.getNameInRecipe(), t.getMessage());
@@ -202,10 +208,11 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Function4<? super RoleOrTechnique, ? super TriggerIngredient, ? super RulesAndComponents, ? super Rule, Uni<? extends List<Suggestion>>> loadAlternativesFromDbAndSelectBest(
 			ReactivePersistenceTxContext tx,
+			RecipeSuggestionNecessaryData data,
 			Ingredient ingredient
 	) {
 		return (role, _, _, rule) -> forc(
-				suggestionDao.findByRule(tx, rule, ingredient),
+				suggestionDao.retrieveByRule(tx, rule, data.personalInfo().getCountry(), ingredient),
 				suggestions -> suggestionsAiFacade.suggestAlternatives(ingredient.getNameInRecipe(), role, suggestions),
 				(suggestions, responseFromAi) -> {
 					// TODO dummy, process response from AI
@@ -240,9 +247,9 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		};
 	}
 
-	private Function<? super SuggestionsAndRecommendationsPerIngredient, Uni<? extends SuggestionsAndRecommendationsPerIngredient>> prioritizeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
-		return data -> suggestionPrioritizer.prioritizeSuggestions(tx, hasUserId, data.suggestions())
-				.map(data::withSuggestions);
+	private BiFunction<? super RecipeSuggestionNecessaryData, ? super SuggestionsAndRecommendationsPerIngredient, Uni<? extends SuggestionsAndRecommendationsPerIngredient>> prioritizeSuggestions(ReactivePersistenceTxContext tx) {
+		return (data, suggestionsAndRecommendations) -> suggestionPrioritizer.prioritizeSuggestions(tx, data.personalInfo(), suggestionsAndRecommendations.suggestions())
+				.map(suggestionsAndRecommendations::withSuggestions);
 	}
 
 	@Override

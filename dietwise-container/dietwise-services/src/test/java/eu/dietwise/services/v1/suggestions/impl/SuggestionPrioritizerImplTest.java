@@ -53,8 +53,6 @@ class SuggestionPrioritizerImplTest {
 	@Mock
 	private DateTimeService dateTimeService;
 	@Mock
-	private PersonalInfoDao personalInfoDao;
-	@Mock
 	private RecommendationDao recommendationDao;
 	@Mock
 	private User user;
@@ -65,18 +63,17 @@ class SuggestionPrioritizerImplTest {
 
 	@Test
 	void prioritizeSuggestionsUsesAgeAndGenderWeightsAndSortsDescending() {
-		var sut = new SuggestionPrioritizerImpl(dateTimeService, personalInfoDao, recommendationDao);
+		var sut = new SuggestionPrioritizerImpl(dateTimeService, recommendationDao);
 
 		PersonalInfo personalInfo = ImmutablePersonalInfo.builder()
 				.yearOfBirth(1996)
 				.gender(BiologicalGender.FEMALE)
 				.build();
-		when(personalInfoDao.findByUser(any(), eq(user))).thenReturn(Uni.createFrom().item(personalInfo));
 		when(dateTimeService.getNow()).thenReturn(NOW);
 		when(recommendationDao.findRecommendations(any(), eq(30), eq(BiologicalGender.FEMALE))).thenReturn(Uni.createFrom().item(WEIGHTS));
 
 		List<Suggestion> result = persistenceContextFactory
-				.withoutTransaction(em -> sut.prioritizeSuggestions(em, user, INPUT_SUGGESTIONS))
+				.withoutTransaction(em -> sut.prioritizeSuggestions(em, personalInfo, INPUT_SUGGESTIONS))
 				.await().indefinitely();
 
 		assertThat(result).containsExactly(HIGH_SUGGESTION, LOW_SUGGESTION, MISSING_SUGGESTION);
@@ -89,15 +86,14 @@ class SuggestionPrioritizerImplTest {
 
 	@Test
 	void prioritizeSuggestionsUsesGenderOnlyWeightsWhenAgeIsNull() {
-		var sut = new SuggestionPrioritizerImpl(dateTimeService, personalInfoDao, recommendationDao);
+		var sut = new SuggestionPrioritizerImpl(dateTimeService, recommendationDao);
 		PersonalInfo personalInfo = org.mockito.Mockito.mock(PersonalInfo.class);
 		when(personalInfo.getYearOfBirth()).thenReturn(null);
 		when(personalInfo.getGender()).thenReturn(BiologicalGender.FEMALE);
-		when(personalInfoDao.findByUser(any(), eq(user))).thenReturn(Uni.createFrom().item(personalInfo));
 		when(recommendationDao.findRecommendations(any(), eq(BiologicalGender.FEMALE))).thenReturn(Uni.createFrom().item(WEIGHTS));
 
 		List<Suggestion> result = persistenceContextFactory
-				.withoutTransaction(em -> sut.prioritizeSuggestions(em, user, INPUT_SUGGESTIONS))
+				.withoutTransaction(em -> sut.prioritizeSuggestions(em, personalInfo, INPUT_SUGGESTIONS))
 				.await().indefinitely();
 
 		assertThat(result).containsExactly(HIGH_SUGGESTION, LOW_SUGGESTION, MISSING_SUGGESTION);
@@ -110,16 +106,15 @@ class SuggestionPrioritizerImplTest {
 
 	@Test
 	void prioritizeSuggestionsUsesAgeOnlyWeightsWhenGenderIsNull() {
-		var sut = new SuggestionPrioritizerImpl(dateTimeService, personalInfoDao, recommendationDao);
+		var sut = new SuggestionPrioritizerImpl(dateTimeService, recommendationDao);
 		PersonalInfo personalInfo = org.mockito.Mockito.mock(PersonalInfo.class);
 		when(personalInfo.getYearOfBirth()).thenReturn(1996);
 		when(personalInfo.getGender()).thenReturn(null);
-		when(personalInfoDao.findByUser(any(), eq(user))).thenReturn(Uni.createFrom().item(personalInfo));
 		when(dateTimeService.getNow()).thenReturn(NOW);
 		when(recommendationDao.findRecommendations(any(), eq(30))).thenReturn(Uni.createFrom().item(WEIGHTS));
 
 		List<Suggestion> result = persistenceContextFactory
-				.withoutTransaction(em -> sut.prioritizeSuggestions(em, user, INPUT_SUGGESTIONS))
+				.withoutTransaction(em -> sut.prioritizeSuggestions(em, personalInfo, INPUT_SUGGESTIONS))
 				.await().indefinitely();
 
 		assertThat(result).containsExactly(HIGH_SUGGESTION, LOW_SUGGESTION, MISSING_SUGGESTION);
@@ -131,15 +126,14 @@ class SuggestionPrioritizerImplTest {
 
 	@Test
 	void prioritizeSuggestionsUsesDefaultWeightsWhenAgeAndGenderAreNull() {
-		var sut = new SuggestionPrioritizerImpl(dateTimeService, personalInfoDao, recommendationDao);
+		var sut = new SuggestionPrioritizerImpl(dateTimeService, recommendationDao);
 		PersonalInfo personalInfo = org.mockito.Mockito.mock(PersonalInfo.class);
 		when(personalInfo.getYearOfBirth()).thenReturn(null);
 		when(personalInfo.getGender()).thenReturn(null);
-		when(personalInfoDao.findByUser(any(), eq(user))).thenReturn(Uni.createFrom().item(personalInfo));
 		when(recommendationDao.findRecommendations(any())).thenReturn(Uni.createFrom().item(WEIGHTS));
 
 		List<Suggestion> result = persistenceContextFactory
-				.withoutTransaction(em -> sut.prioritizeSuggestions(em, user, INPUT_SUGGESTIONS))
+				.withoutTransaction(em -> sut.prioritizeSuggestions(em, personalInfo, INPUT_SUGGESTIONS))
 				.await().indefinitely();
 
 		assertThat(result).containsExactly(HIGH_SUGGESTION, LOW_SUGGESTION, MISSING_SUGGESTION);

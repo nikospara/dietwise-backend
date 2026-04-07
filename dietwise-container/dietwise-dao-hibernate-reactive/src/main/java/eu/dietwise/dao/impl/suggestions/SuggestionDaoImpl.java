@@ -2,35 +2,44 @@ package eu.dietwise.dao.impl.suggestions;
 
 import static java.util.stream.Collectors.toSet;
 
+import static eu.dietwise.common.utils.UniComprehensions.forcm;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
-import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
-import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity_;
-import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
 import eu.dietwise.dao.suggestions.SuggestionDao;
-import eu.dietwise.services.types.suggestions.HasRoleOrTechniqueId;
-import eu.dietwise.services.types.suggestions.HasTriggerIngredientId;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.HasRuleId;
+import eu.dietwise.v1.types.ImmutableSeasonality;
 import eu.dietwise.v1.types.RecommendationComponentName;
+import eu.dietwise.v1.types.Seasonality;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
@@ -41,42 +50,119 @@ import io.smallrye.mutiny.Uni;
 @ApplicationScoped
 public class SuggestionDaoImpl implements SuggestionDao {
 	@Override
-	public Uni<List<Suggestion>> findByRoleAndTriggerIngredient(
-			ReactivePersistenceContext em, HasRoleOrTechniqueId roleId, HasTriggerIngredientId triggerIngredientId, Ingredient ingredient) {
-		return fetchSuggestionsBy(em, ingredient, (cb, suggestionTemplate) -> new Predicate[]{
-				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.roleOrTechnique).get(RoleOrTechniqueEntity_.id), roleId.getId().asUuid()),
-				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid())
-		});
+	public Uni<List<Suggestion>> retrieveByRule(ReactivePersistenceContext em, HasRuleId ruleId, Country country, Ingredient ingredient) {
+		return forcm(
+				findSuggestionTemplatesByRule(em, ruleId),
+				this::extractAlternativeIngredientIds,
+				(_, alternativeIngredientIds) -> findSeasonalityByAlternativeIngredientId(em, alternativeIngredientIds, country),
+				(_, alternativeIngredientIds, _) -> findAlternativeComponentNamesByAlternativeIngredientId(em, alternativeIngredientIds),
+				(suggestionTemplates, _, seasonalityByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId) ->
+						toSuggestionList(suggestionTemplates, seasonalityByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId, ingredient)
+		);
 	}
 
-	@Override
-	public Uni<List<Suggestion>> findByRule(ReactivePersistenceContext em, HasRuleId ruleId, Ingredient ingredient) {
-		return fetchSuggestionsBy(em, ingredient, (cb, suggestionTemplate) -> new Predicate[]{
-				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId.getId().asUuid())
-		});
-	}
-
-	private Uni<List<Suggestion>> fetchSuggestionsBy(
-			ReactivePersistenceContext em,
-			Ingredient ingredient,
-			BiFunction<CriteriaBuilder, Root<SuggestionTemplateEntity>, Predicate[]> makePredicates
-	) {
+	private Uni<List<SuggestionTemplateEntity>> findSuggestionTemplatesByRule(ReactivePersistenceContext em, HasRuleId ruleId) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(SuggestionTemplateEntity.class);
 		Root<SuggestionTemplateEntity> suggestionTemplate = q.from(SuggestionTemplateEntity.class);
 		Fetch<SuggestionTemplateEntity, RuleEntity> rule = suggestionTemplate.fetch(SuggestionTemplateEntity_.rule);
 		rule.fetch(RuleEntity_.recommendation);
-		var alternativeIngredient = suggestionTemplate.fetch(SuggestionTemplateEntity_.alternativeIngredient);
-		alternativeIngredient.fetch(AlternativeIngredientEntity_.componentsForScoring, JoinType.LEFT);
-		q.select(suggestionTemplate).where(makePredicates.apply(cb, suggestionTemplate));
-		return em.createQuery(q).getResultList().map(list -> toSuggestionList(list, ingredient));
+		suggestionTemplate.fetch(SuggestionTemplateEntity_.alternativeIngredient);
+		q.where(cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId.getId().asUuid()));
+		q.select(suggestionTemplate);
+		return em.createQuery(q).getResultList();
 	}
 
-	private static List<Suggestion> toSuggestionList(List<SuggestionTemplateEntity> list, Ingredient ingredient) {
-		return list.stream().map(entity -> toSuggestion(entity, ingredient)).toList();
+	private Uni<Set<UUID>> extractAlternativeIngredientIds(List<SuggestionTemplateEntity> suggestionTemplates) {
+		Set<UUID> alternativeIngredientIds = suggestionTemplates.stream()
+				.map(suggestionTemplate -> suggestionTemplate.getAlternativeIngredient().getId())
+				.collect(toSet());
+		return Uni.createFrom().item(alternativeIngredientIds);
 	}
 
-	private static Suggestion toSuggestion(SuggestionTemplateEntity e, Ingredient ingredient) {
+	private Uni<Map<UUID, AlternativeIngredientSeasonalityEntity>> findSeasonalityByAlternativeIngredientId(
+			ReactivePersistenceContext em,
+			Set<UUID> alternativeIngredientIds,
+			Country country
+	) {
+		if (country == null || alternativeIngredientIds.isEmpty()) {
+			return Uni.createFrom().item(Collections.emptyMap());
+		}
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(AlternativeIngredientSeasonalityEntity.class);
+		Root<AlternativeIngredientSeasonalityEntity> seasonality = q.from(AlternativeIngredientSeasonalityEntity.class);
+		q.select(seasonality).where(
+				cb.and(
+						in(cb, seasonality.get(AlternativeIngredientSeasonalityEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id), alternativeIngredientIds),
+						cb.equal(seasonality.get(AlternativeIngredientSeasonalityEntity_.countryCode2), country.getCode2())
+				)
+		);
+		return em.createQuery(q).getResultList().map(list -> list.stream().collect(
+				Collectors.toMap(
+						seasonalityEntity -> seasonalityEntity.getAlternativeIngredient().getId(),
+						seasonalityEntity -> seasonalityEntity,
+						(existing, _) -> existing,
+						LinkedHashMap::new
+				)
+		));
+	}
+
+	private Uni<Map<UUID, Set<RecommendationComponentName>>> findAlternativeComponentNamesByAlternativeIngredientId(
+			ReactivePersistenceContext em,
+			Set<UUID> alternativeIngredientIds
+	) {
+		if (alternativeIngredientIds.isEmpty()) {
+			return Uni.createFrom().item(Collections.emptyMap());
+		}
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(AlternativeIngredientSeasonalitylessProjection.class);
+		Root<AlternativeIngredientEntity> alternativeIngredient = q.from(AlternativeIngredientEntity.class);
+		var component = alternativeIngredient.join(AlternativeIngredientEntity_.componentsForScoring, JoinType.LEFT);
+		q.select(cb.construct(
+				AlternativeIngredientSeasonalitylessProjection.class,
+				alternativeIngredient.get(AlternativeIngredientEntity_.id),
+				component.get(RecommendationEntity_.componentForScoring)
+		)).where(in(cb, alternativeIngredient.get(AlternativeIngredientEntity_.id), alternativeIngredientIds));
+		return em.createQuery(q).getResultList().map(rows -> {
+			Map<UUID, Set<RecommendationComponentName>> result = new LinkedHashMap<>();
+			for (var row : rows) {
+				result.computeIfAbsent(row.alternativeIngredientId(), ignored -> new java.util.LinkedHashSet<>());
+				if (row.componentForScoring() != null) {
+					result.get(row.alternativeIngredientId()).add(new RecommendationComponentNameImpl(row.componentForScoring()));
+				}
+			}
+			for (var alternativeIngredientId : alternativeIngredientIds) {
+				result.computeIfAbsent(alternativeIngredientId, ignored -> Collections.emptySet());
+			}
+			return result;
+		});
+	}
+
+	private static List<Suggestion> toSuggestionList(
+			List<SuggestionTemplateEntity> suggestionTemplates,
+			Map<UUID, AlternativeIngredientSeasonalityEntity> seasonalityByAlternativeIngredientId,
+			Map<UUID, Set<RecommendationComponentName>> alternativeComponentNamesByAlternativeIngredientId,
+			Ingredient ingredient
+	) {
+		return suggestionTemplates.stream()
+				.map(suggestionTemplate -> {
+					UUID alternativeIngredientId = suggestionTemplate.getAlternativeIngredient().getId();
+					return toSuggestion(
+							suggestionTemplate,
+							seasonalityByAlternativeIngredientId.get(alternativeIngredientId),
+							alternativeComponentNamesByAlternativeIngredientId.getOrDefault(alternativeIngredientId, Collections.emptySet()),
+							ingredient
+					);
+				})
+				.toList();
+	}
+
+	private static Suggestion toSuggestion(
+			SuggestionTemplateEntity e,
+			AlternativeIngredientSeasonalityEntity seasonality,
+			Set<RecommendationComponentName> alternativeComponentNames,
+			Ingredient ingredient
+	) {
 		return ImmutableSuggestion.builder()
 				.id(new GenericSuggestionTemplateId(e.getId().toString()))
 				.alternative(new AlternativeIngredientImpl(e.getAlternativeIngredient().getName()))
@@ -86,14 +172,24 @@ public class SuggestionDaoImpl implements SuggestionDao {
 				.target(new AppliesTo.AppliesToIngredient(ingredient.getId()))
 				.ruleId(new GenericRuleId(e.getRule().getId().toString()))
 				.recommendation(new RecommendationImpl(e.getRule().getRecommendation().getName()))
-				.alternativeComponentNames(toRecommendationComponentNames(e))
+				.seasonality(Optional.ofNullable(seasonality).map(SuggestionDaoImpl::toSeasonality))
+				.alternativeComponentNames(alternativeComponentNames)
 				.build();
 	}
 
-	private static Set<RecommendationComponentName> toRecommendationComponentNames(SuggestionTemplateEntity e) {
-		return e.getAlternativeIngredient().getComponentsForScoring().stream()
-				.map(RecommendationEntity::getComponentForScoring)
-				.map(RecommendationComponentNameImpl::new)
-				.collect(toSet());
+	private static Seasonality toSeasonality(AlternativeIngredientSeasonalityEntity seasonality) {
+		return ImmutableSeasonality.builder().monthFrom(seasonality.getMonthFrom()).monthTo(seasonality.getMonthTo()).build();
+	}
+
+	private static In<UUID> in(CriteriaBuilder cb, Path<UUID> path, Set<UUID> ids) {
+		In<UUID> in = cb.in(path);
+		ids.forEach(in::value);
+		return in;
+	}
+
+	private record AlternativeIngredientSeasonalitylessProjection(
+			UUID alternativeIngredientId,
+			String componentForScoring
+	) {
 	}
 }

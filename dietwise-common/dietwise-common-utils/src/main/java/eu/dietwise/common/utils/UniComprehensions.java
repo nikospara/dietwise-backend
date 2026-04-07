@@ -211,7 +211,7 @@ public interface UniComprehensions {
 	}
 
 	/**
-	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}.
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}, followed by a single {@code Uni.map} operation.
 	 */
 	static <R1, R2, R3, R4, R> Uni<R> forcm(
 			Uni<R1> init,
@@ -221,6 +221,19 @@ public interface UniComprehensions {
 			Function4<R1, R2, R3, R4, R> finalMapper
 	) {
 		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r1, r2).flatMap(r3 -> mapper3.apply(r1, r2, r3).map(r4 -> finalMapper.apply(r1, r2, r3, r4)))));
+	}
+
+	/**
+	 * Apply a chain of {@code Uni.flatMap} operations to the first argument {@code Uni}, followed by a single {@code Uni.map} operation.
+	 */
+	static <R1, R2, R3, R4, R> Uni<R> forcm(
+			Uni<R1> init,
+			Function<? super R1, Uni<? extends R2>> mapper1,
+			Function<? super R2, Uni<? extends R3>> mapper2,
+			Function<? super R3, Uni<? extends R4>> mapper3,
+			Function4<R1, R2, R3, R4, R> finalMapper
+	) {
+		return init.flatMap(r1 -> mapper1.apply(r1).flatMap(r2 -> mapper2.apply(r2).flatMap(r3 -> mapper3.apply(r3).map(r4 -> finalMapper.apply(r1, r2, r3, r4)))));
 	}
 
 	//----------- 5 steps + optional mapper -----------
