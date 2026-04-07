@@ -3,6 +3,8 @@ package eu.dietwise.dao.impl;
 import static eu.dietwise.common.test.testcontainers.DockerImageNames.POSTGRES_IMAGE;
 import static eu.dietwise.v1.types.BiologicalGender.FEMALE;
 import static eu.dietwise.v1.types.BiologicalGender.MALE;
+import static eu.dietwise.v1.types.Country.BELGIUM;
+import static eu.dietwise.v1.types.Country.GREECE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
@@ -63,24 +65,28 @@ public class PersonalInfoDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(pi).isNull();
 		// store
-		var piToStore1 = ImmutablePersonalInfo.builder().gender(MALE).yearOfBirth(1977).build();
+		var piToStore1 = ImmutablePersonalInfo.builder().country(GREECE).gender(MALE).yearOfBirth(1977).build();
 		pi = factory.withTransaction(tx -> sut.storeForUser(tx, new UserIdImpl(USER_ID.toString()), piToStore1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(pi.getCountry()).isEqualTo(GREECE);
 		assertThat(pi.getGender()).isEqualTo(MALE);
 		assertThat(pi.getYearOfBirth()).isEqualTo(1977);
 		// read again, expect the one just stored
 		pi = factory.withTransaction(tx -> sut.findByUser(tx, new UserIdImpl(USER_ID.toString())))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(pi.getCountry()).isEqualTo(GREECE);
 		assertThat(pi.getGender()).isEqualTo(MALE);
 		assertThat(pi.getYearOfBirth()).isEqualTo(1977);
 		// update
-		var piToStore2 = ImmutablePersonalInfo.builder().gender(FEMALE).yearOfBirth(1987).build();
+		var piToStore2 = ImmutablePersonalInfo.builder().country(BELGIUM).gender(FEMALE).yearOfBirth(1987).build();
 		pi = factory.withTransaction(tx -> sut.storeForUser(tx, new UserIdImpl(USER_ID.toString()), piToStore2))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(pi.getCountry()).isEqualTo(BELGIUM);
 		assertThat(pi.getGender()).isEqualTo(FEMALE);
 		assertThat(pi.getYearOfBirth()).isEqualTo(1987);
 		pi = factory.withTransaction(tx -> sut.findByUser(tx, new UserIdImpl(USER_ID.toString())))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(pi.getCountry()).isEqualTo(BELGIUM);
 		assertThat(pi.getGender()).isEqualTo(FEMALE);
 		assertThat(pi.getYearOfBirth()).isEqualTo(1987);
 	}

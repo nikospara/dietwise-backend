@@ -1,6 +1,7 @@
 package eu.dietwise.v1.model;
 
 import static eu.dietwise.v1.types.BiologicalGender.FEMALE;
+import static eu.dietwise.v1.types.Country.GREECE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,11 +14,13 @@ public class PersonalInfoTest {
 		var om = ObjectMapperModelUtils.applyDefaultObjectMapperConfiguration(new ObjectMapper());
 		var json = """
 				{
+					"country": "GR",
 					"gender": "FEMALE",
 					"yearOfBirth": 1979
 				}
 				""";
 		var result = om.readValue(json, PersonalInfo.class);
+		assertThat(result.getCountry()).isEqualTo(GREECE);
 		assertThat(result.getGender()).isEqualTo(FEMALE);
 		assertThat(result.getYearOfBirth()).isEqualTo(1979);
 	}

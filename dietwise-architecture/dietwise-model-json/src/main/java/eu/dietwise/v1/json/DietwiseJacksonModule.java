@@ -28,6 +28,9 @@ import eu.dietwise.v1.model.RecipeMixin;
 import eu.dietwise.v1.model.StatisticsParam;
 import eu.dietwise.v1.model.StatisticsParamBuilderMixin;
 import eu.dietwise.v1.model.StatisticsParamMixin;
+import eu.dietwise.v1.types.Country;
+import eu.dietwise.v1.types.CountryDeserializer;
+import eu.dietwise.v1.types.CountrySerializer;
 import eu.dietwise.v1.types.RepresentableAsStringKeySerializer;
 import eu.dietwise.v1.types.RepresentableAsStringSerializer;
 import eu.dietwise.v1.types.SuggestionTemplateId;
@@ -51,6 +54,8 @@ public class DietwiseJacksonModule extends SimpleModule {
 		setMixInAnnotation(ImmutableStatisticsParam.Builder.class, StatisticsParamBuilderMixin.class);
 		setMixInAnnotation(SuggestionTemplateId.class, SuggestionTemplateIdMixin.class);
 
+		addSerializer(Country.class, new CountrySerializer());
+		addDeserializer(Country.class, new CountryDeserializer());
 		addSerializer(RepresentableAsString.class, new RepresentableAsStringSerializer());
 		addKeySerializer(RepresentableAsString.class, new RepresentableAsStringKeySerializer());
 	}

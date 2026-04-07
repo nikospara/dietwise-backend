@@ -56,15 +56,19 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 
 	private Uni<PersonalInfoEntity> upsert(ReactivePersistenceTxContext tx, UUID userId, PersonalInfoEntity entity, PersonalInfo personalInfo) {
 		if (entity != null) {
-			entity.setGender(personalInfo.getGender());
-			entity.setYearOfBirth(personalInfo.getYearOfBirth());
+			copyToEntity(personalInfo, entity);
 			return tx.merge(entity);
 		} else {
 			entity = new PersonalInfoEntity();
-			entity.setGender(personalInfo.getGender());
-			entity.setYearOfBirth(personalInfo.getYearOfBirth());
+			copyToEntity(personalInfo, entity);
 			return linkWithUserAndPersist(tx, userId, entity);
 		}
+	}
+
+	private void copyToEntity(PersonalInfo personalInfo, PersonalInfoEntity entity) {
+		entity.setGender(personalInfo.getGender());
+		entity.setYearOfBirth(personalInfo.getYearOfBirth());
+		entity.setCountry(personalInfo.getCountry());
 	}
 
 	private Uni<PersonalInfoEntity> linkWithUserAndPersist(ReactivePersistenceTxContext tx, UUID userId, PersonalInfoEntity entity) {
@@ -82,6 +86,10 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 	}
 
 	private PersonalInfo toPersonalInfo(PersonalInfoEntity entity) {
-		return entity == null ? null : ImmutablePersonalInfo.builder().gender(entity.getGender()).yearOfBirth(entity.getYearOfBirth()).build();
+		return entity == null ? null : ImmutablePersonalInfo.builder()
+				.country(entity.getCountry())
+				.gender(entity.getGender())
+				.yearOfBirth(entity.getYearOfBirth())
+				.build();
 	}
 }
