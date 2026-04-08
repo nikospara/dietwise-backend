@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import eu.dietwise.common.types.Nullable;
+import eu.dietwise.v1.types.Cost;
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecommendationComponentName;
 import eu.dietwise.v1.types.RuleId;
@@ -20,6 +21,8 @@ public interface Suggestion extends SuggestionTemplate {
 	Recommendation getRecommendation();
 
 	Optional<Seasonality> getSeasonality();
+
+	Optional<Cost> getCost();
 
 	Optional<String> getRationale();
 

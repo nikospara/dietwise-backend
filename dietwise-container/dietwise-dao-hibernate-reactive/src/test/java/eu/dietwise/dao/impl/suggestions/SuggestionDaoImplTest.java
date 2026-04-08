@@ -1,6 +1,8 @@
 package eu.dietwise.dao.impl.suggestions;
 
 import static eu.dietwise.common.test.testcontainers.DockerImageNames.POSTGRES_IMAGE;
+import static eu.dietwise.v1.types.Cost.HI;
+import static eu.dietwise.v1.types.Cost.LO;
 import static eu.dietwise.v1.types.Country.BELGIUM;
 import static eu.dietwise.v1.types.Country.GREECE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,6 +13,7 @@ import java.util.UUID;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
 import eu.dietwise.v1.model.AppliesTo;
@@ -82,7 +85,17 @@ class SuggestionDaoImplTest {
 											belgiumSeasonality.setMonthFrom(8);
 											belgiumSeasonality.setMonthTo(9);
 
-											return tx.persistAll(greeceSeasonality, belgiumSeasonality);
+											var greeceCost = new AlternativeIngredientCostEntity();
+											greeceCost.setAlternativeIngredient(chickpeaAubergineMix);
+											greeceCost.setCountry(GREECE);
+											greeceCost.setCost(LO);
+
+											var belgiumCost = new AlternativeIngredientCostEntity();
+											belgiumCost.setAlternativeIngredient(paneer);
+											belgiumCost.setCountry(BELGIUM);
+											belgiumCost.setCost(HI);
+
+											return tx.persistAll(greeceSeasonality, belgiumSeasonality, greeceCost, belgiumCost);
 										})
 						)
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -97,6 +110,7 @@ class SuggestionDaoImplTest {
 			assertThat(suggestion.getRuleId()).isEqualTo(new GenericRuleId(RULE_ID.toString()));
 			assertThat(suggestion.getRecommendation()).isEqualTo(new RecommendationImpl("Decrease red meat"));
 			assertThat(suggestion.getSeasonality()).isEmpty();
+			assertThat(suggestion.getCost()).isEmpty();
 		});
 		assertThat(suggestionsWithoutCountry).anySatisfy(suggestion -> {
 			assertThat(suggestion.getId().asString()).isEqualTo("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c");
@@ -139,6 +153,7 @@ class SuggestionDaoImplTest {
 			assertThat(suggestion.getId().asString()).isEqualTo("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c");
 			assertThat(suggestion.getAlternative().asString()).isEqualTo("Chickpea + aubergine mix");
 			assertThat(suggestion.getSeasonality()).contains(ImmutableSeasonality.builder().monthFrom(8).monthTo(10).build());
+			assertThat(suggestion.getCost()).contains(LO);
 			assertThat(suggestion.getAlternativeComponentNames()).containsExactlyInAnyOrder(
 					new RecommendationComponentNameImpl("legumes"),
 					new RecommendationComponentNameImpl("fiber"),
@@ -146,6 +161,9 @@ class SuggestionDaoImplTest {
 			);
 		});
 		assertThat(suggestionsForGreece).filteredOn(suggestion -> !suggestion.getId().asString().equals("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c"))
-				.allSatisfy(suggestion -> assertThat(suggestion.getSeasonality()).isEmpty());
+				.allSatisfy(suggestion -> {
+					assertThat(suggestion.getSeasonality()).isEmpty();
+					assertThat(suggestion.getCost()).isEmpty();
+				});
 	}
 }

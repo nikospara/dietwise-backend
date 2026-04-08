@@ -43,6 +43,9 @@ public class AlternativeIngredientEntity {
 	@OneToMany(mappedBy = "alternativeIngredient", fetch = LAZY)
 	private Set<AlternativeIngredientSeasonalityEntity> seasonalityByCountry;
 
+	@OneToMany(mappedBy = "alternativeIngredient", fetch = LAZY)
+	private Set<AlternativeIngredientCostEntity> costByCountry;
+
 	public UUID getId() {
 		return id;
 	}
@@ -81,5 +84,13 @@ public class AlternativeIngredientEntity {
 
 	public void setSeasonalityByCountry(Set<AlternativeIngredientSeasonalityEntity> seasonalityByCountry) {
 		this.seasonalityByCountry = seasonalityByCountry;
+	}
+
+	public Set<AlternativeIngredientCostEntity> getCostByCountry() {
+		return costByCountry;
+	}
+
+	public void setCostByCountry(Set<AlternativeIngredientCostEntity> costByCountry) {
+		this.costByCountry = costByCountry;
 	}
 }

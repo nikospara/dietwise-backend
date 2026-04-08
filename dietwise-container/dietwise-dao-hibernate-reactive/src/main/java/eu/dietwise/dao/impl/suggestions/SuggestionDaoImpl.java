@@ -22,6 +22,8 @@ import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
@@ -35,6 +37,7 @@ import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.Cost;
 import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.HasRuleId;
 import eu.dietwise.v1.types.ImmutableSeasonality;
@@ -55,9 +58,10 @@ public class SuggestionDaoImpl implements SuggestionDao {
 				findSuggestionTemplatesByRule(em, ruleId),
 				this::extractAlternativeIngredientIds,
 				(_, alternativeIngredientIds) -> findSeasonalityByAlternativeIngredientId(em, alternativeIngredientIds, country),
-				(_, alternativeIngredientIds, _) -> findAlternativeComponentNamesByAlternativeIngredientId(em, alternativeIngredientIds),
-				(suggestionTemplates, _, seasonalityByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId) ->
-						toSuggestionList(suggestionTemplates, seasonalityByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId, ingredient)
+				(_, alternativeIngredientIds, _) -> findCostByAlternativeIngredientId(em, alternativeIngredientIds, country),
+				(_, alternativeIngredientIds, _, _) -> findAlternativeComponentNamesByAlternativeIngredientId(em, alternativeIngredientIds),
+				(suggestionTemplates, _, seasonalityByAlternativeIngredientId, costByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId) ->
+						toSuggestionList(suggestionTemplates, seasonalityByAlternativeIngredientId, costByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId, ingredient)
 		);
 	}
 
@@ -101,7 +105,34 @@ public class SuggestionDaoImpl implements SuggestionDao {
 				Collectors.toMap(
 						seasonalityEntity -> seasonalityEntity.getAlternativeIngredient().getId(),
 						seasonalityEntity -> seasonalityEntity,
-						(existing, _) -> existing,
+						(existing, replacement) -> existing,
+						LinkedHashMap::new
+				)
+		));
+	}
+
+	private Uni<Map<UUID, Cost>> findCostByAlternativeIngredientId(
+			ReactivePersistenceContext em,
+			Set<UUID> alternativeIngredientIds,
+			Country country
+	) {
+		if (country == null || alternativeIngredientIds.isEmpty()) {
+			return Uni.createFrom().item(Collections.emptyMap());
+		}
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(AlternativeIngredientCostEntity.class);
+		Root<AlternativeIngredientCostEntity> cost = q.from(AlternativeIngredientCostEntity.class);
+		q.select(cost).where(
+				cb.and(
+						in(cb, cost.get(AlternativeIngredientCostEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id), alternativeIngredientIds),
+						cb.equal(cost.get(AlternativeIngredientCostEntity_.countryCode2), country.getCode2())
+				)
+		);
+		return em.createQuery(q).getResultList().map(list -> list.stream().collect(
+				Collectors.toMap(
+						costEntity -> costEntity.getAlternativeIngredient().getId(),
+						AlternativeIngredientCostEntity::getCost,
+						(existing, replacement) -> existing,
 						LinkedHashMap::new
 				)
 		));
@@ -141,6 +172,7 @@ public class SuggestionDaoImpl implements SuggestionDao {
 	private static List<Suggestion> toSuggestionList(
 			List<SuggestionTemplateEntity> suggestionTemplates,
 			Map<UUID, AlternativeIngredientSeasonalityEntity> seasonalityByAlternativeIngredientId,
+			Map<UUID, Cost> costByAlternativeIngredientId,
 			Map<UUID, Set<RecommendationComponentName>> alternativeComponentNamesByAlternativeIngredientId,
 			Ingredient ingredient
 	) {
@@ -150,6 +182,7 @@ public class SuggestionDaoImpl implements SuggestionDao {
 					return toSuggestion(
 							suggestionTemplate,
 							seasonalityByAlternativeIngredientId.get(alternativeIngredientId),
+							costByAlternativeIngredientId.get(alternativeIngredientId),
 							alternativeComponentNamesByAlternativeIngredientId.getOrDefault(alternativeIngredientId, Collections.emptySet()),
 							ingredient
 					);
@@ -160,6 +193,7 @@ public class SuggestionDaoImpl implements SuggestionDao {
 	private static Suggestion toSuggestion(
 			SuggestionTemplateEntity e,
 			AlternativeIngredientSeasonalityEntity seasonality,
+			Cost cost,
 			Set<RecommendationComponentName> alternativeComponentNames,
 			Ingredient ingredient
 	) {
@@ -173,6 +207,7 @@ public class SuggestionDaoImpl implements SuggestionDao {
 				.ruleId(new GenericRuleId(e.getRule().getId().toString()))
 				.recommendation(new RecommendationImpl(e.getRule().getRecommendation().getName()))
 				.seasonality(Optional.ofNullable(seasonality).map(SuggestionDaoImpl::toSeasonality))
+				.cost(Optional.ofNullable(cost))
 				.alternativeComponentNames(alternativeComponentNames)
 				.build();
 	}
