@@ -82,6 +82,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				statisticsService.assessedRecipe(user),
 				(_, _) -> recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
+				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), message),
 				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations()).invoke(emitter::emit),
 				this::handleError
@@ -98,6 +99,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				statisticsService.assessedRecipe(user),
 				(_, _) -> recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
+				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), message),
 				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations()).invoke(emitter::emit),
 				this::handleError
@@ -117,6 +119,14 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			emitter.emit(recipeExtractionRecipeAssessmentMessage);
 			return Uni.createFrom().item(recipeExtractionRecipeAssessmentMessage);
 		}
+	}
+
+	private Uni<? extends RecipeExtractionRecipeAssessmentMessage> assessedRecipe(User user, String url, RecipeExtractionRecipeAssessmentMessage recipeExtractionRecipeAssessmentMessage) {
+		int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
+		String recipeName = numberOfRecipes == 1
+				? recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe().getName().orElse(null)
+				: "(multiple recipes)";
+		return statisticsService.assessedRecipe(user, url, recipeName).replaceWith(recipeExtractionRecipeAssessmentMessage);
 	}
 
 	private Uni<? extends MakeSuggestionsResult> assessSingleRecipe(

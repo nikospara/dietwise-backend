@@ -58,4 +58,29 @@
 			referencedColumnNames="id"
 		/>
 	</changeSet>
+
+	<changeSet id="recipe-statistics" author="codex">
+		<createTable tableName="DW_USER_RECIPE_STATS" remarks="Per-user statistics for assessed recipes">
+			<column name="user_id" type="UUID" remarks="Reference to the user">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_RECIPE_STATS" />
+			</column>
+			<column name="application_id" type="VARCHAR(30)" remarks="Application id">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_RECIPE_STATS" />
+			</column>
+			<column name="recipe_url" type="VARCHAR(2000)" remarks="Recipe URL as supplied for assessment">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_USER_RECIPE_STATS" />
+			</column>
+			<column name="recipe_name" type="VARCHAR(300)" remarks="Last observed recipe title" />
+			<column name="times_assessed" type="INT" remarks="Number of times the user assessed this recipe" />
+			<column name="last_assessed" type="TIMESTAMP" remarks="The time the user last assessed this recipe" />
+		</createTable>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_USER_RECIPE_STATS"
+			baseColumnNames="user_id"
+			constraintName="FK_DW_USER_RECIPE_STATS__USER_ID__DW_USER__ID"
+			referencedTableName="DW_USER"
+			referencedColumnNames="id"
+		/>
+	</changeSet>
 </databaseChangeLog>

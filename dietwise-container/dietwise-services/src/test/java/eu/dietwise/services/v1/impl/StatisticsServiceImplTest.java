@@ -20,6 +20,7 @@ import eu.dietwise.common.v1.model.ImmutableUser;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
+import eu.dietwise.dao.statistics.UserRecipeStatsEntityDao;
 import eu.dietwise.dao.statistics.UserStatsEntityDao;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.services.authz.Authorization;
@@ -40,10 +41,14 @@ class StatisticsServiceImplTest {
 	private static final String APPLICATION_ID = "recipewatch";
 	private static final LocalDateTime NOW = LocalDateTime.of(2026, 2, 26, 12, 30);
 	private static final SuggestionTemplateId SUGGESTION_ID = new GenericSuggestionTemplateId("22222222-2222-3333-4444-555555555555");
+	private static final String RECIPE_URL = "https://example.test/recipes/simple-pasta";
+	private static final String RECIPE_NAME = "Simple Pasta";
 
 	@RegisterExtension
 	private final MockReactivePersistenceContextFactory persistenceContextFactory = new MockReactivePersistenceContextFactory();
 
+	@Mock
+	private UserRecipeStatsEntityDao userRecipeStatsEntityDao;
 	@Mock
 	private UserStatsEntityDao userStatsEntityDao;
 	@Mock
@@ -58,7 +63,7 @@ class StatisticsServiceImplTest {
 	@BeforeEach
 	void beforeEach() {
 		lenient().when(dateTimeService.getNow()).thenReturn(NOW);
-		sut = new StatisticsServiceImpl(persistenceContextFactory, userStatsEntityDao, userSuggestionStatsEntityDao, dateTimeService, authorization);
+		sut = new StatisticsServiceImpl(persistenceContextFactory, userRecipeStatsEntityDao, userStatsEntityDao, userSuggestionStatsEntityDao, dateTimeService, authorization);
 	}
 
 	@Test
@@ -69,6 +74,7 @@ class StatisticsServiceImplTest {
 		assertThat(result).isNull();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 		verify(dateTimeService, never()).getNow();
+		verify(userRecipeStatsEntityDao, never()).increaseTimesAssessed(any(), any(), any(), any(), any(), any());
 		verify(userStatsEntityDao, never()).setLastSeen(any(), any(), any(), any());
 		verify(userStatsEntityDao, never()).increaseDaysLaunched(any(), any(), any());
 	}
@@ -83,8 +89,36 @@ class StatisticsServiceImplTest {
 		assertThat(result).isSameAs(user);
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 		verify(dateTimeService, never()).getNow();
+		verify(userRecipeStatsEntityDao, never()).increaseTimesAssessed(any(), any(), any(), any(), any(), any());
 		verify(userStatsEntityDao, never()).setLastSeen(any(), any(), any(), any());
 		verify(userStatsEntityDao, never()).increaseDaysLaunched(any(), any(), any());
+	}
+
+	@Test
+	void assessedRecipeWithDetailsReturnsUserWithoutPersistenceWhenApplicationIdMissing() {
+		User user = makeUserWithoutApplicationId();
+
+		User result = sut.assessedRecipe(user, RECIPE_URL, RECIPE_NAME)
+				.await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(result).isSameAs(user);
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+		verify(dateTimeService, never()).getNow();
+		verify(userRecipeStatsEntityDao, never()).increaseTimesAssessed(any(), any(), any(), any(), any(), any());
+	}
+
+	@Test
+	void assessedRecipeWithDetailsUpdatesPerRecipeStatistics() {
+		User user = makeUserWithApplicationId(APPLICATION_ID);
+		when(userRecipeStatsEntityDao.increaseTimesAssessed(any(), any(), any(), any(), any(), any())).thenReturn(Uni.createFrom().item(3));
+
+		User result = sut.assessedRecipe(user, RECIPE_URL, RECIPE_NAME)
+				.await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(result).isSameAs(user);
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+		verify(dateTimeService, times(1)).getNow();
+		verify(userRecipeStatsEntityDao).increaseTimesAssessed(any(), eq(APPLICATION_ID), eq(USER_UUID), eq(RECIPE_URL), eq(RECIPE_NAME), eq(NOW));
 	}
 
 	@Test

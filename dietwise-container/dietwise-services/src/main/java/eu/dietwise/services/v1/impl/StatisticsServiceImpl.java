@@ -10,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.dao.statistics.UserRecipeStatsEntityDao;
 import eu.dietwise.dao.statistics.UserStatsEntityDao;
 import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.services.authz.Authorization;
@@ -21,6 +22,7 @@ import io.smallrye.mutiny.Uni;
 @ApplicationScoped
 public class StatisticsServiceImpl implements StatisticsService {
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
+	private final UserRecipeStatsEntityDao userRecipeStatsEntityDao;
 	private final UserStatsEntityDao userStatsEntityDao;
 	private final UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
 	private final DateTimeService dateTimeService;
@@ -28,12 +30,14 @@ public class StatisticsServiceImpl implements StatisticsService {
 
 	public StatisticsServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
+			UserRecipeStatsEntityDao userRecipeStatsEntityDao,
 			UserStatsEntityDao userStatsEntityDao,
 			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao,
 			DateTimeService dateTimeService,
 			Authorization authorization
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
+		this.userRecipeStatsEntityDao = userRecipeStatsEntityDao;
 		this.userStatsEntityDao = userStatsEntityDao;
 		this.userSuggestionStatsEntityDao = userSuggestionStatsEntityDao;
 		this.dateTimeService = dateTimeService;
@@ -69,6 +73,17 @@ public class StatisticsServiceImpl implements StatisticsService {
 		UUID userId = UUID.fromString(user.getId().asString());
 		return persistenceContextFactory.withTransaction(tx ->
 				userStatsEntityDao.increaseRecipesAssessed(tx, applicationId, userId).replaceWith(user)
+		);
+	}
+
+	@Override
+	public Uni<User> assessedRecipe(User user, String recipeUrl, String recipeName) {
+		if (user == null || user.getApplicationId().isEmpty()) return Uni.createFrom().item(user);
+		String applicationId = user.getApplicationId().get();
+		UUID userId = UUID.fromString(user.getId().asString());
+		LocalDateTime now = dateTimeService.getNow();
+		return persistenceContextFactory.withTransaction(tx ->
+				userRecipeStatsEntityDao.increaseTimesAssessed(tx, applicationId, userId, recipeUrl, recipeName, now).replaceWith(user)
 		);
 	}
 

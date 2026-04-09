@@ -171,6 +171,7 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any()))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
+		when(statisticsService.assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta")).thenReturn(Uni.createFrom().item(USER));
 		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(2))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
@@ -203,6 +204,7 @@ class RecipeAssessmentServiceImplTest {
 
 		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
 		verify(statisticsService).assessedRecipe(USER);
+		verify(statisticsService).assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta");
 		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), any(Recipe.class));
 		verify(recipeScoringService).makeScoringMessage(any());
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
@@ -223,6 +225,7 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
+		when(statisticsService.assessedRecipe(USER, URL_EXTRACTION_PARAM.getUrl(), "Simple Pasta")).thenReturn(Uni.createFrom().item(USER));
 		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), any(Recipe.class)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(2))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
@@ -250,6 +253,7 @@ class RecipeAssessmentServiceImplTest {
 
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
+		verify(statisticsService).assessedRecipe(USER, URL_EXTRACTION_PARAM.getUrl(), "Simple Pasta");
 		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), any(Recipe.class));
 		verify(recipeScoringService).makeScoringMessage(any());
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
@@ -273,6 +277,7 @@ class RecipeAssessmentServiceImplTest {
 		when(recipeExtractionService.extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
+		when(statisticsService.assessedRecipe(eq(USER), eq(URL_EXTRACTION_PARAM.getUrl()), any())).thenReturn(Uni.createFrom().item(USER));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()

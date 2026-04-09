@@ -19,6 +19,7 @@
 		<class>eu.dietwise.dao.jpa.suggestions.RuleEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity</class>
+		<class>eu.dietwise.dao.jpa.statistics.UserRecipeStatsEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserStatsEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserSuggestionStatsEntity</class>
 

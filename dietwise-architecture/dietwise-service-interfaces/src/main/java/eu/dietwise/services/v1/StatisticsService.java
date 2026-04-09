@@ -15,6 +15,8 @@ public interface StatisticsService {
 
 	Uni<User> assessedRecipe(User user);
 
+	Uni<User> assessedRecipe(User user, String recipeUrl, String recipeName);
+
 	/**
 	 * Increase times, return new value, does not increment if times accepted plus times rejected is greater than times suggested.
 	 */
