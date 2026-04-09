@@ -28,6 +28,7 @@ import eu.dietwise.v1.model.ImmutableRecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import org.jboss.resteasy.reactive.RestResponse;
@@ -66,12 +67,12 @@ public class RecipeExtractionServiceImplTest {
 	);
 	private static final RecipeExtractionAndAssessmentParam URL_EXTRACTION_PARAM = ImmutableRecipeExtractionAndAssessmentParam.builder()
 			.url(URL)
-			.langCode("en")
+			.lang(RecipeLanguage.EN)
 			.build();
 	private static final String MARKDOWN = "Simple pasta recipe with ingredients and instructions.";
 	private static final RecipeAssessmentParam MARKDOWN_PARAM = ImmutableRecipeAssessmentParam.builder()
 			.url(URL)
-			.langCode("en")
+			.lang(RecipeLanguage.EN)
 			.pageContent(MARKDOWN)
 			.build();
 	private static final String RENDERED_MARKDOWN = "rendered markdown";
@@ -93,7 +94,7 @@ public class RecipeExtractionServiceImplTest {
 		when(extractionService.extractRecipeFromMarkdown(MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
 
 		RecipeExtractionRecipeAssessmentMessage extractionMessage =
-				sut.useAiToExtractRecipeFromMarkdown(CORRELATION_ID, URL, "en", MARKDOWN).await().atMost(Duration.ofSeconds(5L));
+				sut.useAiToExtractRecipeFromMarkdown(CORRELATION_ID, URL, RecipeLanguage.EN, MARKDOWN).await().atMost(Duration.ofSeconds(5L));
 
 		assertThat(extractionMessage.pageText()).isEqualTo(MARKDOWN);
 		assertThat(extractionMessage.recipes()).hasSize(1);
@@ -146,7 +147,7 @@ public class RecipeExtractionServiceImplTest {
 		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
 		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
 				.url(url)
-				.langCode("en")
+				.lang(RecipeLanguage.EN)
 				.build();
 
 		assertThatThrownBy(() -> sut.extractRecipeFromUrl(CORRELATION_ID, param).await().atMost(Duration.ofSeconds(5L)))
@@ -162,7 +163,7 @@ public class RecipeExtractionServiceImplTest {
 		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, true, rendererClient);
 		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
 				.url("001.html")
-				.langCode("en")
+				.lang(RecipeLanguage.EN)
 				.build();
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
@@ -187,7 +188,7 @@ public class RecipeExtractionServiceImplTest {
 		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, true, rendererClient);
 		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
 				.url(url)
-				.langCode("en")
+				.lang(RecipeLanguage.EN)
 				.build();
 
 		assertThatThrownBy(() -> sut.extractRecipeFromUrl(CORRELATION_ID, param).await().atMost(Duration.ofSeconds(5L)))

@@ -2,6 +2,7 @@ package eu.dietwise.v1.model;
 
 import java.util.Optional;
 
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Viewport;
 import org.immutables.value.Value;
 
@@ -11,5 +12,5 @@ public interface RecipeExtractionAndAssessmentParam {
 
 	Optional<Viewport> getViewport();
 
-	String getLangCode();
+	RecipeLanguage getLang();
 }

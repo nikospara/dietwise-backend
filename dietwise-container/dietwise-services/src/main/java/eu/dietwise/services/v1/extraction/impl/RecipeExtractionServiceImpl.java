@@ -33,10 +33,10 @@ import eu.dietwise.v1.model.Ingredient;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.infrastructure.Infrastructure;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestResponse;
@@ -65,9 +65,9 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	}
 
 	@Override
-	public Uni<RecipeExtractionRecipeAssessmentMessage> useAiToExtractRecipeFromMarkdown(UUID correlationId, String url, String langCode, String markdown) {
-		return keepOnlyRelevantPageContent(markdown, langCode)
-				.map(filteredContent -> ImmutableRecipeAssessmentParam.builder().url(url).langCode(langCode).pageContent(filteredContent).build())
+	public Uni<RecipeExtractionRecipeAssessmentMessage> useAiToExtractRecipeFromMarkdown(UUID correlationId, String url, RecipeLanguage lang, String markdown) {
+		return keepOnlyRelevantPageContent(markdown, lang)
+				.map(filteredContent -> ImmutableRecipeAssessmentParam.builder().url(url).lang(lang).pageContent(filteredContent).build())
 				.flatMap(this::extractRecipeFromMarkdown)
 				.flatMap(recipe -> failIfRecipeHasNoIngredients(correlationId, url, recipe))
 				.map(llmResponse -> convertLlmResponseToRecipes(llmResponse, markdown));
@@ -84,7 +84,7 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 		);
 	}
 
-	private Uni<String> keepOnlyRelevantPageContent(String pageTextAsMarkdown, String langCode) {
+	private Uni<String> keepOnlyRelevantPageContent(String pageTextAsMarkdown, RecipeLanguage lang) {
 		List<MarkdownBlockSegmenter.Block> segmentedContent = segment(pageTextAsMarkdown);
 		List<String> blocks = MarkdownBlockCoalescer.coalesce(segmentedContent, 5000);
 		return Multi.createFrom().iterable(blocks).onItem().transformToUniAndConcatenate(this::filterRecipeBlock)
@@ -185,7 +185,7 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 				LOG.info("No JSON-LD content, will use AI <{}> for {}", correlationId, param.getUrl());
 				String markdown = renderResponse.output();
 				LOG.debug("Page content: (length {}): {}", markdown.length(), limit(markdown, 1000));
-				return useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), markdown);
+				return useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLang(), markdown);
 			}
 		};
 	}

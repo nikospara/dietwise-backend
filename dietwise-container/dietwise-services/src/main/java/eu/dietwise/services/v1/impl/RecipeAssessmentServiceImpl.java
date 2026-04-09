@@ -75,12 +75,12 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	@Override
 	public Multi<RecipeAssessmentMessage> assessMarkdownRecipe(User user, RecipeAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
-		LOG.info("assessMarkdownRecipe <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
+		LOG.info("assessMarkdownRecipe <{}> {} {}", correlationId, param.getUrl(), param.getLang());
 		authorization.requireLogin(user);
 		String applicationId = authorization.requireApplicationId(user);
 		return emitInSequence(
 				statisticsService.assessedRecipe(user),
-				(_, _) -> recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLangCode(), param.getPageContent()),
+				(_, _) -> recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLang(), param.getPageContent()),
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), message),
@@ -92,7 +92,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	@Override
 	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrl(User user, RecipeExtractionAndAssessmentParam param) {
 		var correlationId = UUID.randomUUID();
-		LOG.info("extractAndAssessRecipeFromUrl <{}> {} {}", correlationId, param.getUrl(), param.getLangCode());
+		LOG.info("extractAndAssessRecipeFromUrl <{}> {} {}", correlationId, param.getUrl(), param.getLang());
 		authorization.requireLogin(user);
 		String applicationId = authorization.requireApplicationId(user);
 		return emitInSequence(

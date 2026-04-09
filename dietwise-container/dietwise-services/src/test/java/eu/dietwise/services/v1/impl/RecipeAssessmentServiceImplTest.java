@@ -54,6 +54,7 @@ import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.ScoringData;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -98,12 +99,12 @@ class RecipeAssessmentServiceImplTest {
 	);
 	private static final RecipeExtractionAndAssessmentParam URL_EXTRACTION_PARAM = ImmutableRecipeExtractionAndAssessmentParam.builder()
 			.url("https://example.test/recipe")
-			.langCode("en")
+			.lang(RecipeLanguage.EN)
 			.build();
 	private static final String MARKDOWN = "Simple pasta recipe with ingredients and instructions.";
 	private static final RecipeAssessmentParam MARKDOWN_PARAM = ImmutableRecipeAssessmentParam.builder()
 			.url("https://example.test/recipe")
-			.langCode("en")
+			.lang(RecipeLanguage.EN)
 			.pageContent(MARKDOWN)
 			.build();
 	private static final String RENDERED_MARKDOWN = "rendered markdown";
