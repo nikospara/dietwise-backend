@@ -31,6 +31,9 @@ import eu.dietwise.v1.model.StatisticsParamMixin;
 import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.CountryDeserializer;
 import eu.dietwise.v1.types.CountrySerializer;
+import eu.dietwise.v1.types.RecipeLanguage;
+import eu.dietwise.v1.types.RecipeLanguageDeserializer;
+import eu.dietwise.v1.types.RecipeLanguageSerializer;
 import eu.dietwise.v1.types.RepresentableAsStringKeySerializer;
 import eu.dietwise.v1.types.RepresentableAsStringSerializer;
 import eu.dietwise.v1.types.SuggestionTemplateId;
@@ -56,6 +59,8 @@ public class DietwiseJacksonModule extends SimpleModule {
 
 		addSerializer(Country.class, new CountrySerializer());
 		addDeserializer(Country.class, new CountryDeserializer());
+		addSerializer(RecipeLanguage.class, new RecipeLanguageSerializer());
+		addDeserializer(RecipeLanguage.class, new RecipeLanguageDeserializer());
 		addSerializer(RepresentableAsString.class, new RepresentableAsStringSerializer());
 		addKeySerializer(RepresentableAsString.class, new RepresentableAsStringKeySerializer());
 	}
