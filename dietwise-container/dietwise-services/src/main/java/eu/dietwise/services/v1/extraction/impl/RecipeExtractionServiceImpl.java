@@ -87,20 +87,20 @@ public class RecipeExtractionServiceImpl implements RecipeExtractionService {
 	private Uni<String> keepOnlyRelevantPageContent(String pageTextAsMarkdown, RecipeLanguage lang) {
 		List<MarkdownBlockSegmenter.Block> segmentedContent = segment(pageTextAsMarkdown);
 		List<String> blocks = MarkdownBlockCoalescer.coalesce(segmentedContent, 5000);
-		return Multi.createFrom().iterable(blocks).onItem().transformToUniAndConcatenate(this::filterRecipeBlock)
+		return Multi.createFrom().iterable(blocks).onItem().transformToUniAndConcatenate(block -> filterRecipeBlock(lang, block))
 				.filter(block -> !block.isBlank())
 				.collect().asList()
 				.map(filteredBlocks -> String.join("\n\n", filteredBlocks));
 	}
 
-	private Uni<String> filterRecipeBlock(String block) {
-		return filterAiFacade.filterRecipeBlock(block)
+	private Uni<String> filterRecipeBlock(RecipeLanguage lang, String block) {
+		return filterAiFacade.filterRecipeBlock(lang, block)
 				.map(result -> result == null ? "" : result.trim().toUpperCase()) // sanitize
 				.map(result -> "KEEP".equals(result) ? block : "");
 	}
 
 	private Uni<Recipe> extractRecipeFromMarkdown(RecipeAssessmentParam param) {
-		return extractionService.extractRecipeFromMarkdown(param.getPageContent())
+		return extractionService.extractRecipeFromMarkdown(param.getLang(), param.getPageContent())
 				.map(this::toRecipeWithOnlyIngredientNames);
 	}
 

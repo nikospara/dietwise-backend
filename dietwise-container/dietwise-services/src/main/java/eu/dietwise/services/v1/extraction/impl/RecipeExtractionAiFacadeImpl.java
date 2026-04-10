@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiFacade;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiService;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
@@ -18,7 +19,7 @@ public class RecipeExtractionAiFacadeImpl implements RecipeExtractionAiFacade {
 	}
 
 	@Override
-	public Uni<String> extractRecipeFromMarkdown(String markdown) {
+	public Uni<String> extractRecipeFromMarkdown(RecipeLanguage lang, String markdown) {
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> aiService.extractRecipeFromMarkdown(markdown))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor());

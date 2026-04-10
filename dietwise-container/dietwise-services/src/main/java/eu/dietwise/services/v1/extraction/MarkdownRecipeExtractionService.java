@@ -1,6 +1,7 @@
 package eu.dietwise.services.v1.extraction;
 
 import eu.dietwise.services.model.RecipeExtractedFromInput;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 public interface MarkdownRecipeExtractionService {
@@ -10,5 +11,5 @@ public interface MarkdownRecipeExtractionService {
 	 * @param markdown A Markdown text, possibly containing a recipe
 	 * @return A {@code Uni} with the recipe or failure with
 	 */
-	Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(String markdown);
+	Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(RecipeLanguage lang, String markdown);
 }

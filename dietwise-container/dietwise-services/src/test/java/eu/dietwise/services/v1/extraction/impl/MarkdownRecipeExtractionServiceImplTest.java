@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiFacade;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.json.ObjectMapperModelUtils;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,14 +45,14 @@ class MarkdownRecipeExtractionServiceImplTest {
 				  "recipeInstructions": ["Boil water", "Cook pasta"]
 				""";
 
-		when(aiFacade.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
+		when(aiFacade.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
 
-		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY).await().indefinitely();
 
 		assertThat(recipe.name()).hasValue("Simple Pasta");
 		assertThat(recipe.recipeIngredients()).containsExactly("200g pasta", "salt");
 		assertThat(recipe.recipeInstructions()).containsExactly("Boil water", "Cook pasta");
-		verify(aiFacade).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+		verify(aiFacade).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY);
 	}
 
 	@Test
@@ -65,14 +66,14 @@ class MarkdownRecipeExtractionServiceImplTest {
 				```
 				""";
 
-		when(aiFacade.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
+		when(aiFacade.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
 
-		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY).await().indefinitely();
 
 		assertThat(recipe.name()).hasValue("Simple Pasta");
 		assertThat(recipe.recipeIngredients()).containsExactly("200g pasta", "salt");
 		assertThat(recipe.recipeInstructions()).containsExactly("Boil water", "Cook pasta");
-		verify(aiFacade).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+		verify(aiFacade).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY);
 	}
 
 	@Test
@@ -87,14 +88,14 @@ class MarkdownRecipeExtractionServiceImplTest {
 				}}
 				""";
 
-		when(aiFacade.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJsonWithExtraClosingBrace));
+		when(aiFacade.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJsonWithExtraClosingBrace));
 
-		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY).await().indefinitely();
 
 		assertThat(recipe.name()).hasValue("Simple Pasta");
 		assertThat(recipe.recipeIngredients()).containsExactly("200g pasta", "salt");
 		assertThat(recipe.recipeInstructions()).containsExactly("Boil water", "Cook pasta");
-		verify(aiFacade).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+		verify(aiFacade).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY);
 	}
 
 	@Test
@@ -108,14 +109,14 @@ class MarkdownRecipeExtractionServiceImplTest {
 				}
 				""";
 
-		when(aiFacade.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
+		when(aiFacade.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
 
-		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY).await().indefinitely();
 
 		assertThat(recipe.name()).hasValue("Tomato Soup");
 		assertThat(recipe.recipeIngredients()).containsExactly("tomatoes", "salt");
 		assertThat(recipe.recipeInstructions()).containsExactly("Simmer", "Blend");
-		verify(aiFacade).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+		verify(aiFacade).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY);
 	}
 
 	@Test
@@ -142,9 +143,9 @@ class MarkdownRecipeExtractionServiceImplTest {
 					]
 				""";
 
-		when(aiFacade.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
+		when(aiFacade.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
 
-		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY).await().indefinitely();
 
 		assertThat(recipe.name()).hasValue("Creamy Chocolate Cheesecake");
 		assertThat(recipe.recipeIngredients()).containsExactly(
@@ -152,7 +153,7 @@ class MarkdownRecipeExtractionServiceImplTest {
 				"{\"ingredientName\":\"Filling\",\"quantity\":\"bittersweet chocolate\",\"unit\":\"oz\"}"
 		);
 		assertThat(recipe.recipeInstructions()).containsExactly("step one", "step two");
-		verify(aiFacade).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+		verify(aiFacade).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY);
 	}
 
 	@Test
@@ -166,13 +167,13 @@ class MarkdownRecipeExtractionServiceImplTest {
 				Some trailing commentary that should be ignored.
 				""";
 
-		when(aiFacade.extractRecipeFromMarkdown(MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
+		when(aiFacade.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY)).thenReturn(Uni.createFrom().item(malformedJson));
 
-		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(MARKDOWN_DUMMY).await().indefinitely();
+		RecipeExtractedFromInput recipe = sut.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY).await().indefinitely();
 
 		assertThat(recipe.name()).hasValue("Simple Salad");
 		assertThat(recipe.recipeIngredients()).containsExactly("lettuce", "olive oil");
 		assertThat(recipe.recipeInstructions()).containsExactly("Mix", "Serve");
-		verify(aiFacade).extractRecipeFromMarkdown(MARKDOWN_DUMMY);
+		verify(aiFacade).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN_DUMMY);
 	}
 }

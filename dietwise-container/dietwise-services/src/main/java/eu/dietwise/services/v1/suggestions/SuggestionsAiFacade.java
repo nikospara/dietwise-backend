@@ -12,6 +12,7 @@ import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 public interface SuggestionsAiFacade {
@@ -38,13 +39,13 @@ public interface SuggestionsAiFacade {
 	 * @param instructionsAsMarkdownList
 	 * @return A {@code Uni} with the outcome of the LLM assessment or empty, if the LLM could not assess; never {@code null} content
 	 */
-	Uni<String> assessIngredientRole(String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList);
+	Uni<String> assessIngredientRole(RecipeLanguage lang, String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList);
 
-	Uni<String> matchIngredientToTrigger(String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role);
+	Uni<String> matchIngredientToTrigger(RecipeLanguage lang, String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role);
 
-	Uni<Set<String>> matchIngredientsWithRecommendations(String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe);
+	Uni<Set<String>> matchIngredientsWithRecommendations(RecipeLanguage lang, String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe);
 
-	Uni<String> findBestRule(String ingredientNameInRecipe, RoleOrTechnique role, TriggerIngredient triggerIngredient, Collection<RecommendationComponent> dietaryComponents, Collection<Rule> filteredRules);
+	Uni<String> findBestRule(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, TriggerIngredient triggerIngredient, Collection<RecommendationComponent> dietaryComponents, Collection<Rule> filteredRules);
 
-	Uni<String> suggestAlternatives(String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives);
+	Uni<String> suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives);
 }

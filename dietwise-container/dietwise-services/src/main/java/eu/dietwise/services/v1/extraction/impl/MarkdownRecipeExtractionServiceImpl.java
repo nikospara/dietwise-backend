@@ -12,6 +12,7 @@ import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.v1.extraction.MarkdownRecipeExtractionService;
 import eu.dietwise.services.v1.extraction.RecipeExtractionAiFacade;
 import eu.dietwise.services.v1.extraction.RecipeJsonNormalizer;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,8 @@ public class MarkdownRecipeExtractionServiceImpl implements MarkdownRecipeExtrac
 	}
 
 	@Override
-	public Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(String markdown) {
-		return extractionAiFacade.extractRecipeFromMarkdown(markdown)
+	public Uni<RecipeExtractedFromInput> extractRecipeFromMarkdown(RecipeLanguage lang, String markdown) {
+		return extractionAiFacade.extractRecipeFromMarkdown(lang, markdown)
 				.map(this::parseRecipeWithRepair);
 	}
 

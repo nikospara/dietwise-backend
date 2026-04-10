@@ -90,8 +90,8 @@ public class RecipeExtractionServiceImplTest {
 	void useAiToExtractRecipeFromMarkdownEmitsExtractionMessage() {
 		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
 
-		when(filterAiFacade.filterRecipeBlock(MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
-		when(extractionService.extractRecipeFromMarkdown(MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
+		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
+		when(extractionService.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
 
 		RecipeExtractionRecipeAssessmentMessage extractionMessage =
 				sut.useAiToExtractRecipeFromMarkdown(CORRELATION_ID, URL, RecipeLanguage.EN, MARKDOWN).await().atMost(Duration.ofSeconds(5L));
@@ -106,8 +106,8 @@ public class RecipeExtractionServiceImplTest {
 		assertThat(extractionMessage.recipes().getFirst().recipe().getRecipeInstructions())
 				.containsExactly("Boil water", "Cook pasta");
 
-		verify(filterAiFacade).filterRecipeBlock(MARKDOWN);
-		verify(extractionService).extractRecipeFromMarkdown(MARKDOWN);
+		verify(filterAiFacade).filterRecipeBlock(RecipeLanguage.EN, MARKDOWN);
+		verify(extractionService).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN);
 	}
 
 	@Test
@@ -205,8 +205,8 @@ public class RecipeExtractionServiceImplTest {
 		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(recipes);
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
-		when(filterAiFacade.filterRecipeBlock(RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
-		when(extractionService.extractRecipeFromMarkdown(RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
+		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
+		when(extractionService.extractRecipeFromMarkdown(RecipeLanguage.EN, RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
 
 		RecipeExtractionRecipeAssessmentMessage extractionMessage =
 				sut.extractRecipeFromUrl(CORRELATION_ID, URL_EXTRACTION_PARAM).await().atMost(Duration.ofSeconds(5L));
@@ -217,8 +217,8 @@ public class RecipeExtractionServiceImplTest {
 		assertThat(extractionMessage.recipes().getFirst().recipe().getName()).contains("Simple Pasta");
 
 		verify(rendererClient).render(any());
-		verify(filterAiFacade).filterRecipeBlock(RENDERED_MARKDOWN);
-		verify(extractionService).extractRecipeFromMarkdown(RENDERED_MARKDOWN);
+		verify(filterAiFacade).filterRecipeBlock(RecipeLanguage.EN, RENDERED_MARKDOWN);
+		verify(extractionService).extractRecipeFromMarkdown(RecipeLanguage.EN, RENDERED_MARKDOWN);
 	}
 
 	@Test
@@ -258,8 +258,8 @@ public class RecipeExtractionServiceImplTest {
 		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
 		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
-		when(filterAiFacade.filterRecipeBlock(RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
-		when(extractionService.extractRecipeFromMarkdown(RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_WITHOUT_INGREDIENTS));
+		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
+		when(extractionService.extractRecipeFromMarkdown(RecipeLanguage.EN, RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_WITHOUT_INGREDIENTS));
 
 		UniAssertSubscriber<RecipeExtractionRecipeAssessmentMessage> subscriber =
 				sut.extractRecipeFromUrl(CORRELATION_ID, URL_EXTRACTION_PARAM)
@@ -268,8 +268,8 @@ public class RecipeExtractionServiceImplTest {
 		subscriber.awaitFailure().assertFailedWith(NoIngredientsInRecipeException.class);
 
 		verify(rendererClient).render(any());
-		verify(filterAiFacade).filterRecipeBlock(RENDERED_MARKDOWN);
-		verify(extractionService).extractRecipeFromMarkdown(RENDERED_MARKDOWN);
+		verify(filterAiFacade).filterRecipeBlock(RecipeLanguage.EN, RENDERED_MARKDOWN);
+		verify(extractionService).extractRecipeFromMarkdown(RecipeLanguage.EN, RENDERED_MARKDOWN);
 	}
 
 	@Test

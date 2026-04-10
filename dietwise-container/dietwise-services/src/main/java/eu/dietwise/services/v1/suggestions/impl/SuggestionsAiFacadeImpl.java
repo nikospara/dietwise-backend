@@ -34,6 +34,7 @@ import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
@@ -157,7 +158,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<String> assessIngredientRole(String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList) {
+	public Uni<String> assessIngredientRole(RecipeLanguage lang, String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList) {
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> ingredientRoleAiService.assessIngredientRole(
 						availableRolesAsMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList))
@@ -168,7 +169,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<String> matchIngredientToTrigger(String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role) {
+	public Uni<String> matchIngredientToTrigger(RecipeLanguage lang, String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role) {
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> triggerIngredientMatcherAiService.matchIngredientToTrigger(
 						availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role != null ? role.getName() : null))
@@ -179,7 +180,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<Set<String>> matchIngredientsWithRecommendations(String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe) {
+	public Uni<Set<String>> matchIngredientsWithRecommendations(RecipeLanguage lang, String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe) {
 		Context callerContext = Vertx.currentContext();
 		Uni<Set<String>> resultUni = Uni.createFrom().item(() -> ingredientMatchInRecommendationsAiService.matchIngredientsWithRecommendations(
 						availableRecommendationsAsMarkdownList, ingredientNameInRecipe))
@@ -198,6 +199,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 
 	@Override
 	public Uni<String> findBestRule(
+			RecipeLanguage lang,
 			String ingredientNameInRecipe,
 			RoleOrTechnique role,
 			TriggerIngredient triggerIngredient,
@@ -247,7 +249,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<String> suggestAlternatives(String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
+	public Uni<String> suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
 		String alternativesAsMarkdownList = convertSuggestionsToMarkdownList(alternatives);
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> alternativeSuggestionAiService.suggestAlternatives(

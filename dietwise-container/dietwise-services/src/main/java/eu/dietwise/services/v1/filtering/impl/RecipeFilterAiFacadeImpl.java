@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.services.v1.filtering.RecipeFilterAiFacade;
 import eu.dietwise.services.v1.filtering.RecipeFilterAiService;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.vertx.core.Context;
@@ -18,7 +19,7 @@ public class RecipeFilterAiFacadeImpl implements RecipeFilterAiFacade {
 	}
 
 	@Override
-	public Uni<String> filterRecipeBlock(String block) {
+	public Uni<String> filterRecipeBlock(RecipeLanguage lang, String block) {
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> aiService.filterRecipeBlock(block))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor());

@@ -44,6 +44,7 @@ import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RecommendationWeight;
 import eu.dietwise.v1.types.RuleId;
 import eu.dietwise.v1.types.SuggestionStats;
@@ -138,15 +139,15 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
 		when(suggestionsAiFacade.convertInstructionsToMarkdownList(eq(RECIPE.getRecipeInstructions()))).thenReturn(INSTRUCTIONS_MARKDOWN);
-		when(suggestionsAiFacade.assessIngredientRole(ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
+		when(suggestionsAiFacade.assessIngredientRole(RecipeLanguage.EN, ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
 				.thenReturn(Uni.createFrom().item("missing-role"));
 		when(suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(any())).thenReturn("");
-		when(suggestionsAiFacade.matchIngredientToTrigger("", INGREDIENT_NAME, null)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FIBER));
+		when(suggestionsAiFacade.matchIngredientToTrigger(RecipeLanguage.EN, "", INGREDIENT_NAME, null)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FIBER));
 		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(Collections.emptyList()));
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), any(), eq(List.of()))).thenReturn(Uni.createFrom().item(List.of()));
 		when(personalInfoDao.findByUser(any(), eq(hasUserId))).thenReturn(Uni.createFrom().item(personalInfo));
 
-		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RecipeLanguage.EN, RECIPE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.message().suggestions()).isEmpty();
@@ -167,14 +168,14 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
 		when(suggestionsAiFacade.convertInstructionsToMarkdownList(eq(RECIPE.getRecipeInstructions()))).thenReturn(INSTRUCTIONS_MARKDOWN);
-		when(suggestionsAiFacade.assessIngredientRole(ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
+		when(suggestionsAiFacade.assessIngredientRole(RecipeLanguage.EN, ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
 				.thenReturn(Uni.createFrom().item("binder"));
 		when(suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(any())).thenReturn("- flour");
-		when(suggestionsAiFacade.matchIngredientToTrigger("- flour", INGREDIENT_NAME, role)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FLOUR));
+		when(suggestionsAiFacade.matchIngredientToTrigger(RecipeLanguage.EN, "- flour", INGREDIENT_NAME, role)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FLOUR));
 		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(List.of(RULE1)));
-		when(suggestionsAiFacade.matchIngredientsWithRecommendations(any(), any())).thenAnswer(ion -> Uni.createFrom().item(Set.of("fiber")));
-		when(suggestionsAiFacade.findBestRule(any(), any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item(RULE1.getId().asString()));
-		when(suggestionsAiFacade.suggestAlternatives(any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
+		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(ion -> Uni.createFrom().item(Set.of("fiber")));
+		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item(RULE1.getId().asString()));
+		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
 		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), any(), eq(RECIPE.getRecipeIngredients().getFirst())))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 
@@ -184,7 +185,7 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item(List.of(prioritizedSuggestion)));
 		when(personalInfoDao.findByUser(any(), eq(hasUserId))).thenReturn(Uni.createFrom().item(personalInfo));
 
-		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RecipeLanguage.EN, RECIPE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.message().suggestions()).containsExactly(prioritizedSuggestion);
