@@ -15,4 +15,5 @@
 	<include relativeToChangelogFile="true" file="changelogs/20260225_suggestion_data.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260226_statistics.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260407_changes_after_ga_athens.xml"/>
+	<include relativeToChangelogFile="true" file="changelogs/20260410_internationalization.xml"/>
 </databaseChangeLog>

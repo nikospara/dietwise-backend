@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="internationalization" author="nikospara">
+		<createTable tableName="DW_RECOMMENDATION_TRANSLATION" remarks="Translation of recommendation strings">
+			<column name="recommendation_id" type="UUID">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION__RECOMMENDATION_ID" primaryKey="true" primaryKeyName="PK_DW_RECOMMENDATION_TRANSLATION" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION__LANG" primaryKey="true" primaryKeyName="PK_DW_RECOMMENDATION_TRANSLATION" />
+			</column>
+			<column name="name" type="VARCHAR(200)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION__NAME" />
+			</column>
+			<column name="component_for_scoring" type="VARCHAR(200)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION__COMPONENT_FOR_SCORING" />
+			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" />
+		</createTable>
+
+		<createTable tableName="DW_TRIGGER_INGREDIENT_TRANSLATION" remarks="Translation of trigger ingredient strings">
+			<column name="trigger_ingredient_id" type="UUID">
+				<constraints nullable="false" notNullConstraintName="NL_DW_TRIGGER_INGREDIENT_TRANSLATION__TRIGGER_INGREDIENT_ID" primaryKey="true" primaryKeyName="PK_DW_TRIGGER_INGREDIENT_TRANSLATION" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_TRIGGER_INGREDIENT_TRANSLATION__LANG" primaryKey="true" primaryKeyName="PK_DW_TRIGGER_INGREDIENT_TRANSLATION" />
+			</column>
+			<column name="name" type="VARCHAR(200)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_TRIGGER_INGREDIENT_TRANSLATION__NAME" />
+			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" />
+		</createTable>
+
+		<createTable tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION" remarks="Translation of role or technique strings">
+			<column name="role_or_technique_id" type="UUID">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ROLE_OR_TECHNIQUE_TRANSLATION__ROLE_OR_TECHNIQUE_ID" primaryKey="true" primaryKeyName="PK_DW_ROLE_OR_TECHNIQUE_TRANSLATION" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ROLE_OR_TECHNIQUE_TRANSLATION__LANG" primaryKey="true" primaryKeyName="PK_DW_ROLE_OR_TECHNIQUE_TRANSLATION" />
+			</column>
+			<column name="name" type="VARCHAR(200)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ROLE_OR_TECHNIQUE_TRANSLATION__NAME" />
+			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" />
+		</createTable>
+
+		<createTable tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION" remarks="Translation of alternative ingredient strings">
+			<column name="alternative_ingredient_id" type="UUID">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_TRANSLATION__ALTERNATIVE_INGREDIENT_ID" primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_TRANSLATION" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_TRANSLATION__LANG" primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_TRANSLATION" />
+			</column>
+			<column name="name" type="VARCHAR(200)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_TRANSLATION__NAME" />
+			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" />
+		</createTable>
+
+		<createTable tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION" remarks="Translation of suggestion template strings">
+			<column name="suggestion_template_id" type="UUID">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_TRANSLATION__SUGGESTION_TEMPLATE_ID" primaryKey="true" primaryKeyName="PK_DW_SUGGESTION_TEMPLATE_TRANSLATION" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_TRANSLATION__LANG" primaryKey="true" primaryKeyName="PK_DW_SUGGESTION_TEMPLATE_TRANSLATION" />
+			</column>
+			<column name="restriction" type="VARCHAR(300)" />
+			<column name="equivalence" type="VARCHAR(300)" />
+			<column name="technique_notes" type="VARCHAR(1000)" />
+		</createTable>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_RECOMMENDATION_TRANSLATION"
+			baseColumnNames="recommendation_id"
+			constraintName="FK_DW_RECOMMENDATION_TRANSLATION__RECOMMENDATION_ID__DW_RECOMMENDATION__ID"
+			referencedTableName="DW_RECOMMENDATION"
+			referencedColumnNames="id"
+		/>
+		<addForeignKeyConstraint
+			baseTableName="DW_TRIGGER_INGREDIENT_TRANSLATION"
+			baseColumnNames="trigger_ingredient_id"
+			constraintName="FK_DW_TRIGGER_INGREDIENT_TRANSLATION__TRIGGER_INGREDIENT_ID__DW_TRIGGER_INGREDIENT__ID"
+			referencedTableName="DW_TRIGGER_INGREDIENT"
+			referencedColumnNames="id"
+		/>
+		<addForeignKeyConstraint
+			baseTableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION"
+			baseColumnNames="role_or_technique_id"
+			constraintName="FK_DW_ROLE_OR_TECHNIQUE_TRANSLATION__ROLE_OR_TECHNIQUE_ID__DW_ROLE_OR_TECHNIQUE__ID"
+			referencedTableName="DW_ROLE_OR_TECHNIQUE"
+			referencedColumnNames="id"
+		/>
+		<addForeignKeyConstraint
+			baseTableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION"
+			baseColumnNames="alternative_ingredient_id"
+			constraintName="FK_DW_ALTERNATIVE_INGREDIENT_TRANSLATION__ALTERNATIVE_INGREDIENT_ID__DW_ALTERNATIVE_INGREDIENT__ID"
+			referencedTableName="DW_ALTERNATIVE_INGREDIENT"
+			referencedColumnNames="id"
+		/>
+		<addForeignKeyConstraint
+			baseTableName="DW_SUGGESTION_TEMPLATE_TRANSLATION"
+			baseColumnNames="suggestion_template_id"
+			constraintName="FK_DW_SUGGESTION_TEMPLATE_TRANSLATION__SUGGESTION_TEMPLATE_ID__DW_SUGGESTION_TEMPLATE__ID"
+			referencedTableName="DW_SUGGESTION_TEMPLATE"
+			referencedColumnNames="id"
+		/>
+	</changeSet>
+</databaseChangeLog>

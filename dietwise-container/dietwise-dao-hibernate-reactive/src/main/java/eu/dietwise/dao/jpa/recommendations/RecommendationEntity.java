@@ -1,12 +1,15 @@
 package eu.dietwise.dao.jpa.recommendations;
 
+import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.EnumType.STRING;
 
+import java.util.Set;
 import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import eu.dietwise.v1.types.RecommendationWeight;
@@ -33,6 +36,9 @@ public class RecommendationEntity {
 	 */
 	@Column(name = "explanation_for_llm")
 	private String explanationForLlm;
+
+	@OneToMany(mappedBy = "recommendation", fetch = LAZY)
+	private Set<RecommendationTranslationEntity> translations;
 
 	public UUID getId() {
 		return id;
@@ -72,5 +78,13 @@ public class RecommendationEntity {
 
 	public void setExplanationForLlm(String explanationForLlm) {
 		this.explanationForLlm = explanationForLlm;
+	}
+
+	public Set<RecommendationTranslationEntity> getTranslations() {
+		return translations;
+	}
+
+	public void setTranslations(Set<RecommendationTranslationEntity> translations) {
+		this.translations = translations;
 	}
 }

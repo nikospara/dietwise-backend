@@ -11,14 +11,19 @@
 		<class>eu.dietwise.dao.jpa.UserEntity</class>
 		<class>eu.dietwise.dao.jpa.recommendations.AgeGroupEntity</class>
 		<class>eu.dietwise.dao.jpa.recommendations.RecommendationEntity</class>
+		<class>eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RuleEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserRecipeStatsEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserStatsEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserSuggestionStatsEntity</class>

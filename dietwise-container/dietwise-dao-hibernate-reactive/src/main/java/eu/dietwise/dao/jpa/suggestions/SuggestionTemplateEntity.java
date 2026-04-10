@@ -2,12 +2,14 @@ package eu.dietwise.dao.jpa.suggestions;
 
 import static jakarta.persistence.FetchType.LAZY;
 
+import java.util.Set;
 import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -33,6 +35,9 @@ public class SuggestionTemplateEntity {
 
 	@Column(name = "technique_notes")
 	private String techniqueNotes;
+
+	@OneToMany(mappedBy = "suggestionTemplate", fetch = LAZY)
+	private Set<SuggestionTemplateTranslationEntity> translations;
 
 	public UUID getId() {
 		return id;
@@ -80,5 +85,13 @@ public class SuggestionTemplateEntity {
 
 	public void setTechniqueNotes(String techniqueNotes) {
 		this.techniqueNotes = techniqueNotes;
+	}
+
+	public Set<SuggestionTemplateTranslationEntity> getTranslations() {
+		return translations;
+	}
+
+	public void setTranslations(Set<SuggestionTemplateTranslationEntity> translations) {
+		this.translations = translations;
 	}
 }
