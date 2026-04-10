@@ -25,13 +25,12 @@ import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
-import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiService;
-import eu.dietwise.services.v1.scoring.impl.ScoringAiFacadeImpl;
-import eu.dietwise.services.v1.suggestions.AlternativeSuggestionAiService;
-import eu.dietwise.services.v1.suggestions.FindBestRuleAiService;
-import eu.dietwise.services.v1.suggestions.IngredientRoleAiService;
+import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiSelector;
+import eu.dietwise.services.v1.suggestions.AlternativeSuggestionAiSelector;
+import eu.dietwise.services.v1.suggestions.FindBestRuleAiSelector;
+import eu.dietwise.services.v1.suggestions.IngredientRoleAiSelector;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
-import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiService;
+import eu.dietwise.services.v1.suggestions.TriggerIngredientMatcherAiSelector;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -44,17 +43,17 @@ import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
-	private static final Logger LOG = LoggerFactory.getLogger(ScoringAiFacadeImpl.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SuggestionsAiFacadeImpl.class);
 
 	private final RoleOrTechniqueDao roleOrTechniqueDao;
 	private final TriggerIngredientDao triggerIngredientDao;
 	private final AlternativeIngredientDao alternativeIngredientDao;
 	private final RecommendationDao recommendationDao;
-	private final IngredientRoleAiService ingredientRoleAiService;
-	private final TriggerIngredientMatcherAiService triggerIngredientMatcherAiService;
-	private final IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService;
-	private final FindBestRuleAiService findBestruleAiService;
-	private final AlternativeSuggestionAiService alternativeSuggestionAiService;
+	private final IngredientRoleAiSelector ingredientRoleAiSelector;
+	private final TriggerIngredientMatcherAiSelector triggerIngredientMatcherAiSelector;
+	private final IngredientMatchInRecommendationsAiSelector ingredientMatchInRecommendationsAiSelector;
+	private final FindBestRuleAiSelector findBestRuleAiSelector;
+	private final AlternativeSuggestionAiSelector alternativeSuggestionAiSelector;
 
 	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
 	private final CachedUniValue<Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniValue<>();
@@ -65,21 +64,21 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			TriggerIngredientDao triggerIngredientDao,
 			AlternativeIngredientDao alternativeIngredientDao,
 			RecommendationDao recommendationDao,
-			IngredientRoleAiService ingredientRoleAiService,
-			TriggerIngredientMatcherAiService triggerIngredientMatcherAiService,
-			IngredientMatchInRecommendationsAiService ingredientMatchInRecommendationsAiService,
-			FindBestRuleAiService findBestruleAiService,
-			AlternativeSuggestionAiService alternativeSuggestionAiService
+			IngredientRoleAiSelector ingredientRoleAiSelector,
+			TriggerIngredientMatcherAiSelector triggerIngredientMatcherAiSelector,
+			IngredientMatchInRecommendationsAiSelector ingredientMatchInRecommendationsAiSelector,
+			FindBestRuleAiSelector findBestRuleAiSelector,
+			AlternativeSuggestionAiSelector alternativeSuggestionAiSelector
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
 		this.alternativeIngredientDao = alternativeIngredientDao;
 		this.recommendationDao = recommendationDao;
-		this.ingredientRoleAiService = ingredientRoleAiService;
-		this.triggerIngredientMatcherAiService = triggerIngredientMatcherAiService;
-		this.ingredientMatchInRecommendationsAiService = ingredientMatchInRecommendationsAiService;
-		this.findBestruleAiService = findBestruleAiService;
-		this.alternativeSuggestionAiService = alternativeSuggestionAiService;
+		this.ingredientRoleAiSelector = ingredientRoleAiSelector;
+		this.triggerIngredientMatcherAiSelector = triggerIngredientMatcherAiSelector;
+		this.ingredientMatchInRecommendationsAiSelector = ingredientMatchInRecommendationsAiSelector;
+		this.findBestRuleAiSelector = findBestRuleAiSelector;
+		this.alternativeSuggestionAiSelector = alternativeSuggestionAiSelector;
 	}
 
 	@Override
@@ -160,8 +159,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<String> assessIngredientRole(RecipeLanguage lang, String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList) {
 		Context callerContext = Vertx.currentContext();
-		Uni<String> resultUni = Uni.createFrom().item(() -> ingredientRoleAiService.assessIngredientRole(
-						availableRolesAsMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList))
+		Uni<String> resultUni = Uni.createFrom().item(() -> ingredientRoleAiSelector.assessIngredientRole(
+						lang, availableRolesAsMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
 				.map(this::normalizeRoleName);
 		if (callerContext == null) return resultUni;
@@ -171,8 +170,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<String> matchIngredientToTrigger(RecipeLanguage lang, String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, RoleOrTechnique role) {
 		Context callerContext = Vertx.currentContext();
-		Uni<String> resultUni = Uni.createFrom().item(() -> triggerIngredientMatcherAiService.matchIngredientToTrigger(
-						availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role != null ? role.getName() : null))
+		Uni<String> resultUni = Uni.createFrom().item(() -> triggerIngredientMatcherAiSelector.matchIngredientToTrigger(
+						lang, availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role != null ? role.getName() : null))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
 				.map(this::normalizeTriggerIngredientName);
 		if (callerContext == null) return resultUni;
@@ -182,8 +181,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	@Override
 	public Uni<Set<String>> matchIngredientsWithRecommendations(RecipeLanguage lang, String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe) {
 		Context callerContext = Vertx.currentContext();
-		Uni<Set<String>> resultUni = Uni.createFrom().item(() -> ingredientMatchInRecommendationsAiService.matchIngredientsWithRecommendations(
-						availableRecommendationsAsMarkdownList, ingredientNameInRecipe))
+		Uni<Set<String>> resultUni = Uni.createFrom().item(() -> ingredientMatchInRecommendationsAiSelector.matchIngredientsWithRecommendations(
+						lang, availableRecommendationsAsMarkdownList, ingredientNameInRecipe))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor())
 				.map(recommendationsFromAi -> postProcessRecommendationsFromAi(ingredientNameInRecipe, recommendationsFromAi));
 		if (callerContext == null) return resultUni;
@@ -210,7 +209,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		var mappedRules = mapRules(filteredRules);
 		String filteredRulesMarkdownList = convertMappedRulesToMarkdownList(mappedRules);
 		Context callerContext = Vertx.currentContext();
-		Uni<String> resultUni = Uni.createFrom().item(() -> findBestruleAiService.findBestRule(
+		Uni<String> resultUni = Uni.createFrom().item(() -> findBestRuleAiSelector.findBestRule(
+						lang,
 						ingredientNameInRecipe,
 						role == null ? "-" : role.getName(),
 						triggerIngredient.getName(),
@@ -252,7 +252,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	public Uni<String> suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
 		String alternativesAsMarkdownList = convertSuggestionsToMarkdownList(alternatives);
 		Context callerContext = Vertx.currentContext();
-		Uni<String> resultUni = Uni.createFrom().item(() -> alternativeSuggestionAiService.suggestAlternatives(
+		Uni<String> resultUni = Uni.createFrom().item(() -> alternativeSuggestionAiSelector.suggestAlternatives(
+						lang,
 						ingredientNameInRecipe,
 						role == null ? "-" : role.getName(),
 						alternativesAsMarkdownList
