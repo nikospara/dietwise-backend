@@ -55,9 +55,10 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final FindBestRuleAiSelector findBestRuleAiSelector;
 	private final AlternativeSuggestionAiSelector alternativeSuggestionAiSelector;
 
-	private final CachedUniValue<Map<String, RoleOrTechnique>> cachedRoles = new CachedUniValue<>();
-	private final CachedUniValue<Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniValue<>();
-	private final CachedUniValue<Map<String, AlternativeIngredient>> cachedAlternatives = new CachedUniValue<>();
+	private final CachedUniMap<RecipeLanguage, Map<String, RoleOrTechnique>> cachedRoles = new CachedUniMap<>();
+	private final CachedUniMap<RecipeLanguage, Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniMap<>();
+	private final CachedUniMap<RecipeLanguage, Map<String, AlternativeIngredient>> cachedAlternatives = new CachedUniMap<>();
+	private final CachedUniMap<RecipeLanguage, Map<String, RecommendationComponent>> cachedRecommendations = new CachedUniMap<>();
 
 	public SuggestionsAiFacadeImpl(
 			RoleOrTechniqueDao roleOrTechniqueDao,
@@ -82,8 +83,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<Map<String, RoleOrTechnique>> retrieveAllRolesKeyedByNormalizedName(ReactivePersistenceContext em) {
-		return cachedRoles.getOrLoad(() -> roleOrTechniqueDao.findAll(em)
+	public Uni<Map<String, RoleOrTechnique>> retrieveAllRolesKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang) {
+		return cachedRoles.getOrLoad(lang, () -> roleOrTechniqueDao.findAll(em, lang)
 				.map(list -> list.stream().collect(toMap(
 						x -> normalizeRoleName(x.getName()),
 						Function.identity(),
@@ -108,8 +109,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<Map<String, TriggerIngredient>> retrieveAllTriggerIngredientsKeyedByNormalizedName(ReactivePersistenceContext em) {
-		return cachedTriggerIngredients.getOrLoad(() -> triggerIngredientDao.findAll(em)
+	public Uni<Map<String, TriggerIngredient>> retrieveAllTriggerIngredientsKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang) {
+		return cachedTriggerIngredients.getOrLoad(lang, () -> triggerIngredientDao.findAll(em, lang)
 				.map(list -> list.stream().collect(toMap(
 						x -> normalizeRoleName(x.getName()),
 						Function.identity(),
@@ -129,8 +130,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em) {
-		return cachedAlternatives.getOrLoad(() -> alternativeIngredientDao.findAll(em)
+	public Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang) {
+		return cachedAlternatives.getOrLoad(lang, () -> alternativeIngredientDao.findAll(em, lang)
 				.map(list -> list.stream().collect(toMap(
 						x -> normalizeRoleName(x.getName()),
 						Function.identity(),
@@ -140,9 +141,10 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em) {
-		return recommendationDao.listAllRecommendationsForScoring(em)
-				.map(list -> list.stream().collect(toMap(this::normalizeRecommendationComponentName, Function.identity())));
+	public Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang) {
+		return cachedRecommendations.getOrLoad(lang, () -> recommendationDao.listAllRecommendationsForScoring(em, lang)
+				.map(list -> list.stream().collect(toMap(this::normalizeRecommendationComponentName, Function.identity())))
+				.map(Map::copyOf));
 	}
 
 	private String normalizeRecommendationComponentName(RecommendationComponent rc) {

@@ -80,7 +80,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe) {
 		return forcm(
-				readAllNecessaryData(tx, hasUserId),
+				readAllNecessaryData(tx, hasUserId, lang),
 				extractSuggestionsForRecipePerIngredient(tx, lang, recipe),
 				prioritizeSuggestions(tx),
 				data -> new MakeSuggestionsResult(
@@ -90,13 +90,13 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		);
 	}
 
-	private Uni<RecipeSuggestionNecessaryData> readAllNecessaryData(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
+	private Uni<RecipeSuggestionNecessaryData> readAllNecessaryData(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang) {
 		return forcm(
 				personalInfoDao.findByUser(tx, hasUserId),
-				_ -> suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(tx),
-				_ -> suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(tx),
-				_ -> suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(tx),
-				_ -> suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(tx),
+				_ -> suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(tx, lang),
+				_ -> suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(tx, lang),
+				_ -> suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(tx, lang),
+				_ -> suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(tx, lang),
 				RecipeSuggestionNecessaryData::new
 		);
 	}

@@ -14,14 +14,20 @@ import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Seasonality;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Testcontainers
 class AlternativeIngredientDaoImplTest {
 	private static final long ASYNC_WAIT_SECONDS = 300;
@@ -42,6 +48,7 @@ class AlternativeIngredientDaoImplTest {
 			new HibernateReactiveExtension(postgres::getJdbcUrl, postgres.getUsername(), postgres.getPassword());
 
 	@Test
+	@Order(1)
 	void testFindAllReturnsSeasonalityByCountry(Mutiny.SessionFactory sessionFactory) {
 		var sut = new AlternativeIngredientDaoImpl();
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
@@ -66,7 +73,7 @@ class AlternativeIngredientDaoImplTest {
 						})
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
-		var alternatives = factory.withoutTransaction(sut::findAll).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var alternatives = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.EN)).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var alternative = alternatives.stream()
 				.filter(a -> a.getId().getId().asUuid().equals(ALTERNATIVE_INGREDIENT_ID))
 				.findFirst()
@@ -76,6 +83,34 @@ class AlternativeIngredientDaoImplTest {
 		assertThat(alternative.getSeasonalityByCountry().orElseThrow())
 				.containsEntry(GREECE, seasonality(8, 10))
 				.containsEntry(BELGIUM, seasonality(7, 9));
+	}
+
+	@Test
+	@Order(1)
+	void testFindAllReturnsLocalizedAlternativeIngredientWithFallback(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> tx.find(AlternativeIngredientEntity.class, ALTERNATIVE_INGREDIENT_ID)
+						.flatMap(alternativeIngredient -> {
+							var translation = new AlternativeIngredientTranslationEntity();
+							translation.setAlternativeIngredient(alternativeIngredient);
+							translation.setLang(RecipeLanguage.NL);
+							translation.setName("Volkoren wrap");
+							translation.setExplanationForLlm(null);
+							return tx.persist(translation);
+						}))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var alternatives = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.NL))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var alternative = alternatives.stream()
+				.filter(a -> a.getId().getId().asUuid().equals(ALTERNATIVE_INGREDIENT_ID))
+				.findFirst()
+				.orElseThrow();
+
+		assertThat(alternative.getName()).isEqualTo("Volkoren wrap");
+		assertThat(alternative.getExplanationForLlm()).isEmpty();
 	}
 
 	private static Seasonality seasonality(int monthFrom, int monthTo) {

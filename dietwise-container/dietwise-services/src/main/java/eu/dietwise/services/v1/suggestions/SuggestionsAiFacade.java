@@ -16,19 +16,19 @@ import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 public interface SuggestionsAiFacade {
-	Uni<Map<String, RoleOrTechnique>> retrieveAllRolesKeyedByNormalizedName(ReactivePersistenceContext em);
+	Uni<Map<String, RoleOrTechnique>> retrieveAllRolesKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang);
 
 	String convertRolesToMarkdownList(Collection<RoleOrTechnique> rolesOrTechniques);
 
 	String convertInstructionsToMarkdownList(List<String> instructions);
 
-	Uni<Map<String, TriggerIngredient>> retrieveAllTriggerIngredientsKeyedByNormalizedName(ReactivePersistenceContext em);
+	Uni<Map<String, TriggerIngredient>> retrieveAllTriggerIngredientsKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang);
 
 	String convertTriggerIngredientsToMarkdownList(Collection<TriggerIngredient> triggerIngredients);
 
-	Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em);
+	Uni<Map<String, AlternativeIngredient>> retrieveAllAlternativesKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang);
 
-	Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em);
+	Uni<Map<String, RecommendationComponent>> retrieveAllRecommendationsKeyedByNormalizedName(ReactivePersistenceContext em, RecipeLanguage lang);
 
 	String convertRecommendationsToMarkdownList(Collection<RecommendationComponent> recommendations);
 

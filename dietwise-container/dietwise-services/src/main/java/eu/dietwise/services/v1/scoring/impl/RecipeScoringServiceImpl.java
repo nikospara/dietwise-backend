@@ -16,6 +16,7 @@ import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutableScoringData;
 import eu.dietwise.v1.types.IngredientId;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
@@ -32,12 +33,12 @@ public class RecipeScoringServiceImpl implements RecipeScoringService {
 	}
 
 	@Override
-	public Uni<ScoringRecipeAssessmentMessage> makeScoringMessage(Map<IngredientId, Set<RecommendationComponent>> recommendations) {
-		return persistenceContextFactory.withoutTransaction(em -> makeScoringMessageInternal(em, recommendations));
+	public Uni<ScoringRecipeAssessmentMessage> makeScoringMessage(Map<IngredientId, Set<RecommendationComponent>> recommendations, RecipeLanguage lang) {
+		return persistenceContextFactory.withoutTransaction(em -> makeScoringMessageInternal(em, recommendations, lang));
 	}
 
-	private Uni<ScoringRecipeAssessmentMessage> makeScoringMessageInternal(ReactivePersistenceContext em, Map<IngredientId, Set<RecommendationComponent>> recommendations) {
-		return recommendationDao.listAllRecommendationsForScoring(em).map(recommendationComponents ->
+	private Uni<ScoringRecipeAssessmentMessage> makeScoringMessageInternal(ReactivePersistenceContext em, Map<IngredientId, Set<RecommendationComponent>> recommendations, RecipeLanguage lang) {
+		return recommendationDao.listAllRecommendationsForScoring(em, lang).map(recommendationComponents ->
 				toScoringRecipeAssessmentMessage(recommendationComponents, recommendations)
 		);
 	}

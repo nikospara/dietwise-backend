@@ -1,6 +1,7 @@
 package eu.dietwise.services.v1.impl;
 
 import static eu.dietwise.common.utils.MultiComprehensions.emitInSequence;
+import static eu.dietwise.common.utils.UniComprehensions.forcm;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 
 import java.time.Duration;
@@ -27,7 +28,6 @@ import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
-import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableIngredient;
@@ -85,7 +85,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),
-				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations()).invoke(emitter::emit),
+				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
 				this::handleError
 		);
 	}
@@ -102,7 +102,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),
-				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations()).invoke(emitter::emit),
+				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
 				this::handleError
 		);
 	}
@@ -146,22 +146,13 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
 		} else {
 			Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
-			return recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, lang, recipe)
-					.call(result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()))
-					.flatMap(result -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message())
-							.map(message -> new MakeSuggestionsResult(message, result.recommendations()))
-					)
-					.invoke(result -> emitter.emit(result.message()));
+			return forcm(
+					recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, lang, recipe),
+					result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()),
+					(result, _) -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message()),
+					(result, _, message) -> new MakeSuggestionsResult(message, result.recommendations())
+			).invoke(result -> emitter.emit(result.message()));
 		}
-	}
-
-	private Uni<? extends ScoringRecipeAssessmentMessage> calculateScoreData(
-			MultiEmitter<? super RecipeAssessmentMessage> emitter,
-			RecipeExtractionRecipeAssessmentMessage message,
-			MakeSuggestionsResult suggestionsResult
-	) {
-		return recipeScoringService.makeScoringMessage(suggestionsResult.recommendations())
-				.invoke(emitter::emit);
 	}
 
 	@Override

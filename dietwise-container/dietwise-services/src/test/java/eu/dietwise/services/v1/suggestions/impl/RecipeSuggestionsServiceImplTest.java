@@ -133,10 +133,10 @@ class RecipeSuggestionsServiceImplTest {
 		var hasUserId = hasUserId();
 		var personalInfo = ImmutablePersonalInfo.builder().build();
 		RoleOrTechnique role = mock(RoleOrTechnique.class);
-		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
-		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_NAME_FIBER, TRIGGER_INGREDIENT_FIBER)));
-		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
-		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
+		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
+		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_NAME_FIBER, TRIGGER_INGREDIENT_FIBER)));
+		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
 		when(suggestionsAiFacade.convertInstructionsToMarkdownList(eq(RECIPE.getRecipeInstructions()))).thenReturn(INSTRUCTIONS_MARKDOWN);
 		when(suggestionsAiFacade.assessIngredientRole(RecipeLanguage.EN, ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))
@@ -162,10 +162,10 @@ class RecipeSuggestionsServiceImplTest {
 		RoleOrTechnique role = mock(RoleOrTechnique.class);
 		var triggerIngredient = mock(eu.dietwise.services.model.suggestions.TriggerIngredient.class);
 
-		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
-		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_NAME_FLOUR, triggerIngredient)));
-		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(Map.of()));
-		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any())).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
+		when(suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(Map.of("binder", role)));
+		when(suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_NAME_FLOUR, triggerIngredient)));
+		when(suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(RECOMMENDATIONS));
 		when(suggestionsAiFacade.convertRolesToMarkdownList(any())).thenReturn(ROLE_MARKDOWN);
 		when(suggestionsAiFacade.convertInstructionsToMarkdownList(eq(RECIPE.getRecipeInstructions()))).thenReturn(INSTRUCTIONS_MARKDOWN);
 		when(suggestionsAiFacade.assessIngredientRole(RecipeLanguage.EN, ROLE_MARKDOWN, INGREDIENT_NAME, INSTRUCTIONS_MARKDOWN))

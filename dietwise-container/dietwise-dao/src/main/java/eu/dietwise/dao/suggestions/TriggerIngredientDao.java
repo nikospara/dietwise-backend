@@ -4,8 +4,9 @@ import java.util.List;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 public interface TriggerIngredientDao {
-	Uni<List<TriggerIngredient>> findAll(ReactivePersistenceContext em);
+	Uni<List<TriggerIngredient>> findAll(ReactivePersistenceContext em, RecipeLanguage lang);
 }

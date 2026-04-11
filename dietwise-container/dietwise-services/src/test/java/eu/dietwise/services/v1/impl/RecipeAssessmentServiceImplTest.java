@@ -177,7 +177,7 @@ class RecipeAssessmentServiceImplTest {
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(3))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
-		when(recipeScoringService.makeScoringMessage(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
+		when(recipeScoringService.makeScoringMessage(any(), eq(RecipeLanguage.EN))).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.assessMarkdownRecipe(USER, MARKDOWN_PARAM)
 				.collect().asList()
@@ -207,7 +207,7 @@ class RecipeAssessmentServiceImplTest {
 		verify(statisticsService).assessedRecipe(USER);
 		verify(statisticsService).assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta");
 		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class));
-		verify(recipeScoringService).makeScoringMessage(any());
+		verify(recipeScoringService).makeScoringMessage(any(), eq(RecipeLanguage.EN));
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
 		var hasSuggestionTemplateIdsCaptor = ArgumentCaptor.forClass(HasSuggestionTemplateIds.class);
@@ -231,7 +231,7 @@ class RecipeAssessmentServiceImplTest {
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(3))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
-		when(recipeScoringService.makeScoringMessage(any())).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
+		when(recipeScoringService.makeScoringMessage(any(), eq(RecipeLanguage.EN))).thenAnswer(iom -> Uni.createFrom().item(new ScoringRecipeAssessmentMessage(dummyScoringData())));
 
 		List<RecipeAssessmentMessage> messages = sut.extractAndAssessRecipeFromUrl(USER, URL_EXTRACTION_PARAM)
 				.collect().asList()
@@ -256,7 +256,7 @@ class RecipeAssessmentServiceImplTest {
 		verify(statisticsService).assessedRecipe(USER);
 		verify(statisticsService).assessedRecipe(USER, URL_EXTRACTION_PARAM.getUrl(), "Simple Pasta");
 		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class));
-		verify(recipeScoringService).makeScoringMessage(any());
+		verify(recipeScoringService).makeScoringMessage(any(), eq(RecipeLanguage.EN));
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
 		var hasSuggestionTemplateIdsCaptor = ArgumentCaptor.forClass(HasSuggestionTemplateIds.class);

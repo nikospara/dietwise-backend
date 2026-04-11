@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
@@ -14,6 +15,8 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
+import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity_;
 import eu.dietwise.dao.recommendations.RecommendationDao;
@@ -21,6 +24,7 @@ import eu.dietwise.services.model.recommendations.ImmutableRecommendationCompone
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
@@ -113,24 +117,46 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	}
 
 	@Override
-	public Uni<List<RecommendationComponent>> listAllRecommendationsForScoring(ReactivePersistenceContext em) {
+	public Uni<List<RecommendationComponent>> listAllRecommendationsForScoring(ReactivePersistenceContext em, RecipeLanguage lang) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(RecommendationEntity.class);
 		q.from(RecommendationEntity.class);
-		return em.createQuery(q).getResultList().map(values ->
-				values.stream().map(this::toRecommendationComponent).toList());
+		return em.createQuery(q).getResultList()
+				.flatMap(values -> loadTranslationsByRecommendationId(em, lang)
+						.map(translationsById -> values.stream()
+								.map(value -> toRecommendationComponent(value, translationsById.get(value.getId())))
+								.toList()));
+	}
+
+	private Uni<Map<UUID, RecommendationTranslationEntity>> loadTranslationsByRecommendationId(
+			ReactivePersistenceContext em,
+			RecipeLanguage lang
+	) {
+		if (lang == RecipeLanguage.EN) {
+			return Uni.createFrom().item(Map.of());
+		}
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(RecommendationTranslationEntity.class);
+		var translation = q.from(RecommendationTranslationEntity.class);
+		q.select(translation).where(cb.equal(translation.get(RecommendationTranslationEntity_.lang), lang));
+		return em.createQuery(q).getResultList()
+				.map(values -> values.stream().collect(Collectors.toMap(
+						t -> t.getRecommendation().getId(),
+						t -> t
+				)));
 	}
 
 	private Recommendation toRecommendation(Tuple tuple) {
 		return new RecommendationImpl(tuple.get(0, String.class));
 	}
 
-	private RecommendationComponent toRecommendationComponent(RecommendationEntity e) {
+	private RecommendationComponent toRecommendationComponent(RecommendationEntity e, RecommendationTranslationEntity t) {
 		return ImmutableRecommendationComponent.builder()
-				.recommendation(new RecommendationImpl(e.getName()))
-				.componentForScoring(new RecommendationComponentNameImpl(e.getComponentForScoring()))
+				.recommendation(new RecommendationImpl(t != null && t.getName() != null ? t.getName() : e.getName()))
+				.componentForScoring(new RecommendationComponentNameImpl(
+						t != null && t.getComponentForScoring() != null ? t.getComponentForScoring() : e.getComponentForScoring()))
 				.weight(e.getWeight())
-				.explanationForLlm(Optional.ofNullable(e.getExplanationForLlm()))
+				.explanationForLlm(Optional.ofNullable(t != null && t.getExplanationForLlm() != null ? t.getExplanationForLlm() : e.getExplanationForLlm()))
 				.build();
 	}
 }

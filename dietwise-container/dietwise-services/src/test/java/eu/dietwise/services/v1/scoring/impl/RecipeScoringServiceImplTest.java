@@ -18,6 +18,7 @@ import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RecommendationWeight;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
@@ -62,10 +63,10 @@ class RecipeScoringServiceImplTest {
 					Function<ReactivePersistenceContext, Uni<ScoringRecipeAssessmentMessage>> work = invocation.getArgument(0);
 					return work.apply(persistenceContext);
 				});
-		when(recommendationDao.listAllRecommendationsForScoring(persistenceContext))
+		when(recommendationDao.listAllRecommendationsForScoring(persistenceContext, RecipeLanguage.EN))
 				.thenAnswer(iom -> Uni.createFrom().item(recommendationComponents));
 
-		ScoringRecipeAssessmentMessage message = sut.makeScoringMessage(Map.of(ingredientId1, Set.of(recommendationComp1)))
+		ScoringRecipeAssessmentMessage message = sut.makeScoringMessage(Map.of(ingredientId1, Set.of(recommendationComp1)), RecipeLanguage.EN)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(message.scoringData().getTotalNumberOfRecomendations()).isEqualTo(2);
@@ -78,7 +79,7 @@ class RecipeScoringServiceImplTest {
 						Set.of(new RecommendationComponentNameImpl("Fiber"))
 				);
 
-		verify(recommendationDao).listAllRecommendationsForScoring(persistenceContext);
+		verify(recommendationDao).listAllRecommendationsForScoring(persistenceContext, RecipeLanguage.EN);
 	}
 
 	private static RecommendationComponent recommendationComponent(
