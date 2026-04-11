@@ -241,6 +241,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	private String convertMappedRulesToMarkdownList(Map<String, Rule> rules) {
+		// TODO Add language
 		return rules.entrySet().stream()
 				.flatMap(e -> Stream.of(
 						"- id: " + e.getKey(),
@@ -266,6 +267,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	private String convertSuggestionsToMarkdownList(List<Suggestion> alternatives) {
+		// TODO Add language
 		return alternatives.stream()
 				.flatMap(a -> Stream.of(
 						"- " + a.getAlternative().asString(),

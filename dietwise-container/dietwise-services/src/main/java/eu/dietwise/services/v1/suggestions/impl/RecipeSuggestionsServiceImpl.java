@@ -247,6 +247,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			Ingredient ingredient
 	) {
 		// TODO Dummy for now, implement to fill-in the text - filtering happens in loadAlternativesFromDbAndSelectBest
+		// TODO Add language
 		return (rulesAndComponents, _, list) -> {
 			List<Suggestion> result = list.stream()
 					.map(s -> (Suggestion) ImmutableSuggestion.copyOf(s).withText("We suggest: " + s.getAlternative().asString() + " instead of: " + ingredient.getNameInRecipe()))
