@@ -220,7 +220,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			Ingredient ingredient
 	) {
 		return (role, _, _, rule) -> forc(
-				suggestionDao.retrieveByRule(tx, rule, data.personalInfo().getCountry(), ingredient),
+				suggestionDao.retrieveByRule(tx, rule, data.personalInfo().getCountry(), ingredient, lang),
 				suggestions -> suggestionsAiFacade.suggestAlternatives(lang, ingredient.getNameInRecipe(), role, suggestions),
 				(suggestions, responseFromAi) -> {
 					// TODO dummy, process response from AI

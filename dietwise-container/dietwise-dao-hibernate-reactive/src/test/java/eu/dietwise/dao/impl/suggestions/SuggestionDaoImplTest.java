@@ -16,9 +16,12 @@ import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableIngredient;
 import eu.dietwise.v1.types.ImmutableSeasonality;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.GenericIngredientId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
@@ -101,7 +104,7 @@ class SuggestionDaoImplTest {
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		var suggestionsWithoutCountry = factory.withoutTransaction(em ->
-				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient)
+				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient, RecipeLanguage.EN)
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(suggestionsWithoutCountry).hasSize(3);
@@ -140,7 +143,7 @@ class SuggestionDaoImplTest {
 		});
 
 		var suggestionsForGreece = factory.withoutTransaction(em ->
-				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), GREECE, ingredient)
+				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), GREECE, ingredient, RecipeLanguage.EN)
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(suggestionsForGreece).hasSize(3);
@@ -165,5 +168,39 @@ class SuggestionDaoImplTest {
 					assertThat(suggestion.getSeasonality()).isEmpty();
 					assertThat(suggestion.getCost()).isEmpty();
 				});
+	}
+
+	@Test
+	@Order(2)
+	void testRetrieveByRuleReturnsLocalizedSuggestionTemplateStrings(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var ingredient = ImmutableIngredient.builder()
+				.id(new GenericIngredientId(INGREDIENT_ID.toString()))
+				.nameInRecipe("beef mince")
+				.build();
+
+		factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, UUID.fromString("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c"))
+				.flatMap(suggestionTemplate -> {
+					var translation = new SuggestionTemplateTranslationEntity();
+					translation.setSuggestionTemplate(suggestionTemplate);
+					translation.setLang(RecipeLanguage.NL);
+					translation.setRestriction("Minder eiwit");
+					translation.setEquivalence("1:1 in volume");
+					translation.setTechniqueNotes("Rooster aubergine eerst");
+					return tx.persist(translation);
+				}))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var suggestions = factory.withoutTransaction(em ->
+				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient, RecipeLanguage.NL)
+		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(suggestions).anySatisfy(suggestion -> {
+			assertThat(suggestion.getId().asString()).isEqualTo("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c");
+			assertThat(suggestion.getRestriction()).contains("Minder eiwit");
+			assertThat(suggestion.getEquivalence()).contains("1:1 in volume");
+			assertThat(suggestion.getTechniqueNotes()).contains("Rooster aubergine eerst");
+		});
 	}
 }

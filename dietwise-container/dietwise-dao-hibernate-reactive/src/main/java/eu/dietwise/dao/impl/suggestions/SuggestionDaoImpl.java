@@ -1,7 +1,6 @@
 package eu.dietwise.dao.impl.suggestions;
 
 import static java.util.stream.Collectors.toSet;
-
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.Collections;
@@ -22,16 +21,22 @@ import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
+import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity_;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity_;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableSuggestion;
@@ -41,6 +46,7 @@ import eu.dietwise.v1.types.Cost;
 import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.HasRuleId;
 import eu.dietwise.v1.types.ImmutableSeasonality;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RecommendationComponentName;
 import eu.dietwise.v1.types.Seasonality;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
@@ -53,15 +59,29 @@ import io.smallrye.mutiny.Uni;
 @ApplicationScoped
 public class SuggestionDaoImpl implements SuggestionDao {
 	@Override
-	public Uni<List<Suggestion>> retrieveByRule(ReactivePersistenceContext em, HasRuleId ruleId, Country country, Ingredient ingredient) {
+	public Uni<List<Suggestion>> retrieveByRule(ReactivePersistenceContext em, HasRuleId ruleId, Country country, Ingredient ingredient, RecipeLanguage lang) {
 		return forcm(
 				findSuggestionTemplatesByRule(em, ruleId),
 				this::extractAlternativeIngredientIds,
-				(_, alternativeIngredientIds) -> findSeasonalityByAlternativeIngredientId(em, alternativeIngredientIds, country),
-				(_, alternativeIngredientIds, _) -> findCostByAlternativeIngredientId(em, alternativeIngredientIds, country),
-				(_, alternativeIngredientIds, _, _) -> findAlternativeComponentNamesByAlternativeIngredientId(em, alternativeIngredientIds),
-				(suggestionTemplates, _, seasonalityByAlternativeIngredientId, costByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId) ->
-						toSuggestionList(suggestionTemplates, seasonalityByAlternativeIngredientId, costByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId, ingredient)
+				this::extractRecommendationIds,
+				(suggestionTemplates, _, _) -> findSuggestionTemplateTranslationsBySuggestionTemplateId(em, suggestionTemplates, lang),
+				(_, alternativeIngredientIds, _, _) -> findAlternativeIngredientTranslationsByAlternativeIngredientId(em, alternativeIngredientIds, lang),
+				(_, _, recommendationIds, _, _) -> findRecommendationTranslationsByRecommendationId(em, recommendationIds, lang),
+				(_, alternativeIngredientIds, _, _, _, _) -> findSeasonalityByAlternativeIngredientId(em, alternativeIngredientIds, country),
+				(_, alternativeIngredientIds, _, _, _, _, _) -> findCostByAlternativeIngredientId(em, alternativeIngredientIds, country),
+				(_, alternativeIngredientIds, _, _, _, _, _, _) -> findAlternativeComponentNamesByAlternativeIngredientId(em, alternativeIngredientIds),
+				(suggestionTemplates, _, _, suggestionTemplateTranslationsById, alternativeIngredientTranslationsById, recommendationTranslationsById,
+				 seasonalityByAlternativeIngredientId, costByAlternativeIngredientId, alternativeComponentNamesByAlternativeIngredientId) ->
+						toSuggestionList(
+								suggestionTemplates,
+								suggestionTemplateTranslationsById,
+								alternativeIngredientTranslationsById,
+								recommendationTranslationsById,
+								seasonalityByAlternativeIngredientId,
+								costByAlternativeIngredientId,
+								alternativeComponentNamesByAlternativeIngredientId,
+								ingredient
+						)
 		);
 	}
 
@@ -82,6 +102,83 @@ public class SuggestionDaoImpl implements SuggestionDao {
 				.map(suggestionTemplate -> suggestionTemplate.getAlternativeIngredient().getId())
 				.collect(toSet());
 		return Uni.createFrom().item(alternativeIngredientIds);
+	}
+
+	private Uni<Set<UUID>> extractRecommendationIds(List<SuggestionTemplateEntity> suggestionTemplates, Set<UUID> ignoredAlternativeIngredientIds) {
+		Set<UUID> recommendationIds = suggestionTemplates.stream()
+				.map(suggestionTemplate -> suggestionTemplate.getRule().getRecommendation().getId())
+				.collect(toSet());
+		return Uni.createFrom().item(recommendationIds);
+	}
+
+	private Uni<Map<UUID, SuggestionTemplateTranslationEntity>> findSuggestionTemplateTranslationsBySuggestionTemplateId(
+			ReactivePersistenceContext em,
+			List<SuggestionTemplateEntity> suggestionTemplates,
+			RecipeLanguage lang
+	) {
+		if (lang == RecipeLanguage.EN || suggestionTemplates.isEmpty()) {
+			return Uni.createFrom().item(Collections.emptyMap());
+		}
+		Set<UUID> suggestionTemplateIds = suggestionTemplates.stream().map(SuggestionTemplateEntity::getId).collect(toSet());
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(SuggestionTemplateTranslationEntity.class);
+		Root<SuggestionTemplateTranslationEntity> translation = q.from(SuggestionTemplateTranslationEntity.class);
+		q.select(translation).where(
+				cb.and(
+						in(cb, translation.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.id), suggestionTemplateIds),
+						cb.equal(translation.get(SuggestionTemplateTranslationEntity_.lang), lang)
+				)
+		);
+		return em.createQuery(q).getResultList().map(list -> list.stream().collect(Collectors.toMap(
+				t -> t.getSuggestionTemplate().getId(),
+				t -> t
+		)));
+	}
+
+	private Uni<Map<UUID, AlternativeIngredientTranslationEntity>> findAlternativeIngredientTranslationsByAlternativeIngredientId(
+			ReactivePersistenceContext em,
+			Set<UUID> alternativeIngredientIds,
+			RecipeLanguage lang
+	) {
+		if (lang == RecipeLanguage.EN || alternativeIngredientIds.isEmpty()) {
+			return Uni.createFrom().item(Collections.emptyMap());
+		}
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(AlternativeIngredientTranslationEntity.class);
+		Root<AlternativeIngredientTranslationEntity> translation = q.from(AlternativeIngredientTranslationEntity.class);
+		q.select(translation).where(
+				cb.and(
+						in(cb, translation.get(AlternativeIngredientTranslationEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id), alternativeIngredientIds),
+						cb.equal(translation.get(AlternativeIngredientTranslationEntity_.lang), lang)
+				)
+		);
+		return em.createQuery(q).getResultList().map(list -> list.stream().collect(Collectors.toMap(
+				t -> t.getAlternativeIngredient().getId(),
+				t -> t
+		)));
+	}
+
+	private Uni<Map<UUID, RecommendationTranslationEntity>> findRecommendationTranslationsByRecommendationId(
+			ReactivePersistenceContext em,
+			Set<UUID> recommendationIds,
+			RecipeLanguage lang
+	) {
+		if (lang == RecipeLanguage.EN || recommendationIds.isEmpty()) {
+			return Uni.createFrom().item(Collections.emptyMap());
+		}
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(RecommendationTranslationEntity.class);
+		Root<RecommendationTranslationEntity> translation = q.from(RecommendationTranslationEntity.class);
+		q.select(translation).where(
+				cb.and(
+						in(cb, translation.get(RecommendationTranslationEntity_.recommendation).get(RecommendationEntity_.id), recommendationIds),
+						cb.equal(translation.get(RecommendationTranslationEntity_.lang), lang)
+				)
+		);
+		return em.createQuery(q).getResultList().map(list -> list.stream().collect(Collectors.toMap(
+				t -> t.getRecommendation().getId(),
+				t -> t
+		)));
 	}
 
 	private Uni<Map<UUID, AlternativeIngredientSeasonalityEntity>> findSeasonalityByAlternativeIngredientId(
@@ -171,6 +268,9 @@ public class SuggestionDaoImpl implements SuggestionDao {
 
 	private static List<Suggestion> toSuggestionList(
 			List<SuggestionTemplateEntity> suggestionTemplates,
+			Map<UUID, SuggestionTemplateTranslationEntity> suggestionTemplateTranslationsById,
+			Map<UUID, AlternativeIngredientTranslationEntity> alternativeIngredientTranslationsById,
+			Map<UUID, RecommendationTranslationEntity> recommendationTranslationsById,
 			Map<UUID, AlternativeIngredientSeasonalityEntity> seasonalityByAlternativeIngredientId,
 			Map<UUID, Cost> costByAlternativeIngredientId,
 			Map<UUID, Set<RecommendationComponentName>> alternativeComponentNamesByAlternativeIngredientId,
@@ -181,6 +281,9 @@ public class SuggestionDaoImpl implements SuggestionDao {
 					UUID alternativeIngredientId = suggestionTemplate.getAlternativeIngredient().getId();
 					return toSuggestion(
 							suggestionTemplate,
+							suggestionTemplateTranslationsById.get(suggestionTemplate.getId()),
+							alternativeIngredientTranslationsById.get(alternativeIngredientId),
+							recommendationTranslationsById.get(suggestionTemplate.getRule().getRecommendation().getId()),
 							seasonalityByAlternativeIngredientId.get(alternativeIngredientId),
 							costByAlternativeIngredientId.get(alternativeIngredientId),
 							alternativeComponentNamesByAlternativeIngredientId.getOrDefault(alternativeIngredientId, Collections.emptySet()),
@@ -192,6 +295,9 @@ public class SuggestionDaoImpl implements SuggestionDao {
 
 	private static Suggestion toSuggestion(
 			SuggestionTemplateEntity e,
+			SuggestionTemplateTranslationEntity suggestionTemplateTranslation,
+			AlternativeIngredientTranslationEntity alternativeIngredientTranslation,
+			RecommendationTranslationEntity recommendationTranslation,
 			AlternativeIngredientSeasonalityEntity seasonality,
 			Cost cost,
 			Set<RecommendationComponentName> alternativeComponentNames,
@@ -199,13 +305,28 @@ public class SuggestionDaoImpl implements SuggestionDao {
 	) {
 		return ImmutableSuggestion.builder()
 				.id(new GenericSuggestionTemplateId(e.getId().toString()))
-				.alternative(new AlternativeIngredientImpl(e.getAlternativeIngredient().getName()))
-				.restriction(Optional.ofNullable(e.getRestriction()))
-				.equivalence(Optional.ofNullable(e.getEquivalence()))
-				.techniqueNotes(Optional.ofNullable(e.getTechniqueNotes()))
+				.alternative(new AlternativeIngredientImpl(
+						alternativeIngredientTranslation != null && alternativeIngredientTranslation.getName() != null
+								? alternativeIngredientTranslation.getName()
+								: e.getAlternativeIngredient().getName()))
+				.restriction(Optional.ofNullable(
+						suggestionTemplateTranslation != null && suggestionTemplateTranslation.getRestriction() != null
+								? suggestionTemplateTranslation.getRestriction()
+								: e.getRestriction()))
+				.equivalence(Optional.ofNullable(
+						suggestionTemplateTranslation != null && suggestionTemplateTranslation.getEquivalence() != null
+								? suggestionTemplateTranslation.getEquivalence()
+								: e.getEquivalence()))
+				.techniqueNotes(Optional.ofNullable(
+						suggestionTemplateTranslation != null && suggestionTemplateTranslation.getTechniqueNotes() != null
+								? suggestionTemplateTranslation.getTechniqueNotes()
+								: e.getTechniqueNotes()))
 				.target(new AppliesTo.AppliesToIngredient(ingredient.getId()))
 				.ruleId(new GenericRuleId(e.getRule().getId().toString()))
-				.recommendation(new RecommendationImpl(e.getRule().getRecommendation().getName()))
+				.recommendation(new RecommendationImpl(
+						recommendationTranslation != null && recommendationTranslation.getName() != null
+								? recommendationTranslation.getName()
+								: e.getRule().getRecommendation().getName()))
 				.seasonality(Optional.ofNullable(seasonality).map(SuggestionDaoImpl::toSeasonality))
 				.cost(Optional.ofNullable(cost))
 				.alternativeComponentNames(alternativeComponentNames)

@@ -176,7 +176,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(ion -> Uni.createFrom().item(Set.of("fiber")));
 		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item(RULE1.getId().asString()));
 		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
-		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), any(), eq(RECIPE.getRecipeIngredients().getFirst())))
+		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), any(), eq(RECIPE.getRecipeIngredients().getFirst()), eq(RecipeLanguage.EN)))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 
 		Suggestion prioritizedSuggestion = ImmutableSuggestion.copyOf(FIRST_SUGGESTION)

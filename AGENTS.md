@@ -24,6 +24,14 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
   - `dietwise-dao-hibernate-reactive`: DAO implementation and Liquibase changelog resources.
 - `dietwise-docker`: peripheral Docker images and compose files.
 
+## Usage of Hibernate Reactive
+
+This project contains a wrapper around Hibernate Reactive that provides a more neutral API, `ReactivePersistenceContext` and `ReactivePersistenceTxContext`.
+Treat them as any other code using the database with Hibernate Reactive.
+
+- Do not use Hibernate Reactive concurrently.
+- Always use the JPA metamodel to construct queries.
+
 ## Build and Run
 - Full build:
   - `mvn package`
