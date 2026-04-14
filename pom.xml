@@ -5,7 +5,7 @@
 
 	<groupId>eu.dietwise</groupId>
 	<artifactId>dietwise-parent</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>0.6.0</version>
 
 	<name>DietWise: Backend Parent</name>
 	<description>Parent module defining the base build configuration and further project structure for the entire DietWise backend monorepo</description>
@@ -27,7 +27,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.34.1</version.quarkus.platform>
+		<version.quarkus.platform>3.34.3</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.assertj>3.27.7</version.assertj>
@@ -367,7 +367,7 @@
 					<plugin>
 						<groupId>org.owasp</groupId>
 						<artifactId>dependency-check-maven</artifactId>
-						<version>12.2.0</version>
+						<version>12.2.1</version>
 						<executions>
 							<execution>
 								<goals>
