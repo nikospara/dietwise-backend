@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>eu.dietwise</groupId>
 		<artifactId>dietwise-container</artifactId>
-		<version>0.6.0</version>
+		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>dietwise-dao-hibernate-reactive</artifactId>
@@ -18,32 +18,32 @@
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-common-dao-reactive</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-common-types</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-common-utils</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-dao</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-model</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-services-model</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- SPECS -->
@@ -66,13 +66,13 @@
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-common-dao-reactive-hibernate</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>eu.dietwise</groupId>
 			<artifactId>dietwise-common-testutils</artifactId>
-			<version>0.6.0</version>
+			<version>1.0.0-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 
