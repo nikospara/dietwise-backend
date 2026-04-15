@@ -112,4 +112,28 @@
 			referencedColumnNames="id"
 		/>
 	</changeSet>
+
+	<changeSet id="internationalization_rules" author="nikospara">
+		<addColumn tableName="DW_RULE">
+			<column name="rationale" type="VARCHAR(300)" remarks="Rationale for the rule, English" />
+		</addColumn>
+
+		<createTable tableName="DW_RULE_TRANSLATION" remarks="Translation of rule strings">
+			<column name="rule_id" type="UUID">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE_TRANSLATION__RULE_ID" primaryKey="true" primaryKeyName="PK_DW_RULE_TRANSLATION" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE_TRANSLATION__LANG" primaryKey="true" primaryKeyName="PK_DW_RULE_TRANSLATION" />
+			</column>
+			<column name="rationale" type="VARCHAR(300)" />
+		</createTable>
+
+		<addForeignKeyConstraint
+			baseTableName="DW_RULE_TRANSLATION"
+			baseColumnNames="rule_id"
+			constraintName="FK_DW_RULE_TRANSLATION__RULE_ID__DW_RULE__ID"
+			referencedTableName="DW_RULE"
+			referencedColumnNames="id"
+		/>
+	</changeSet>
 </databaseChangeLog>

@@ -174,7 +174,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	) {
 		// let's ask the DB and the AI in parallel, they are independent operations
 		return triggerIngredient -> Uni.combine().all().unis(
-				findByTriggerIngredientAndThrowIfNotFound(tx, triggerIngredient),
+				findByTriggerIngredientAndThrowIfNotFound(tx, triggerIngredient, lang),
 				suggestionsAiFacade.matchIngredientsWithRecommendations(lang, availableRecommendationsAsMarkdownList, ingredient.getNameInRecipe())
 		).with((rules, componentNames) -> {
 			var components = componentNames.stream()
@@ -187,8 +187,12 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		});
 	}
 
-	private Uni<List<Rule>> findByTriggerIngredientAndThrowIfNotFound(ReactivePersistenceTxContext tx, TriggerIngredient triggerIngredient) {
-		return ruleDao.findByTriggerIngredient(tx, triggerIngredient)
+	private Uni<List<Rule>> findByTriggerIngredientAndThrowIfNotFound(
+			ReactivePersistenceTxContext tx,
+			TriggerIngredient triggerIngredient,
+			RecipeLanguage lang
+	) {
+		return ruleDao.findByTriggerIngredient(tx, triggerIngredient, lang)
 				.flatMap(rules ->
 						rules.isEmpty()
 								? Uni.createFrom().failure(() -> new NoRulesForTriggerIngredientException(triggerIngredient))

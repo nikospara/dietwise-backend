@@ -3,6 +3,7 @@ package eu.dietwise.dao.jpa.suggestions;
 import static jakarta.persistence.FetchType.LAZY;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,9 +38,15 @@ public class RuleEntity {
 	@Column(name = "cuisine")
 	private String cuisine;
 
+	@Column(name = "rationale")
+	private String rationale;
+
 	@OneToMany(mappedBy = "rule", fetch = LAZY)
 	@OrderColumn(name = "alternative_order")
 	private List<SuggestionTemplateEntity> alternatives;
+
+	@OneToMany(mappedBy = "rule", fetch = LAZY)
+	private Set<RuleTranslationEntity> translations;
 
 	public UUID getId() {
 		return id;
@@ -73,6 +80,14 @@ public class RuleEntity {
 		this.cuisine = cuisine;
 	}
 
+	public String getRationale() {
+		return rationale;
+	}
+
+	public void setRationale(String rationale) {
+		this.rationale = rationale;
+	}
+
 	public RoleOrTechniqueEntity getRoleOrTechnique() {
 		return roleOrTechnique;
 	}
@@ -87,5 +102,13 @@ public class RuleEntity {
 
 	public void setAlternatives(List<SuggestionTemplateEntity> alternatives) {
 		this.alternatives = alternatives;
+	}
+
+	public Set<RuleTranslationEntity> getTranslations() {
+		return translations;
+	}
+
+	public void setTranslations(Set<RuleTranslationEntity> translations) {
+		this.translations = translations;
 	}
 }

@@ -15,5 +15,8 @@ public interface RuleData {
 	RoleOrTechnique getRoleOrTechnique();
 
 	@Nullable
+	String getRationale();
+
+	@Nullable
 	String getCuisineContext();
 }
