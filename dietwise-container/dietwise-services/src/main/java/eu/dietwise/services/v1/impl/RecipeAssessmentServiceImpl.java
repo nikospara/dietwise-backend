@@ -8,7 +8,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.v1.model.User;
@@ -45,7 +44,6 @@ import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.MultiEmitter;
-import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +83,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),
-				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
+				(emitter, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
 				this::handleError
 		);
 	}
@@ -102,7 +100,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),
-				(emitter, _, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
+				(emitter, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
 				this::handleError
 		);
 	}
@@ -165,7 +163,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		);
 		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(suggestions);
 		return Multi.createFrom().<RecipeAssessmentMessage>items(recipeMsg, suggestionsMsg)
-				.onItem().call(m -> Uni.createFrom().nullItem().onItem().delayIt().by(Duration.ofSeconds(3L)));
+				.onItem().call(_ -> Uni.createFrom().nullItem().onItem().delayIt().by(Duration.ofSeconds(3L)));
 	}
 
 	private Recipe makeDummyRecipe() {
@@ -202,30 +200,21 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 	}
 
 	private <T extends Throwable> void handleError(MultiEmitter<? super RecipeAssessmentMessage> emitter, T error) {
-		if (error instanceof NoRecipesDetectedException) {
-			emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
-		} else if (error instanceof NoIngredientsInRecipeException) {
-			emitter.emit(new RecipeAssessmentErrorMessage(List.of("No ingredients could be detected")));
-		} else if (error instanceof InvalidRecipeSourceUrlException) {
-			emitter.emit(new RecipeAssessmentErrorMessage(List.of("The supplied URL is not allowed")));
-		} else if (error instanceof MoreThanOneRecipesDetectedException mto) {
-			emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
-		} else {
-			// TODO Create dedicated exceptions for extraction failures, suggestion failures
-			LOG.error("The server failed to assess the recipe", error);
-			emitter.emit(new RecipeAssessmentErrorMessage(List.of("The server failed to assess the recipe")));
+		switch (error) {
+			case NoRecipesDetectedException _ ->
+					emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
+			case NoIngredientsInRecipeException _ ->
+					emitter.emit(new RecipeAssessmentErrorMessage(List.of("No ingredients could be detected")));
+			case InvalidRecipeSourceUrlException _ ->
+					emitter.emit(new RecipeAssessmentErrorMessage(List.of("The supplied URL is not allowed")));
+			case MoreThanOneRecipesDetectedException mto ->
+					emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
+			case null, default -> {
+				// TODO Create dedicated exceptions for extraction failures, suggestion failures
+				LOG.error("The server failed to assess the recipe", error);
+				emitter.emit(new RecipeAssessmentErrorMessage(List.of("The server failed to assess the recipe")));
+			}
 		}
 		emitter.complete();
-	}
-
-	/**
-	 * @deprecated The rendering service returns appropriate messages and this left unused; keeping around because we may reconsider
-	 */
-	@Deprecated(forRemoval = true)
-	private Function<ClientWebApplicationException, Multi<RecipeAssessmentMessage>> handleHtmlExtractionError(RecipeExtractionAndAssessmentParam param) {
-		return e -> {
-			LOG.error("Could not read the page at {}", param.getUrl(), e);
-			return Multi.createFrom().item(new RecipeAssessmentErrorMessage(List.of("Could not read the page")));
-		};
 	}
 }

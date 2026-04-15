@@ -143,7 +143,7 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item("missing-role"));
 		when(suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(any())).thenReturn("");
 		when(suggestionsAiFacade.matchIngredientToTrigger(RecipeLanguage.EN, "", INGREDIENT_NAME, null)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FIBER));
-		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(Collections.emptyList()));
+		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(_ -> Uni.createFrom().item(Collections.emptyList()));
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), any(), eq(List.of()))).thenReturn(Uni.createFrom().item(List.of()));
 		when(personalInfoDao.findByUser(any(), eq(hasUserId))).thenReturn(Uni.createFrom().item(personalInfo));
 
@@ -172,10 +172,10 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item("binder"));
 		when(suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(any())).thenReturn("- flour");
 		when(suggestionsAiFacade.matchIngredientToTrigger(RecipeLanguage.EN, "- flour", INGREDIENT_NAME, role)).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_NAME_FLOUR));
-		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(iom -> Uni.createFrom().item(List.of(RULE1)));
-		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(ion -> Uni.createFrom().item(Set.of("fiber")));
-		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item(RULE1.getId().asString()));
-		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
+		when(ruleDao.findByTriggerIngredient(any(), any())).thenAnswer(_ -> Uni.createFrom().item(List.of(RULE1)));
+		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(_ -> Uni.createFrom().item(Set.of("fiber")));
+		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item(RULE1.getId().asString()));
+		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
 		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), any(), eq(RECIPE.getRecipeIngredients().getFirst()), eq(RecipeLanguage.EN)))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 
