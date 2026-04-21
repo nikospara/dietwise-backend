@@ -79,7 +79,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		String applicationId = authorization.requireApplicationId(user);
 		return emitInSequence(
 				statisticsService.assessedRecipe(user),
-				(_, _) -> recipeExtractionService.useAiToExtractRecipeFromMarkdown(correlationId, param.getUrl(), param.getLang(), param.getPageContent()),
+				(_, _) -> recipeExtractionService.extractRecipeFromJsonLdOrMarkdown(correlationId, param),
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
 				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),

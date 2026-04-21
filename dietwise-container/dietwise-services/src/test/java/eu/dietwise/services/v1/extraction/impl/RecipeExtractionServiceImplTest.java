@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dietwise.services.model.RecipeExtractedFromInput;
 import eu.dietwise.services.renderer.RenderResponse;
 import eu.dietwise.services.renderer.RendererClient;
@@ -70,10 +71,26 @@ public class RecipeExtractionServiceImplTest {
 			.lang(RecipeLanguage.EN)
 			.build();
 	private static final String MARKDOWN = "Simple pasta recipe with ingredients and instructions.";
+	private static final String JSONLD_CONTENT = """
+			{"@context":"https://schema.org","@type":"Recipe","name":"Simple Pasta","recipeIngredient":["200g pasta","salt"],"recipeInstructions":["Boil water","Cook pasta"]}
+			""";
+	private static final String INVALID_JSONLD_CONTENT = "{this is not valid json-ld}";
 	private static final RecipeAssessmentParam MARKDOWN_PARAM = ImmutableRecipeAssessmentParam.builder()
 			.url(URL)
 			.lang(RecipeLanguage.EN)
 			.pageContent(MARKDOWN)
+			.build();
+	private static final RecipeAssessmentParam MARKDOWN_PARAM_WITH_JSONLD = ImmutableRecipeAssessmentParam.builder()
+			.url(URL)
+			.lang(RecipeLanguage.EN)
+			.pageContent(MARKDOWN)
+			.jsonLdContent(JSONLD_CONTENT)
+			.build();
+	private static final RecipeAssessmentParam MARKDOWN_PARAM_WITH_INVALID_JSONLD = ImmutableRecipeAssessmentParam.builder()
+			.url(URL)
+			.lang(RecipeLanguage.EN)
+			.pageContent(MARKDOWN)
+			.jsonLdContent(INVALID_JSONLD_CONTENT)
 			.build();
 	private static final String RENDERED_MARKDOWN = "rendered markdown";
 
@@ -86,9 +103,17 @@ public class RecipeExtractionServiceImplTest {
 	@Mock
 	private RendererClient rendererClient;
 
+	private RecipeExtractionServiceImpl makeSut() {
+		return new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient, new ObjectMapper(), new KeyValuePairsCoercionStrategy());
+	}
+
+	private RecipeExtractionServiceImpl makeSut(boolean allowCachedTestPages) {
+		return new RecipeExtractionServiceImpl(filterAiFacade, extractionService, allowCachedTestPages, rendererClient, new ObjectMapper(), new KeyValuePairsCoercionStrategy());
+	}
+
 	@Test
 	void useAiToExtractRecipeFromMarkdownEmitsExtractionMessage() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 
 		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
 		when(extractionService.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
@@ -111,8 +136,44 @@ public class RecipeExtractionServiceImplTest {
 	}
 
 	@Test
+	void extractRecipeFromJsonLdOrMarkdownUsesJsonLdContentWhenPresentAndUseful() {
+		var sut = makeSut();
+
+		RecipeExtractionRecipeAssessmentMessage extractionMessage =
+				sut.extractRecipeFromJsonLdOrMarkdown(CORRELATION_ID, MARKDOWN_PARAM_WITH_JSONLD).await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(extractionMessage.pageText()).isEqualTo(MARKDOWN);
+		assertThat(extractionMessage.recipes()).hasSize(1);
+		assertThat(extractionMessage.recipes().getFirst().detectionType()).isEqualTo(JSONLD);
+		assertThat(extractionMessage.recipes().getFirst().recipe().getName()).contains("Simple Pasta");
+		assertThat(extractionMessage.recipes().getFirst().recipe().getRecipeIngredients())
+				.extracting(Ingredient::getNameInRecipe)
+				.containsExactly("200g pasta", "salt");
+
+		verifyNoInteractions(filterAiFacade);
+		verifyNoInteractions(extractionService);
+	}
+
+	@Test
+	void extractRecipeFromJsonLdOrMarkdownFallsBackToAiWhenJsonLdContentIsInvalid() {
+		var sut = makeSut();
+		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
+		when(extractionService.extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN)).thenReturn(Uni.createFrom().item(RECIPE_SIMPLE_PASTA));
+
+		RecipeExtractionRecipeAssessmentMessage extractionMessage =
+				sut.extractRecipeFromJsonLdOrMarkdown(CORRELATION_ID, MARKDOWN_PARAM_WITH_INVALID_JSONLD).await().atMost(Duration.ofSeconds(5L));
+
+		assertThat(extractionMessage.pageText()).isEqualTo(MARKDOWN);
+		assertThat(extractionMessage.recipes()).hasSize(1);
+		assertThat(extractionMessage.recipes().getFirst().detectionType()).isEqualTo(LLM_FROM_TEXT);
+
+		verify(filterAiFacade).filterRecipeBlock(RecipeLanguage.EN, MARKDOWN);
+		verify(extractionService).extractRecipeFromMarkdown(RecipeLanguage.EN, MARKDOWN);
+	}
+
+	@Test
 	void extractRecipeFromUrlEmitsExtractionMessage() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 
@@ -144,7 +205,7 @@ public class RecipeExtractionServiceImplTest {
 			"https://user:pass@example.test/recipe"
 	})
 	void extractRecipeFromUrlRejectsUnsafeUrls(String url) {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
 				.url(url)
 				.lang(RecipeLanguage.EN)
@@ -160,7 +221,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlAllowsExactCachedTestPageWhenEnabled() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, true, rendererClient);
+		var sut = makeSut(true);
 		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
 				.url("001.html")
 				.lang(RecipeLanguage.EN)
@@ -185,7 +246,7 @@ public class RecipeExtractionServiceImplTest {
 			"foo/001.html"
 	})
 	void extractRecipeFromUrlRejectsNearMissCachedTestPagesEvenWhenEnabled(String url) {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, true, rendererClient);
+		var sut = makeSut(true);
 		RecipeExtractionAndAssessmentParam param = ImmutableRecipeExtractionAndAssessmentParam.builder()
 				.url(url)
 				.lang(RecipeLanguage.EN)
@@ -202,7 +263,7 @@ public class RecipeExtractionServiceImplTest {
 	@ParameterizedTest
 	@NullAndEmptySource
 	void extractRecipeFromUrlFallsBackToAiWhenNoJsonLdRecipes(List<RecipeExtractedFromInput> recipes) {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		var restResponse = makeRenderResponseForRecipes(recipes);
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
@@ -223,7 +284,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsMoreThanOneRecipesMessageWhenMultipleRecipesExtracted() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA, RECIPE_SIMPLE_SALAD));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 
@@ -237,7 +298,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlKeepsOnlyValidJsonLdRecipesWhenInputIsMixed() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		var restResponse = makeRenderResponseForRecipes(List.of(RECIPE_SIMPLE_PASTA, RECIPE_WITHOUT_INGREDIENTS));
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 
@@ -255,7 +316,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsErrorWhenAiReturnsRecipeWithoutIngredients() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		var restResponse = makeRenderResponseForRecipes(Collections.emptyList());
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().item(restResponse));
 		when(filterAiFacade.filterRecipeBlock(RecipeLanguage.EN, RENDERED_MARKDOWN)).thenReturn(Uni.createFrom().item("KEEP"));
@@ -274,7 +335,7 @@ public class RecipeExtractionServiceImplTest {
 
 	@Test
 	void extractRecipeFromUrlEmitsErrorWhenRendererFails() {
-		var sut = new RecipeExtractionServiceImpl(filterAiFacade, extractionService, false, rendererClient);
+		var sut = makeSut();
 		when(rendererClient.render(any())).thenReturn(Uni.createFrom().failure(new RuntimeException("Renderer failed")));
 
 		UniAssertSubscriber<RecipeExtractionRecipeAssessmentMessage> subscriber =

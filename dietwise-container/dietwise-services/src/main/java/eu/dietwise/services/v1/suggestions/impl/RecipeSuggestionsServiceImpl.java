@@ -177,6 +177,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				findByTriggerIngredientAndThrowIfNotFound(tx, triggerIngredient, lang),
 				suggestionsAiFacade.matchIngredientsWithRecommendations(lang, availableRecommendationsAsMarkdownList, ingredient.getNameInRecipe())
 		).with((rules, componentNames) -> {
+			LOG.debug("matchIngredientsWithRecommendations for <{}>: {} -> {}", ingredient.getNameInRecipe(), triggerIngredient.getName(), componentNames);
 			var components = componentNames.stream()
 					.filter(Objects::nonNull)
 					.map(name -> name.trim().toLowerCase())

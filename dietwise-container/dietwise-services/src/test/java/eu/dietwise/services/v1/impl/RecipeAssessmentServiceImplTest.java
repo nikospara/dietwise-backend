@@ -169,7 +169,7 @@ class RecipeAssessmentServiceImplTest {
 				List.of(new RecipeAndDetectionType(RECIPE_SIMPLE_PASTA, LLM_FROM_TEXT)),
 				MARKDOWN
 		);
-		when(recipeExtractionService.useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any()))
+		when(recipeExtractionService.extractRecipeFromJsonLdOrMarkdown(any(UUID.class), any(RecipeAssessmentParam.class)))
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(statisticsService.assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta")).thenReturn(Uni.createFrom().item(USER));
@@ -203,7 +203,7 @@ class RecipeAssessmentServiceImplTest {
 
 		assertThat(messages.get(2)).isInstanceOf(ScoringRecipeAssessmentMessage.class);
 
-		verify(recipeExtractionService).useAiToExtractRecipeFromMarkdown(any(UUID.class), any(), any(), any());
+		verify(recipeExtractionService).extractRecipeFromJsonLdOrMarkdown(any(UUID.class), any(RecipeAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
 		verify(statisticsService).assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta");
 		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class));
