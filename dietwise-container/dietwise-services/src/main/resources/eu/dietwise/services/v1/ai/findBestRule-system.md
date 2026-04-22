@@ -64,18 +64,36 @@ dietaryComponents:
 
 Filtered db entries:
 - id: 1
-    - recommendation: Decrease saturated fat
-    - role: sauté fat
+  - recommendation: Decrease saturated fat
+  - role: baking fat
 - id: 2
     - recommendation: Decrease saturated fat
-    - role: baking fat
-- id: 3
-    - recommendation: Decrease saturated fat
-    - role: sauce enricher
-
+    - role: sauté fat
+  
 Select the id of the best fitting entry.
 Output only the id.
 
 ## Assistant message
 
 2
+
+# Example 3
+
+## User message
+ingredient: 2 baguettes
+roleOrTechnique: bread pizza
+triggerIngredient: refined bread
+dietaryComponents:
+- 
+
+Filtered db entries:
+- id: 1
+  - recommendation: Increase fiber
+  - role: bread
+
+Select the id of the best fitting entry.
+Output only the id.
+
+## Assistant message
+
+1
