@@ -5,12 +5,13 @@ import java.util.UUID;
 import eu.dietwise.common.v1.types.HasUserId;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
 import eu.dietwise.v1.model.Recipe;
-import eu.dietwise.v1.types.RecipeLanguage;
+import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
+import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 public interface RecipeSuggestionsService {
-	Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe);
+	Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride);
 
 	/**
 	 * Try to increase the times each suggestion was offered. Will log any failures silently.

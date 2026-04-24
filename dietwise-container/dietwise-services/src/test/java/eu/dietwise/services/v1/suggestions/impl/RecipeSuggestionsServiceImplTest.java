@@ -1,6 +1,8 @@
 package eu.dietwise.services.v1.suggestions.impl;
 
 import static eu.dietwise.common.test.model.HasRuleIdArgumentMatcher.hasRuleId;
+import static eu.dietwise.v1.types.Country.BELGIUM;
+import static eu.dietwise.v1.types.Country.GREECE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -147,7 +149,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionPrioritizer.prioritizeSuggestions(any(), any(), eq(List.of()))).thenReturn(Uni.createFrom().item(List.of()));
 		when(personalInfoDao.findByUser(any(), eq(hasUserId))).thenReturn(Uni.createFrom().item(personalInfo));
 
-		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RecipeLanguage.EN, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RecipeLanguage.EN, RECIPE, null)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.message().suggestions()).isEmpty();
@@ -158,7 +160,7 @@ class RecipeSuggestionsServiceImplTest {
 	@Test
 	void makeSuggestionsReturnsPrioritizedSuggestionsWithGeneratedTextWhenRuleMatches() {
 		var hasUserId = hasUserId();
-		var personalInfo = ImmutablePersonalInfo.builder().build();
+		var personalInfo = ImmutablePersonalInfo.builder().country(BELGIUM).build();
 		RoleOrTechnique role = mock(RoleOrTechnique.class);
 		var triggerIngredient = mock(eu.dietwise.services.model.suggestions.TriggerIngredient.class);
 
@@ -176,7 +178,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(_ -> Uni.createFrom().item(Set.of("fiber")));
 		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item(RULE1.getId().asString()));
 		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
-		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), any(), eq(RECIPE.getRecipeIngredients().getFirst()), eq(RecipeLanguage.EN)))
+		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), eq(GREECE), eq(RECIPE.getRecipeIngredients().getFirst()), eq(RecipeLanguage.EN)))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 
 		Suggestion prioritizedSuggestion = ImmutableSuggestion.copyOf(FIRST_SUGGESTION)
@@ -185,7 +187,7 @@ class RecipeSuggestionsServiceImplTest {
 				.thenReturn(Uni.createFrom().item(List.of(prioritizedSuggestion)));
 		when(personalInfoDao.findByUser(any(), eq(hasUserId))).thenReturn(Uni.createFrom().item(personalInfo));
 
-		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RecipeLanguage.EN, RECIPE)
+		MakeSuggestionsResult result = sut.makeSuggestions(CORRELATION_ID, hasUserId, RecipeLanguage.EN, RECIPE, GREECE)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(result.message().suggestions()).containsExactly(prioritizedSuggestion);

@@ -36,6 +36,7 @@ import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
 import eu.dietwise.v1.model.Suggestion;
+import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -82,7 +83,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(_, _) -> recipeExtractionService.extractRecipeFromJsonLdOrMarkdown(correlationId, param),
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
-				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),
+				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), param.getCountryOverride(), message),
 				(emitter, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
 				this::handleError
 		);
@@ -99,7 +100,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(_, _) -> recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
 				(_, message) -> assessedRecipe(user, param.getUrl(), message),
-				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), message),
+				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), null, message),
 				(emitter, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
 				this::handleError
 		);
@@ -135,6 +136,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			HasUserId hasUserId,
 			String url,
 			RecipeLanguage lang,
+			Country countryOverride,
 			RecipeExtractionRecipeAssessmentMessage recipeExtractionRecipeAssessmentMessage
 	) {
 		int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
@@ -145,7 +147,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		} else {
 			Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
 			return forcm(
-					recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, lang, recipe),
+					recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, lang, recipe, countryOverride),
 					result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()),
 					(result, _) -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message()),
 					(result, _, message) -> new MakeSuggestionsResult(message, result.recommendations())

@@ -28,13 +28,16 @@ import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
+import eu.dietwise.v1.model.ImmutablePersonalInfo;
 import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Ingredient;
+import eu.dietwise.v1.model.PersonalInfo;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
-import eu.dietwise.v1.types.RecipeLanguage;
+import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
 import io.smallrye.mutiny.Multi;
@@ -74,13 +77,13 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	}
 
 	@Override
-	public Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe) {
-		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, hasUserId, lang, recipe));
+	public Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride) {
+		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, hasUserId, lang, recipe, countryOverride));
 	}
 
-	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe) {
+	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride) {
 		return forcm(
-				readAllNecessaryData(tx, hasUserId, lang),
+				readAllNecessaryData(tx, hasUserId, lang, countryOverride),
 				extractSuggestionsForRecipePerIngredient(tx, lang, recipe),
 				prioritizeSuggestions(tx),
 				data -> new MakeSuggestionsResult(
@@ -90,15 +93,25 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		);
 	}
 
-	private Uni<RecipeSuggestionNecessaryData> readAllNecessaryData(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang) {
+	private Uni<RecipeSuggestionNecessaryData> readAllNecessaryData(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang, Country countryOverride) {
 		return forcm(
-				personalInfoDao.findByUser(tx, hasUserId),
+				personalInfoDao.findByUser(tx, hasUserId).map(personalInfo -> applyCountryOverride(personalInfo, countryOverride)),
 				_ -> suggestionsAiFacade.retrieveAllRolesKeyedByNormalizedName(tx, lang),
 				_ -> suggestionsAiFacade.retrieveAllTriggerIngredientsKeyedByNormalizedName(tx, lang),
 				_ -> suggestionsAiFacade.retrieveAllAlternativesKeyedByNormalizedName(tx, lang),
 				_ -> suggestionsAiFacade.retrieveAllRecommendationsKeyedByNormalizedName(tx, lang),
 				RecipeSuggestionNecessaryData::new
 		);
+	}
+
+	private PersonalInfo applyCountryOverride(PersonalInfo personalInfo, Country countryOverride) {
+		if (countryOverride == null) {
+			return personalInfo;
+		} else if (personalInfo == null) {
+			return ImmutablePersonalInfo.builder().country(countryOverride).build();
+		} else {
+			return ImmutablePersonalInfo.copyOf(personalInfo).withCountry(countryOverride);
+		}
 	}
 
 	private Function<? super RecipeSuggestionNecessaryData, Uni<? extends SuggestionsAndRecommendationsPerIngredient>> extractSuggestionsForRecipePerIngredient(
@@ -225,7 +238,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			Ingredient ingredient
 	) {
 		return (role, _, _, rule) -> forc(
-				suggestionDao.retrieveByRule(tx, rule, data.personalInfo().getCountry(), ingredient, lang),
+				suggestionDao.retrieveByRule(tx, rule, country(data.personalInfo()), ingredient, lang),
 				suggestions -> suggestionsAiFacade.suggestAlternatives(lang, ingredient.getNameInRecipe(), role, suggestions),
 				(suggestions, responseFromAi) -> {
 					// TODO dummy, process response from AI
@@ -236,6 +249,10 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 					return Uni.createFrom().item(suggestions);
 				}
 		);
+	}
+
+	private Country country(PersonalInfo personalInfo) {
+		return personalInfo == null ? null : personalInfo.getCountry();
 	}
 
 	private String toLogString(RoleOrTechnique role) {

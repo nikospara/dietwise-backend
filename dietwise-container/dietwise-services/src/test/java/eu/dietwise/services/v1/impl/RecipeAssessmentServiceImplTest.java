@@ -2,10 +2,12 @@ package eu.dietwise.services.v1.impl;
 
 import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 import static eu.dietwise.services.v1.types.RecipeDetectionType.LLM_FROM_TEXT;
+import static eu.dietwise.v1.types.Country.GREECE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -106,6 +108,7 @@ class RecipeAssessmentServiceImplTest {
 			.url("https://example.test/recipe")
 			.lang(RecipeLanguage.EN)
 			.pageContent(MARKDOWN)
+			.countryOverride(GREECE)
 			.build();
 	private static final String RENDERED_MARKDOWN = "rendered markdown";
 	private static final String SUGGESTION_ID = "00000000-2222-3333-4444-555555555555";
@@ -173,7 +176,7 @@ class RecipeAssessmentServiceImplTest {
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(statisticsService.assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta")).thenReturn(Uni.createFrom().item(USER));
-		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class)))
+		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class), eq(GREECE)))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(3))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
@@ -206,7 +209,7 @@ class RecipeAssessmentServiceImplTest {
 		verify(recipeExtractionService).extractRecipeFromJsonLdOrMarkdown(any(UUID.class), any(RecipeAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
 		verify(statisticsService).assessedRecipe(USER, MARKDOWN_PARAM.getUrl(), "Simple Pasta");
-		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class));
+		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class), eq(GREECE));
 		verify(recipeScoringService).makeScoringMessage(any(), eq(RecipeLanguage.EN));
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
@@ -227,7 +230,7 @@ class RecipeAssessmentServiceImplTest {
 				.thenReturn(Uni.createFrom().item(extractionMessage));
 		when(statisticsService.assessedRecipe(USER)).thenReturn(Uni.createFrom().item(USER));
 		when(statisticsService.assessedRecipe(USER, URL_EXTRACTION_PARAM.getUrl(), "Simple Pasta")).thenReturn(Uni.createFrom().item(USER));
-		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class)))
+		when(recipeSuggestionsService.makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class), isNull()))
 				.thenAnswer(iom -> Uni.createFrom().item(makeSuggestions(iom.getArgument(3))));
 		when(recipeSuggestionsService.increaseTimesSuggested(any(), any(), any(), any())).thenReturn(Uni.createFrom().voidItem());
 		when(recipeSuggestionsService.enrichWithStatistics(any(), any(), any(), any())).thenAnswer(iom -> Uni.createFrom().item((SuggestionsRecipeAssessmentMessage) iom.getArgument(3)));
@@ -255,7 +258,7 @@ class RecipeAssessmentServiceImplTest {
 		verify(recipeExtractionService).extractRecipeFromUrl(any(UUID.class), any(RecipeExtractionAndAssessmentParam.class));
 		verify(statisticsService).assessedRecipe(USER);
 		verify(statisticsService).assessedRecipe(USER, URL_EXTRACTION_PARAM.getUrl(), "Simple Pasta");
-		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class));
+		verify(recipeSuggestionsService).makeSuggestions(any(), eq(USER), eq(RecipeLanguage.EN), any(Recipe.class), isNull());
 		verify(recipeScoringService).makeScoringMessage(any(), eq(RecipeLanguage.EN));
 		var applicationIdCaptor = ArgumentCaptor.forClass(String.class);
 		var hasUserIdCaptor = ArgumentCaptor.forClass(HasUserId.class);
