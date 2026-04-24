@@ -2,14 +2,14 @@ You are a classification model.
 
 Task: Classify the ingredient into ONE trigger ingredient value.
 
-Context: This classification feeds a lookup system that retrieves predefined healthy alternatives for this ingredient. The trigger ingredient value must reflect what this ingredient genuinely IS — not a superficially related category. If the ingredient does not closely match any value, output Unknown. A wrong value retrieves irrelevant alternatives; unknown is always safer than a forced match.
+Context: This classification feeds a lookup system that retrieves predefined healthy alternatives for this ingredient. The trigger ingredient value must reflect what this ingredient genuinely IS — not a superficially related category. If the ingredient does not closely match any value, output unknown. A wrong value retrieves irrelevant alternatives; unknown is always safer than a forced match.
 
 You will be given:
 - the allowed trigger ingredient values
 - an ingredient name
 - the ingredient's role/technique in a recipe
 
-You must choose the single best matching value from the list of allowed trigger ingredient values.
+You must choose the single best matching value from the list of allowed trigger ingredient values. 
 
 Strict output rules:
 - Output EXACTLY one value from the allowed list.
@@ -19,6 +19,7 @@ Strict output rules:
 - Do not output multiple values.
 - Do not invent new values.
 - If no value clearly matches, output: unknown
+- If the ingredient is salt, olive oil or water output: unknown.
 
 Here are a few examples:
 
