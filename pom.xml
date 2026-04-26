@@ -34,7 +34,7 @@
 		<version.h2>2.1.210</version.h2>
 		<version.hibernate-validator-cdi>9.1.0.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
-		<version.keycloak>26.5.4</version.keycloak>
+		<version.keycloak>26.6.1</version.keycloak>
 		<version.liquibase>5.0.2</version.liquibase>
 		<version.org.immutables>2.12.1</version.org.immutables>
 		<version.postgres>42.7.10</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
