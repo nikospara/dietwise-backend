@@ -26,13 +26,13 @@ Create a new enabled realm, "dietwise". Go to "Configure" from the left menu:
 		- User registration, Forgot password, Remember me: On
 		- Email as username, Login with email: On
 		- Verify email: **should be On, TODO**
-	- Events: **TODO, for when we implement the user management events**
 	- Sessions: Make sure "Offline session settings" -> "Offline Session Idle" is set to something like 30 Days
 	- User profile:
 		- Row `firstName` -> Edit -> "Required field": No -> Save
 		- Row `lastName`, the same
 - Realm roles:
 	- Create Role: "influencer"
+- **FOR PRODUCTION:** Create user "master", no groups, press "Create", tab "Role mapping", "Assign role", "Realm roles", "admin"
 
 ### Create a client for RecipeWatch
 
@@ -41,11 +41,12 @@ Create a new client in the Realm:
 - General settings:
 	- Client type: OpenID Connect
 	- Client ID: recipewatch
-	- Name: RecipeWatch
+	- Name: MyRecipeWatch
 - Capability config:
 	- Client authentication: Off
 	- Authorization: Off
 	- Authentication flow: Check *only* "Standard flow"
+	- Require PKCE: On
 	- PKCE Method: S256
 - Login settings:
 	- Root URL: (empty)
@@ -55,16 +56,25 @@ Create a new client in the Realm:
 		- http://localhost:5173/recipewatch/authcallback
 		- https://gaia.ispatial.survey.ntua.gr/recipewatch/authcallback
 		- https://gaia.ispatial.survey.ntua.local/recipewatch/authcallback
-        - eu.dietwise.recipewatch://authcallback
+		- eu.dietwise.recipewatch://authcallback
+		- **FOR PRODUCTION:**
+			- eu.dietwise.recipewatch://authcallback
+			- https://dietwise.ispatial.survey.ntua.gr/recipewatch/authcallback
 	- Valid post logout redirect URIs:
 		- http://localhost:5173/endsession
 		- http://localhost:5173/recipewatch/endsession
 		- https://gaia.ispatial.survey.ntua.gr/recipewatch/endsession
 		- https://gaia.ispatial.survey.ntua.local/recipewatch/endsession
 		- eu.dietwise.recipewatch://endsession
+		- **FOR PRODUCTION:**
+			- eu.dietwise.recipewatch://endsession
+			- https://dietwise.ispatial.survey.ntua.gr/recipewatch/endsession
 	- Web origins:
 		- http://localhost:5173
-        - https://localhost
+        - https://localhost (for the native Ionic deployment)
+		- **FOR PRODUCTION:**
+			- https://localhost (for the native Ionic deployment)
+			- https://dietwise.ispatial.survey.ntua.gr
 - Save & finish the new client wizard
 
 ### Create a client for Responsible Cooking Alliance
@@ -79,21 +89,25 @@ Create a new client in the Realm:
 	- Client authentication: Off
 	- Authorization: Off
 	- Authentication flow: Check *only* "Standard flow"
-    - PKCE Method: **TODO** (should be S256 - also in the "Settings" tab, under the "Capability config" section)
+	- Require PKCE: On
+	- PKCE Method: S256
 - Login settings:
-	- Root URL: **TODO**
-	- Home URL: **TODO**
+	- Root URL: (empty)
+	- Home URL: (empty)
 	- Valid redirect URIs:
 		- http://localhost:5173
 		- http://localhost:5173/
 		- http://localhost:8180/extension-callback.html
-		- **TODO**
+		- https://e9daffa4e57cef0785f2756a14b247b128162e80.extensions.allizom.org/
+		- https://gaia.ispatial.survey.ntua.gr/extension-callback.html
+		- https://gaia.ispatial.survey.ntua.local/extension-callback.html
+		- **FOR PRODUCTION:** (not magic, see [here](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/identity#getting_the_redirect_url), run `node -e "console.log(require('crypto').createHash('sha1').update('responsible-cooking-alliance@dietwise.eu').digest('hex'))"`)
+			- https://dietwise.ispatial.survey.ntua.gr/extension-callback.html
+			- https://e9daffa4e57cef0785f2756a14b247b128162e80.extensions.allizom.org/
 	- Valid post logout redirect URIs:
-		- **TODO**
+		- (empty)
 	- Web origins:
-		- http://localhost:5173
-        - http://localhost:8180/
-		- **TODO**
+		- (empty)
 - Save & finish the new client wizard
 
 ### Create some test users
