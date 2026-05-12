@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<meta http-equiv="Cache-Control" content="no-store, max-age=0"/>
+	<meta http-equiv="Pragma" content="no-cache"/>
+	<meta name="referrer" content="no-referrer"/>
+	<title>Delete DietWise Account</title>
+	<style>
+		:root {
+			color-scheme: light dark;
+			font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			line-height: 1.45;
+		}
+
+		body {
+			margin: 0;
+			background: Canvas;
+			color: CanvasText;
+		}
+
+		main {
+			box-sizing: border-box;
+			max-width: 44rem;
+			min-height: 100vh;
+			padding: 4rem 1.25rem;
+			margin: 0 auto;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			gap: 1rem;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: clamp(1.875rem, 4vw, 2.75rem);
+			line-height: 1.1;
+			letter-spacing: 0;
+		}
+
+		p {
+			margin: 0;
+			max-width: 38rem;
+			font-size: 1rem;
+		}
+
+		.actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .75rem;
+			margin-top: .75rem;
+		}
+
+		button {
+			border: 0;
+			border-radius: .375rem;
+			padding: .75rem 1rem;
+			font: inherit;
+			font-weight: 650;
+			cursor: pointer;
+		}
+
+		button:disabled {
+			cursor: progress;
+			opacity: .65;
+		}
+
+		.primary {
+			background: #b42318;
+			color: #fff;
+		}
+
+		.secondary {
+			background: ButtonFace;
+			color: ButtonText;
+			border: 1px solid color-mix(in srgb, ButtonText 24%, transparent);
+		}
+
+		.notice {
+			border-left: .25rem solid #b42318;
+			padding: .85rem 1rem;
+			background: color-mix(in srgb, #b42318 9%, Canvas);
+		}
+
+		.status {
+			min-height: 1.5rem;
+			font-weight: 650;
+		}
+
+		.subtitle {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.subtitle > div {
+			display: flex;
+			align-items: center;
+			gap: 20px;
+		}
+	</style>
+</head>
+<body>
+<main>
+	<h1 id="title">Delete your DietWise account</h1>
+	<h2 class="subtitle">
+		<div>
+			<img src="data:image/png;base64,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" alt="MyRecipeWatch" />
+			<span>both for MyRecipeWatch</span>
+		</div>
+		<div>
+			<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAAAxHpUWHRSYXcgcHJvZmlsZSB0eXBlIGV4aWYAAHjabVDbDcMwCPz3FB2Blwkex2lSqRt0/OKAo6TqWT4woDNQ9s/7VR4DhFKkLqZNFRzSpFF3xyDQD0aQgw+QZA7v8XImyEPsluNpmvUzjqdAmO5evQjZMxPrPdHyA7IfIQrDo6PhbynUUogpEpgCPcYCbbZcR1h3uMPilkHYMjjH+XnL4tvbqv/DRDsjgzOzRgM8rhbu7lRnZB6FfkYEnIVnJ76Qf3uaKF/m1lkXIG6b1QAAAYRpQ0NQSUNDIHByb2ZpbGUAAHicfZG/S8NAHMVfU0tVWhzaQcQhQ3Wyi4o41ioUoUKoFVp1MLn+hCYNSYqLo+BacPDHYtXBxVlXB1dBEPwB4h8gToouUuL3kkKLGA+O+/Du3uPuHSC0akw1+xKAqllGJpUUc/lVMfiKAMKIABiQmanPSVIanuPrHj6+3sV5lve5P0e4UDQZ4BOJE0w3LOIN4plNS+e8TxxlFblAfE48YdAFiR+5rrj8xrnssMAzo0Y2M08cJRbLPaz0MKsYKvE0caygapQv5FwucN7irNYarHNP/sJQUVtZ5jrNUaSwiCVIEKGggSpqsBCnVSPFRIb2kx7+EccvkUshVxWMHAuoQ4Xs+MH/4He3Zmlq0k0KJYHAi21/jAHBXaDdtO3vY9tunwD+Z+BK6/rrLWD2k/RmV4sdAUPbwMV1V1P2gMsdYPhJlw3Zkfw0hVIJeD+jb8oDkVtgcM3trbOP0wcgS12lb4CDQ2C8TNnrHu/u7+3t3zOd/n4AFfFygZ8vgtsAAA14aVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49Iu+7vyIgaWQ9Ilc1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCI/Pgo8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA0LjQuMC1FeGl2MiI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczpHSU1QPSJodHRwOi8vd3d3LmdpbXAub3JnL3htcC8iCiAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIKICAgeG1wTU06RG9jdW1lbnRJRD0iZ2ltcDpkb2NpZDpnaW1wOmRkNDhhNDFhLWJjNzAtNGNjMS1iODE0LTlhYTdmMDExYzE2NCIKICAgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpiNWVhYjMyMy05YWUxLTQyZGMtODRiNy1jYmVmNjkzMzc3MGYiCiAgIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpiYTU0YTQ2ZC1lYTk2LTQ2MjUtYTg5My0wMmYwODZkODEwZTYiCiAgIGRjOkZvcm1hdD0iaW1hZ2UvcG5nIgogICBHSU1QOkFQST0iMi4wIgogICBHSU1QOlBsYXRmb3JtPSJMaW51eCIKICAgR0lNUDpUaW1lU3RhbXA9IjE3Nzg2OTg4NDQxMTQ5NTEiCiAgIEdJTVA6VmVyc2lvbj0iMi4xMC4zNiIKICAgdGlmZjpPcmllbnRhdGlvbj0iMSIKICAgeG1wOkNyZWF0b3JUb29sPSJHSU1QIDIuMTAiCiAgIHhtcDpNZXRhZGF0YURhdGU9IjIwMjY6MDU6MTNUMjI6MDA6NDQrMDM6MDAiCiAgIHhtcDpNb2RpZnlEYXRlPSIyMDI2OjA1OjEzVDIyOjAwOjQ0KzAzOjAwIj4KICAgPHhtcE1NOkhpc3Rvcnk+CiAgICA8cmRmOlNlcT4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii8iCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6OGIzNzBlZjQtMzA0Zi00NDM1LWI2MTMtZjI5ZWZlZGExYzYzIgogICAgICBzdEV2dDpzb2Z0d2FyZUFnZW50PSJHaW1wIDIuMTAgKExpbnV4KSIKICAgICAgc3RFdnQ6d2hlbj0iMjAyNi0wNS0xM1QyMjowMDo0NCswMzowMCIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgPC9yZGY6RGVzY3JpcHRpb24+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgCjw/eHBhY2tldCBlbmQ9InciPz4Z36TWAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAACkAAAApAGigzyxAAAAB3RJTUUH6gUNEwAsbTm0IwAACIdJREFUWMPVmHtwlNUZxn/vt7sh5qZFHWgdsTJWxQtQyjS7K1TjMFBUmmziQmMBR4rYkYKBZDfIjHaHqSjZjZGgtfaCl2otxGQ3YJPCdIZSIbtBtI0Sb0Wr8YIUQRLZXL/93v6RCxuyAat2pj1/fTPnnPc85znv5Xk/+B8b8p9uqIgVfUusxBwRZqjIZSgTgOyB6c8Q2lDeUGWPncSO1e5tB79yQI/tX+Zo7z1SLCJ3guYCqnBAoBV4D/i035iMVXQCcBVwJSAKMRF9JN51/A+BvL+YXxpQMJo/T9V4SISJCFFR2YyjL1I2ffsnp9u3/q/e8x0Os0BhiYAT5KCK3OV31jZ8IUCP7PJmdaabjwILBfZZhlXmz61/4Yv4RUWT51pBQ4hMB54kI77cN2Vn/HMDerDJe4EpZqPApaisibsmVwckYH0ZZw1owMiMtZQA9wOv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" alt="Responsible Cooking Alliance" />
+			<span>and the Responsible Cooking Alliance</span>
+		</div>
+	</h2>
+	<p>You can delete your account and all related data in two simple steps:</p>
+	<ol>
+		<li>Sign in so that we know it is really you (a fresh sign in will be required)</li>
+		<li>Once signed-in, press the "Delete account" button</li>
+	</ol>
+	<p>We are sorry to lose you, but it's your call!</p>
+	<p>
+		This process will clear <em>ALL YOUR DATA</em>: account info (where you entered your email and, optionally, your name) and all collected statistics.
+		Some technical logs related to your activities may remain in our systems, but these do not include any personally identifiable information that can link back to you.
+	</p>
+	<hr/>
+	<p id="message">Sign in to verify the account you want to delete.</p>
+	<p class="notice" id="notice">This permanently deletes your DietWise profile, personal information, and account statistics. This cannot be undone.</p>
+	<p class="status" id="status" role="status" aria-live="polite"></p>
+	<div class="actions" id="actions"></div>
+</main>
+
+<script>
+	const config = {
+		realmUrl: 'http://localhost:8280/realms/dietwise',
+		clientId: 'account-deletion',
+		deleteEndpoint: '/api/v1/users/me',
+	};
+
+	const storageKeys = {
+		state: 'dietwise.accountDeletion.state',
+		verifier: 'dietwise.accountDeletion.verifier',
+	};
+
+	const title = document.getElementById('title');
+	const message = document.getElementById('message');
+	const notice = document.getElementById('notice');
+	const status = document.getElementById('status');
+	const actions = document.getElementById('actions');
+	let accessToken = null;
+
+	run().catch(error => renderError(error));
+
+	async function run() {
+		const params = new URLSearchParams(location.search);
+		if (params.has('error')) {
+			clearCallbackUrl();
+			throw new Error(params.get('error_description') || params.get('error') || 'Sign-in failed.');
+		}
+
+		const code = params.get('code');
+		if (!code) {
+			renderStart();
+			return;
+		}
+
+		await completeSignIn(code, params.get('state'));
+		clearCallbackUrl();
+		renderConfirm();
+	}
+
+	function renderStart() {
+		accessToken = null;
+		title.textContent = 'Delete your DietWise account';
+		message.textContent = 'Sign in to verify the account you want to delete.';
+		notice.hidden = false;
+		setStatus('');
+		setActions([
+			button('Sign in', 'primary', startSignIn),
+		]);
+	}
+
+	function renderConfirm() {
+		const claims = decodeJwt(accessToken);
+		const account = claims.email || claims.preferred_username || claims.sub || 'this account';
+		title.textContent = 'Confirm account deletion';
+		message.textContent = `You are signed in as ${account}.`;
+		notice.hidden = false;
+		setStatus('');
+		setActions([
+			button('Delete account', 'primary', deleteAccount),
+			button('Cancel', 'secondary', renderStart),
+		]);
+	}
+
+	function renderDeleted() {
+		title.textContent = 'Account deletion requested';
+		message.textContent = 'Your deletion request has been accepted.';
+		notice.hidden = true;
+		setStatus('You can close this page.');
+		setActions([]);
+		accessToken = null;
+	}
+
+	function renderError(error) {
+		title.textContent = 'Account deletion could not continue';
+		message.textContent = 'The request did not complete.';
+		notice.hidden = false;
+		setStatus(error.message || 'Unexpected error.');
+		setActions([
+			button('Start again', 'primary', renderStart),
+		]);
+		accessToken = null;
+	}
+
+	async function startSignIn() {
+		disableButtons();
+		setStatus('Redirecting to sign in...');
+
+		const state = randomString(32);
+		const verifier = randomString(64);
+		const challenge = await createCodeChallenge(verifier);
+		sessionStorage.setItem(storageKeys.state, state);
+		sessionStorage.setItem(storageKeys.verifier, verifier);
+
+		const authorizeUrl = new URL(`${config.realmUrl}/protocol/openid-connect/auth`);
+		authorizeUrl.searchParams.set('client_id', config.clientId);
+		authorizeUrl.searchParams.set('redirect_uri', redirectUri());
+		authorizeUrl.searchParams.set('response_type', 'code');
+		authorizeUrl.searchParams.set('scope', 'openid email profile');
+		authorizeUrl.searchParams.set('state', state);
+		authorizeUrl.searchParams.set('code_challenge', challenge);
+		authorizeUrl.searchParams.set('code_challenge_method', 'S256');
+		authorizeUrl.searchParams.set('max_age', '0');
+
+		location.assign(authorizeUrl.toString());
+	}
+
+	async function completeSignIn(code, returnedState) {
+		setStatus('Completing sign in...');
+		const expectedState = sessionStorage.getItem(storageKeys.state);
+		const verifier = sessionStorage.getItem(storageKeys.verifier);
+		sessionStorage.removeItem(storageKeys.state);
+		sessionStorage.removeItem(storageKeys.verifier);
+
+		if (!expectedState || !verifier || returnedState !== expectedState) {
+			throw new Error('The sign-in response could not be verified.');
+		}
+
+		const body = new URLSearchParams();
+		body.set('grant_type', 'authorization_code');
+		body.set('client_id', config.clientId);
+		body.set('redirect_uri', redirectUri());
+		body.set('code', code);
+		body.set('code_verifier', verifier);
+
+		const response = await fetch(`${config.realmUrl}/protocol/openid-connect/token`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body,
+		});
+
+		if (!response.ok) {
+			throw new Error('The sign-in token could not be obtained.');
+		}
+
+		const tokenResponse = await response.json();
+		if (!tokenResponse.access_token) {
+			throw new Error('The sign-in response did not include an access token.');
+		}
+		accessToken = tokenResponse.access_token;
+	}
+
+	async function deleteAccount() {
+		disableButtons();
+		setStatus('Deleting account data...');
+
+		const response = await fetch(config.deleteEndpoint, {
+			method: 'DELETE',
+			headers: {
+				'Authorization': `Bearer ${accessToken}`,
+			},
+		});
+
+		if (response.status === 200 || response.status === 202 || response.status === 204) {
+			renderDeleted();
+			return;
+		}
+
+		if (response.status === 401 || response.status === 403) {
+			throw new Error('The deletion request was not authorized. Please sign in again.');
+		}
+
+		throw new Error('The deletion request failed. Please try again later.');
+	}
+
+	function button(label, className, onClick) {
+		const element = document.createElement('button');
+		element.type = 'button';
+		element.className = className;
+		element.textContent = label;
+		element.addEventListener('click', event => {
+			event.preventDefault();
+			Promise.resolve(onClick()).catch(error => renderError(error));
+		});
+		return element;
+	}
+
+	function setActions(elements) {
+		actions.replaceChildren(...elements);
+	}
+
+	function setStatus(value) {
+		status.textContent = value;
+	}
+
+	function disableButtons() {
+		for (const element of actions.querySelectorAll('button')) {
+			element.disabled = true;
+		}
+	}
+
+	function redirectUri() {
+		return `${location.origin}${location.pathname}`;
+	}
+
+	function clearCallbackUrl() {
+		history.replaceState(null, '', location.pathname);
+	}
+
+	function randomString(length) {
+		const bytes = new Uint8Array(length);
+		crypto.getRandomValues(bytes);
+		return base64Url(bytes);
+	}
+
+	async function createCodeChallenge(verifier) {
+		const bytes = new TextEncoder().encode(verifier);
+		const digest = await crypto.subtle.digest('SHA-256', bytes);
+		return base64Url(new Uint8Array(digest));
+	}
+
+	function decodeJwt(token) {
+		try {
+			const payload = token.split('.')[1];
+			const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+			const padded = normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, '=');
+			return JSON.parse(atob(padded));
+		} catch (_) {
+			return {};
+		}
+	}
+
+	function base64Url(bytes) {
+		let binary = '';
+		for (const byte of bytes) {
+			binary += String.fromCharCode(byte);
+		}
+		return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+	}
+</script>
+</body>
+</html>
