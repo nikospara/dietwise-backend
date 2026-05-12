@@ -25,6 +25,7 @@ import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.services.v1.i18n.I18nMessages;
 import eu.dietwise.services.v1.scoring.IngredientMatchInRecommendationsAiSelector;
 import eu.dietwise.services.v1.suggestions.AlternativeSuggestionAiSelector;
 import eu.dietwise.services.v1.suggestions.FindBestRuleAiSelector;
@@ -54,6 +55,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	private final IngredientMatchInRecommendationsAiSelector ingredientMatchInRecommendationsAiSelector;
 	private final FindBestRuleAiSelector findBestRuleAiSelector;
 	private final AlternativeSuggestionAiSelector alternativeSuggestionAiSelector;
+	private final I18nMessages i18nMessages;
 
 	private final CachedUniMap<RecipeLanguage, Map<String, RoleOrTechnique>> cachedRoles = new CachedUniMap<>();
 	private final CachedUniMap<RecipeLanguage, Map<String, TriggerIngredient>> cachedTriggerIngredients = new CachedUniMap<>();
@@ -69,7 +71,8 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 			TriggerIngredientMatcherAiSelector triggerIngredientMatcherAiSelector,
 			IngredientMatchInRecommendationsAiSelector ingredientMatchInRecommendationsAiSelector,
 			FindBestRuleAiSelector findBestRuleAiSelector,
-			AlternativeSuggestionAiSelector alternativeSuggestionAiSelector
+			AlternativeSuggestionAiSelector alternativeSuggestionAiSelector,
+			I18nMessages i18nMessages
 	) {
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.triggerIngredientDao = triggerIngredientDao;
@@ -80,6 +83,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		this.ingredientMatchInRecommendationsAiSelector = ingredientMatchInRecommendationsAiSelector;
 		this.findBestRuleAiSelector = findBestRuleAiSelector;
 		this.alternativeSuggestionAiSelector = alternativeSuggestionAiSelector;
+		this.i18nMessages = i18nMessages;
 	}
 
 	@Override
@@ -209,7 +213,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	) {
 		String dietaryComponentsMarkdownList = convertRecommendationsToMarkdownList(dietaryComponents);
 		var mappedRules = mapRules(filteredRules);
-		String filteredRulesMarkdownList = convertMappedRulesToMarkdownList(mappedRules);
+		String filteredRulesMarkdownList = convertMappedRulesToMarkdownList(lang, mappedRules);
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> findBestRuleAiSelector.findBestRule(
 						lang,
@@ -240,20 +244,21 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		return result;
 	}
 
-	private String convertMappedRulesToMarkdownList(Map<String, Rule> rules) {
-		// TODO Add language
+	private String convertMappedRulesToMarkdownList(RecipeLanguage lang, Map<String, Rule> rules) {
+		String recommendationLabel = i18nMessages.format(lang, "ai.label.recommendation");
+		String roleLabel = i18nMessages.format(lang, "ai.label.role");
 		return rules.entrySet().stream()
 				.flatMap(e -> Stream.of(
 						"- id: " + e.getKey(),
-						"    - recommendation: " + e.getValue().getRecommendation().asString(),
-						"    - role: " + e.getValue().getRoleOrTechnique().asString()
+						"    - " + recommendationLabel + ": " + e.getValue().getRecommendation().asString(),
+						"    - " + roleLabel + ": " + e.getValue().getRoleOrTechnique().asString()
 				))
 				.collect(Collectors.joining("\n"));
 	}
 
 	@Override
 	public Uni<String> suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
-		String alternativesAsMarkdownList = convertSuggestionsToMarkdownList(alternatives);
+		String alternativesAsMarkdownList = convertSuggestionsToMarkdownList(lang, alternatives);
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> alternativeSuggestionAiSelector.suggestAlternatives(
 						lang,
@@ -266,15 +271,18 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
 	}
 
-	private String convertSuggestionsToMarkdownList(List<Suggestion> alternatives) {
-		// TODO Add language
+	private String convertSuggestionsToMarkdownList(RecipeLanguage lang, List<Suggestion> alternatives) {
+		String rationaleLabel = i18nMessages.format(lang, "ai.label.rationale");
+		String restrictionsLabel = i18nMessages.format(lang, "ai.label.restrictions");
+		String equivalenceLabel = i18nMessages.format(lang, "ai.label.equivalence");
+		String techniqueNotesLabel = i18nMessages.format(lang, "ai.label.techniqueNotes");
 		return alternatives.stream()
 				.flatMap(a -> Stream.of(
 						"- " + a.getAlternative().asString(),
-						a.getRationale().map(r -> "    - Rationale: " + r).orElse(null),
-						a.getRestriction().map(r -> "    - Restrictions: " + r).orElse(null),
-						a.getEquivalence().map(e -> "    - Equivalence: " + e).orElse(null),
-						a.getTechniqueNotes().map(n -> "    - Technique notes: " + n).orElse(null)
+						a.getRationale().map(r -> "    - " + rationaleLabel + ": " + r).orElse(null),
+						a.getRestriction().map(r -> "    - " + restrictionsLabel + ": " + r).orElse(null),
+						a.getEquivalence().map(e -> "    - " + equivalenceLabel + ": " + e).orElse(null),
+						a.getTechniqueNotes().map(n -> "    - " + techniqueNotesLabel + ": " + n).orElse(null)
 				))
 				.filter(Objects::nonNull)
 				.collect(Collectors.joining("\n"));

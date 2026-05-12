@@ -32,6 +32,7 @@ import eu.dietwise.services.model.suggestions.ImmutableTriggerIngredient;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.services.types.suggestions.TriggerIngredientId;
+import eu.dietwise.services.v1.i18n.I18nMessages;
 import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.services.v1.suggestions.SuggestionsAiFacade;
@@ -127,7 +128,7 @@ class RecipeSuggestionsServiceImplTest {
 	@BeforeEach
 	void beforeEach() {
 		sut = new RecipeSuggestionsServiceImpl(
-				persistenceContextFactory, personalInfoDao, suggestionsAiFacade, suggestionDao, ruleDao, suggestionPrioritizer, userSuggestionStatsEntityDao);
+				persistenceContextFactory, personalInfoDao, suggestionsAiFacade, suggestionDao, ruleDao, suggestionPrioritizer, userSuggestionStatsEntityDao, new I18nMessages());
 	}
 
 	@Test

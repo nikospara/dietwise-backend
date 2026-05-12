@@ -23,6 +23,7 @@ import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionDao;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
+import eu.dietwise.services.v1.i18n.I18nMessages;
 import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
@@ -58,6 +59,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private final RuleDao ruleDao;
 	private final SuggestionPrioritizer suggestionPrioritizer;
 	private final UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
+	private final I18nMessages i18nMessages;
 
 	public RecipeSuggestionsServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
@@ -65,7 +67,8 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			SuggestionsAiFacade suggestionsAiFacade,
 			SuggestionDao suggestionDao, RuleDao ruleDao,
 			SuggestionPrioritizer suggestionPrioritizer,
-			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao
+			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao,
+			I18nMessages i18nMessages
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.personalInfoDao = personalInfoDao;
@@ -74,6 +77,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 		this.ruleDao = ruleDao;
 		this.suggestionPrioritizer = suggestionPrioritizer;
 		this.userSuggestionStatsEntityDao = userSuggestionStatsEntityDao;
+		this.i18nMessages = i18nMessages;
 	}
 
 	@Override
@@ -149,7 +153,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				loadMatchingRulesAndDetermineComposition(tx, lang, data, availableRecommendationsAsMarkdownList, ingredient),
 				identifyBestFittingRule(lang, ingredient),
 				loadAlternativesFromDbAndSelectBest(tx, lang, data, ingredient),
-				postProcessAlternatives(recipe, data, ingredient)
+				postProcessAlternatives(recipe, data, ingredient, lang)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
 			LOG.warn("Failed to process ingredient <{}>: {}", ingredient.getNameInRecipe(), t.getMessage());
 			return SuggestionsAndComponents.empty(ingredient);
@@ -266,13 +270,18 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 	private Function3<? super RulesAndComponents, ? super Rule, ? super List<Suggestion>, Uni<? extends SuggestionsAndComponents>> postProcessAlternatives(
 			Recipe recipe,
 			RecipeSuggestionNecessaryData data,
-			Ingredient ingredient
+			Ingredient ingredient,
+			RecipeLanguage lang
 	) {
 		// TODO Dummy for now, implement to fill-in the text - filtering happens in loadAlternativesFromDbAndSelectBest
-		// TODO Add language
 		return (rulesAndComponents, _, list) -> {
 			List<Suggestion> result = list.stream()
-					.map(s -> (Suggestion) ImmutableSuggestion.copyOf(s).withText("We suggest: " + s.getAlternative().asString() + " instead of: " + ingredient.getNameInRecipe()))
+					.map(s -> (Suggestion) ImmutableSuggestion.copyOf(s).withText(i18nMessages.format(
+							lang,
+							"suggestion.text.weSuggestInsteadOf",
+							s.getAlternative().asString(),
+							ingredient.getNameInRecipe()
+					)))
 					.toList();
 			return Uni.createFrom().item(new SuggestionsAndComponents(ingredient, result, rulesAndComponents.components()));
 		};
