@@ -31,6 +31,13 @@ public interface User extends Principal, HasUserId {
 	EmailAddress getEmail();
 
 	/**
+	 * The identifier of this user in the identity management system.
+	 *
+	 * @return The IDM id string; empty for the unauthenticated user
+	 */
+	Optional<String> getIdmId();
+
+	/**
 	 * Check if this user is the system user.
 	 *
 	 * @return {@code true} if this user is the system user

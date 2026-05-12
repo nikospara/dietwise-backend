@@ -60,6 +60,7 @@ public class DietwiseAuthenticationFilter {
 									.id(userData.getId())
 									.name(email)
 									.email(EmailAddress.of(email))
+									.idmId(sub)
 									.isService(false)
 									.isSystem(false)
 									.isUnauthenticated(false)
