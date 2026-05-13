@@ -9,6 +9,7 @@ import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
@@ -143,6 +144,15 @@ public class UserSuggestionStatsEntityDaoImpl implements UserSuggestionStatsEnti
 					return entity;
 				})
 				.flatMap(entity -> tx.merge(entity).replaceWith(entity.getTimesRejected()));
+	}
+
+	@Override
+	public Uni<Void> deleteByUser(ReactivePersistenceTxContext tx, UUID userId) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<UserSuggestionStatsEntity> delete = cb.createCriteriaDelete(UserSuggestionStatsEntity.class);
+		var root = delete.from(UserSuggestionStatsEntity.class);
+		delete.where(cb.equal(root.get(UserSuggestionStatsEntity_.userId), userId));
+		return tx.createDelete(delete).execute().replaceWithVoid();
 	}
 
 	private Predicate in(jakarta.persistence.criteria.CriteriaBuilder cb, Path<UUID> path, Set<SuggestionTemplateId> ids) {

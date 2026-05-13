@@ -16,4 +16,7 @@ public interface UserRecipeStatsEntityDao {
 			String recipeName,
 			LocalDateTime lastAssessed
 	);
+
+	/** Delete all per-recipe statistics for the given user, if any. */
+	Uni<Void> deleteByUser(ReactivePersistenceTxContext tx, UUID userId);
 }

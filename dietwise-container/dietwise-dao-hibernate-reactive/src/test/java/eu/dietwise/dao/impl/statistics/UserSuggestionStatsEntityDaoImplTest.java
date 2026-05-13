@@ -172,6 +172,28 @@ public class UserSuggestionStatsEntityDaoImplTest {
 				.matches(t -> t instanceof EntityNotFoundException enf && enf.getEntityClass() == SuggestionTemplateEntity.class && enf.getEntityId().equals(SUGGESTION_ID_NOT_EXISTING.asUuid()));
 	}
 
+	/**
+	 * Tests deletion, keep it last.
+	 */
+	@Test
+	@Order(50)
+	void testDeleteByUser(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new UserSuggestionStatsEntityDaoImpl();
+		var userId = new UserIdImpl(USER_ID.toString());
+		Set<SuggestionTemplateId> ids = new LinkedHashSet<>();
+		ids.add(SUGGESTION_ID_1);
+		ids.add(SUGGESTION_ID_2);
+
+		factory.withTransaction(tx -> sut.deleteByUser(tx, USER_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var userStats = factory.withTransaction(tx -> sut.retrieveUserSuggestionStats(tx, APPLICATION_ID, userId, ids))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertZeroStats(userStats.get(SUGGESTION_ID_1));
+		assertZeroStats(userStats.get(SUGGESTION_ID_2));
+	}
+
 	private void assertZeroStats(SuggestionStats stats) {
 		assertThat(stats).isEqualTo(new SuggestionStats(0, 0, 0));
 	}

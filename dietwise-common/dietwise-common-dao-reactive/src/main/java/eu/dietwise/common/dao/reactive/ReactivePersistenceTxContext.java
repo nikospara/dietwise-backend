@@ -1,5 +1,6 @@
 package eu.dietwise.common.dao.reactive;
 
+import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaUpdate;
 
 import io.smallrye.mutiny.Uni;
@@ -29,4 +30,6 @@ public interface ReactivePersistenceTxContext extends ReactivePersistenceContext
 	void markForRollback();
 
 	<R> ReactiveUpdate createUpdate(CriteriaUpdate<R> criteriaUpdate);
+
+	<R> ReactiveUpdate createDelete(CriteriaDelete<R> criteriaDelete);
 }

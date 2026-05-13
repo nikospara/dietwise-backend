@@ -3,11 +3,13 @@ package eu.dietwise.dao.impl.statistics;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.criteria.CriteriaDelete;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.dao.jpa.UserEntity;
 import eu.dietwise.dao.jpa.statistics.UserStatsEntity;
+import eu.dietwise.dao.jpa.statistics.UserStatsEntity_;
 import eu.dietwise.dao.jpa.statistics.UserStatsId;
 import eu.dietwise.dao.statistics.UserStatsEntityDao;
 import io.smallrye.mutiny.Uni;
@@ -49,6 +51,15 @@ public class UserStatsEntityDaoImpl implements UserStatsEntityDao {
 				.map(entity -> Tuple2.of(entity, toIntOr0(entity.getRecipesAssessed())))
 				.invoke(entityAndVal -> entityAndVal.getItem1().setRecipesAssessed(toIntOr0(entityAndVal.getItem1().getRecipesAssessed()) + 1))
 				.flatMap(entityAndVal -> tx.merge(entityAndVal.getItem1()).replaceWith(entityAndVal.getItem2()));
+	}
+
+	@Override
+	public Uni<Void> deleteByUser(ReactivePersistenceTxContext tx, UUID userId) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<UserStatsEntity> delete = cb.createCriteriaDelete(UserStatsEntity.class);
+		var root = delete.from(UserStatsEntity.class);
+		delete.where(cb.equal(root.get(UserStatsEntity_.userId), userId));
+		return tx.createDelete(delete).execute().replaceWithVoid();
 	}
 
 	private Uni<UserStatsEntity> getOrCreate(ReactivePersistenceTxContext tx, String applicationId, UUID userId) {

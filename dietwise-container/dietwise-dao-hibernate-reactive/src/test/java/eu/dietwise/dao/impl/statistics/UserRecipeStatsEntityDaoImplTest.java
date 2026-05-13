@@ -66,24 +66,24 @@ public class UserRecipeStatsEntityDaoImplTest {
 
 		LocalDateTime lastAssessed1 = LocalDateTime.of(2026, 4, 9, 20, 0, 0);
 		Integer timesAssessed = factory.withTransaction(tx ->
-				sut.increaseTimesAssessed(tx, APPLICATION_ID, USER_ID, RECIPE_URL_1, RECIPE_NAME_1, lastAssessed1))
+						sut.increaseTimesAssessed(tx, APPLICATION_ID, USER_ID, RECIPE_URL_1, RECIPE_NAME_1, lastAssessed1))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(timesAssessed).isEqualTo(1);
 
 		LocalDateTime lastAssessed2 = LocalDateTime.of(2026, 4, 9, 20, 5, 0);
 		timesAssessed = factory.withTransaction(tx ->
-				sut.increaseTimesAssessed(tx, APPLICATION_ID, USER_ID, RECIPE_URL_1, RECIPE_NAME_2, lastAssessed2))
+						sut.increaseTimesAssessed(tx, APPLICATION_ID, USER_ID, RECIPE_URL_1, RECIPE_NAME_2, lastAssessed2))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(timesAssessed).isEqualTo(2);
 
 		LocalDateTime lastAssessed3 = LocalDateTime.of(2026, 4, 9, 20, 10, 0);
 		timesAssessed = factory.withTransaction(tx ->
-				sut.increaseTimesAssessed(tx, APPLICATION_ID, USER_ID, RECIPE_URL_2, RECIPE_NAME_3, lastAssessed3))
+						sut.increaseTimesAssessed(tx, APPLICATION_ID, USER_ID, RECIPE_URL_2, RECIPE_NAME_3, lastAssessed3))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(timesAssessed).isEqualTo(1);
 
 		UserRecipeStatsEntity recipeStatsEntity1 = factory.withTransaction(tx ->
-				tx.find(UserRecipeStatsEntity.class, new UserRecipeStatsId(USER_ID, APPLICATION_ID, RECIPE_URL_1)))
+						tx.find(UserRecipeStatsEntity.class, new UserRecipeStatsId(USER_ID, APPLICATION_ID, RECIPE_URL_1)))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(recipeStatsEntity1).isNotNull();
 		assertThat(recipeStatsEntity1.getRecipeName()).isEqualTo(RECIPE_NAME_2);
@@ -91,11 +91,31 @@ public class UserRecipeStatsEntityDaoImplTest {
 		assertThat(recipeStatsEntity1.getLastAssessed()).isEqualTo(lastAssessed2);
 
 		UserRecipeStatsEntity recipeStatsEntity2 = factory.withTransaction(tx ->
-				tx.find(UserRecipeStatsEntity.class, new UserRecipeStatsId(USER_ID, APPLICATION_ID, RECIPE_URL_2)))
+						tx.find(UserRecipeStatsEntity.class, new UserRecipeStatsId(USER_ID, APPLICATION_ID, RECIPE_URL_2)))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(recipeStatsEntity2).isNotNull();
 		assertThat(recipeStatsEntity2.getRecipeName()).isEqualTo(RECIPE_NAME_3);
 		assertThat(recipeStatsEntity2.getTimesAssessed()).isEqualTo(1);
 		assertThat(recipeStatsEntity2.getLastAssessed()).isEqualTo(lastAssessed3);
+	}
+
+	/**
+	 * Tests deletion, keep it last.
+	 */
+	@Test
+	@Order(10)
+	void testDeleteByUser(Mutiny.SessionFactory sessionFactory) {
+		var sut = new UserRecipeStatsEntityDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		factory.withTransaction(tx -> sut.deleteByUser(tx, USER_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		UserRecipeStatsEntity recipeStatsEntity1 = factory.withTransaction(tx ->
+						tx.find(UserRecipeStatsEntity.class, new UserRecipeStatsId(USER_ID, APPLICATION_ID, RECIPE_URL_1)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		UserRecipeStatsEntity recipeStatsEntity2 = factory.withTransaction(tx ->
+						tx.find(UserRecipeStatsEntity.class, new UserRecipeStatsId(USER_ID, APPLICATION_ID, RECIPE_URL_2)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(recipeStatsEntity1).isNull();
+		assertThat(recipeStatsEntity2).isNull();
 	}
 }

@@ -22,8 +22,12 @@ import eu.dietwise.common.v1.model.ImmutableUser;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
+import eu.dietwise.dao.PersonalInfoDao;
 import eu.dietwise.dao.UserDao;
-import eu.dietwise.services.authz.Authorization;
+import eu.dietwise.dao.statistics.UserRecipeStatsEntityDao;
+import eu.dietwise.dao.statistics.UserStatsEntityDao;
+import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
+import eu.dietwise.services.authz.AuthorizationImpl;
 import eu.dietwise.services.keycloak.KeycloakAdminClient;
 import eu.dietwise.services.nondomain.DateTimeService;
 import io.smallrye.mutiny.Uni;
@@ -52,9 +56,15 @@ class AccountServiceImplTest {
 	@Mock
 	private UserDao userDao;
 	@Mock
-	private DateTimeService dateTimeService;
+	private PersonalInfoDao personalInfoDao;
 	@Mock
-	private Authorization authorization;
+	private UserRecipeStatsEntityDao userRecipeStatsEntityDao;
+	@Mock
+	private UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
+	@Mock
+	private UserStatsEntityDao userStatsEntityDao;
+	@Mock
+	private DateTimeService dateTimeService;
 	@Mock
 	private KeycloakAdminClient keycloakAdminClient;
 
@@ -62,11 +72,24 @@ class AccountServiceImplTest {
 
 	@BeforeEach
 	void beforeEach() {
-		sut = new AccountServiceImpl(persistenceContextFactory, userDao, dateTimeService, authorization, keycloakAdminClient, REALM, CLIENT_ID, CLIENT_SECRET);
+		sut = new AccountServiceImpl(
+				persistenceContextFactory,
+				userDao,
+				personalInfoDao,
+				userRecipeStatsEntityDao,
+				userSuggestionStatsEntityDao,
+				userStatsEntityDao,
+				dateTimeService,
+				new AuthorizationImpl(),
+				keycloakAdminClient,
+				REALM,
+				CLIENT_ID,
+				CLIENT_SECRET
+		);
 	}
 
 	@Test
-	void deleteAccountDeletesKeycloakUserAndTombstonesUser() {
+	void deleteAccountDeletesKeycloakUserLocalDataAndTombstonesUser() {
 		User user = makeUserWithIdmId();
 		RestResponse<Void> deleteResponse = makeResponse(204);
 		when(keycloakAdminClient.getClientCredentialsToken(REALM, "client_credentials", CLIENT_ID, CLIENT_SECRET))
@@ -74,16 +97,23 @@ class AccountServiceImplTest {
 		when(keycloakAdminClient.deleteUser(REALM, IDM_ID, "Bearer " + ACCESS_TOKEN))
 				.thenReturn(Uni.createFrom().item(deleteResponse));
 		when(dateTimeService.getNow()).thenReturn(DELETED_AT);
+		when(personalInfoDao.deleteByUser(any(), eq(user))).thenReturn(Uni.createFrom().voidItem());
+		when(userRecipeStatsEntityDao.deleteByUser(any(), eq(USER_UUID))).thenReturn(Uni.createFrom().voidItem());
+		when(userSuggestionStatsEntityDao.deleteByUser(any(), eq(USER_UUID))).thenReturn(Uni.createFrom().voidItem());
+		when(userStatsEntityDao.deleteByUser(any(), eq(USER_UUID))).thenReturn(Uni.createFrom().voidItem());
 		when(userDao.tombstoneByIdmId(any(), eq(IDM_ID), eq(DELETED_AT))).thenReturn(Uni.createFrom().voidItem());
 
 		Void result = sut.deleteAccount(user).await().atMost(Duration.ofSeconds(5));
 
 		assertThat(result).isNull();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
-		verify(authorization).requireLogin(user);
-		InOrder inOrder = inOrder(keycloakAdminClient, userDao);
+		InOrder inOrder = inOrder(keycloakAdminClient, personalInfoDao, userRecipeStatsEntityDao, userSuggestionStatsEntityDao, userStatsEntityDao, userDao);
 		inOrder.verify(keycloakAdminClient).getClientCredentialsToken(REALM, "client_credentials", CLIENT_ID, CLIENT_SECRET);
 		inOrder.verify(keycloakAdminClient).deleteUser(REALM, IDM_ID, "Bearer " + ACCESS_TOKEN);
+		inOrder.verify(personalInfoDao).deleteByUser(any(), eq(user));
+		inOrder.verify(userRecipeStatsEntityDao).deleteByUser(any(), eq(USER_UUID));
+		inOrder.verify(userSuggestionStatsEntityDao).deleteByUser(any(), eq(USER_UUID));
+		inOrder.verify(userStatsEntityDao).deleteByUser(any(), eq(USER_UUID));
 		inOrder.verify(userDao).tombstoneByIdmId(any(), eq(IDM_ID), eq(DELETED_AT));
 	}
 
@@ -96,6 +126,10 @@ class AccountServiceImplTest {
 		when(keycloakAdminClient.deleteUser(REALM, IDM_ID, "Bearer " + ACCESS_TOKEN))
 				.thenReturn(Uni.createFrom().item(deleteResponse));
 		when(dateTimeService.getNow()).thenReturn(DELETED_AT);
+		when(personalInfoDao.deleteByUser(any(), eq(user))).thenReturn(Uni.createFrom().voidItem());
+		when(userRecipeStatsEntityDao.deleteByUser(any(), eq(USER_UUID))).thenReturn(Uni.createFrom().voidItem());
+		when(userSuggestionStatsEntityDao.deleteByUser(any(), eq(USER_UUID))).thenReturn(Uni.createFrom().voidItem());
+		when(userStatsEntityDao.deleteByUser(any(), eq(USER_UUID))).thenReturn(Uni.createFrom().voidItem());
 		when(userDao.tombstoneByIdmId(any(), eq(IDM_ID), eq(DELETED_AT))).thenReturn(Uni.createFrom().voidItem());
 
 		Void result = sut.deleteAccount(user).await().atMost(Duration.ofSeconds(5));
@@ -105,6 +139,7 @@ class AccountServiceImplTest {
 		verify(userDao).tombstoneByIdmId(any(), eq(IDM_ID), eq(DELETED_AT));
 	}
 
+	// TODO This is more like a test for the AuthorizationImpl
 	@Test
 	void deleteAccountFailsWhenUserHasNoIdmId() {
 		User user = makeUserWithoutIdmId();
@@ -113,8 +148,23 @@ class AccountServiceImplTest {
 				.isInstanceOf(NotAuthenticatedException.class)
 				.hasMessage("this operation requires a user with an IDM id");
 
-		verify(authorization).requireLogin(user);
 		verify(keycloakAdminClient, never()).getClientCredentialsToken(any(), any(), any(), any());
+		verify(personalInfoDao, never()).deleteByUser(any(), any());
+		verify(userDao, never()).tombstoneByIdmId(any(), any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	// TODO This is more like a test for the AuthorizationImpl
+	@Test
+	void deleteAccountFailsWhenUserHasNoLocalId() {
+		User user = makeUserWithoutLocalId();
+
+		assertThatThrownBy(() -> sut.deleteAccount(user))
+				.isInstanceOf(NotAuthenticatedException.class)
+				.hasMessage("this operation requires a user with a local id");
+
+		verify(keycloakAdminClient, never()).getClientCredentialsToken(any(), any(), any(), any());
+		verify(personalInfoDao, never()).deleteByUser(any(), any());
 		verify(userDao, never()).tombstoneByIdmId(any(), any(), any());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
@@ -144,6 +194,19 @@ class AccountServiceImplTest {
 				.id(new UserIdImpl(USER_UUID.toString()))
 				.name("user@example.test")
 				.email(null)
+				.isService(false)
+				.isSystem(false)
+				.isUnauthenticated(false)
+				.roles(EnumSet.of(Role.CITIZEN))
+				.build();
+	}
+
+	private static User makeUserWithoutLocalId() {
+		return ImmutableUser.builder()
+				.id(null)
+				.name("user@example.test")
+				.email(null)
+				.idmId(IDM_ID)
 				.isService(false)
 				.isSystem(false)
 				.isUnauthenticated(false)

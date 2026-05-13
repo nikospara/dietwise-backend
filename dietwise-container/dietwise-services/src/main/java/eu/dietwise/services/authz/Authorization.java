@@ -1,5 +1,7 @@
 package eu.dietwise.services.authz;
 
+import java.util.UUID;
+
 import eu.dietwise.common.types.authorization.NotAuthenticatedException;
 import eu.dietwise.common.types.authorization.NotAuthorizedException;
 import eu.dietwise.common.v1.model.User;
@@ -11,6 +13,8 @@ public interface Authorization {
 	void requireLogin(User user);
 
 	String requireIdmId(User user);
+
+	UUID requireUserUuid(User user);
 
 	/**
 	 * Require a valid, non-null, application, throw {@code NotAuthorizedException} if not.

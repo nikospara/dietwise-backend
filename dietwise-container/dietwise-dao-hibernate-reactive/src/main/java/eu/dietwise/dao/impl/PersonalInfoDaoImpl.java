@@ -39,6 +39,13 @@ public class PersonalInfoDaoImpl implements PersonalInfoDao {
 		);
 	}
 
+	@Override
+	public Uni<Void> deleteByUser(ReactivePersistenceTxContext tx, HasUserId hasUserId) {
+		return makeUserUuid(hasUserId)
+				.flatMap(uuid -> tx.find(PersonalInfoEntity.class, uuid))
+				.flatMap(entity -> entity == null ? Uni.createFrom().voidItem() : tx.remove(entity));
+	}
+
 	private Uni<UUID> makeUserUuid(HasUserId hasUserId) {
 		if (hasUserId == null) {
 			return Uni.createFrom().failure(new IllegalArgumentException("hasUserId is null"));

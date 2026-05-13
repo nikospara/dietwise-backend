@@ -113,4 +113,19 @@ public class UserStatsEntityDaoImplTest {
 		assertThat(userStatsEntity.getDaysLaunched()).isEqualTo(3);
 		assertThat(userStatsEntity.getRecipesAssessed()).isEqualTo(3);
 	}
+
+	/**
+	 * Tests deletion, keep it last.
+	 */
+	@Test
+	@Order(10)
+	void testDeleteByUser(Mutiny.SessionFactory sessionFactory) {
+		var sut = new UserStatsEntityDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		factory.withTransaction(tx -> sut.deleteByUser(tx, USER_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		UserStatsEntity userStatsEntity = factory.withTransaction(tx -> sut.findByUserId(tx, APPLICATION_ID, USER_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(userStatsEntity).isNull();
+	}
 }

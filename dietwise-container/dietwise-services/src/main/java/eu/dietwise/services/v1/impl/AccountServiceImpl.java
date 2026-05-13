@@ -2,11 +2,16 @@ package eu.dietwise.services.v1.impl;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.dao.PersonalInfoDao;
 import eu.dietwise.dao.UserDao;
+import eu.dietwise.dao.statistics.UserRecipeStatsEntityDao;
+import eu.dietwise.dao.statistics.UserStatsEntityDao;
+import eu.dietwise.dao.statistics.UserSuggestionStatsEntityDao;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.keycloak.KeycloakAdminClient;
 import eu.dietwise.services.nondomain.DateTimeService;
@@ -23,6 +28,10 @@ public class AccountServiceImpl implements AccountService {
 
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final UserDao userDao;
+	private final PersonalInfoDao personalInfoDao;
+	private final UserRecipeStatsEntityDao userRecipeStatsEntityDao;
+	private final UserSuggestionStatsEntityDao userSuggestionStatsEntityDao;
+	private final UserStatsEntityDao userStatsEntityDao;
 	private final DateTimeService dateTimeService;
 	private final Authorization authorization;
 	private final KeycloakAdminClient keycloakAdminClient;
@@ -33,6 +42,10 @@ public class AccountServiceImpl implements AccountService {
 	public AccountServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
 			UserDao userDao,
+			PersonalInfoDao personalInfoDao,
+			UserRecipeStatsEntityDao userRecipeStatsEntityDao,
+			UserSuggestionStatsEntityDao userSuggestionStatsEntityDao,
+			UserStatsEntityDao userStatsEntityDao,
 			DateTimeService dateTimeService,
 			Authorization authorization,
 			@RestClient KeycloakAdminClient keycloakAdminClient,
@@ -42,6 +55,10 @@ public class AccountServiceImpl implements AccountService {
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.userDao = userDao;
+		this.personalInfoDao = personalInfoDao;
+		this.userRecipeStatsEntityDao = userRecipeStatsEntityDao;
+		this.userSuggestionStatsEntityDao = userSuggestionStatsEntityDao;
+		this.userStatsEntityDao = userStatsEntityDao;
 		this.dateTimeService = dateTimeService;
 		this.authorization = authorization;
 		this.keycloakAdminClient = keycloakAdminClient;
@@ -54,8 +71,9 @@ public class AccountServiceImpl implements AccountService {
 	public Uni<Void> deleteAccount(User user) {
 		authorization.requireLogin(user);
 		String idmId = authorization.requireIdmId(user);
+		UUID userId = authorization.requireUserUuid(user);
 		return deleteIdentity(idmId)
-				.chain(() -> tombstoneUser(idmId));
+				.chain(() -> deleteLocalAccountData(user, userId, idmId));
 	}
 
 	private Uni<Void> deleteIdentity(String idmId) {
@@ -71,9 +89,15 @@ public class AccountServiceImpl implements AccountService {
 		return Uni.createFrom().failure(new IllegalStateException("Keycloak user deletion failed with HTTP status " + status));
 	}
 
-	private Uni<Void> tombstoneUser(String idmId) {
+	private Uni<Void> deleteLocalAccountData(User user, UUID userId, String idmId) {
 		LocalDateTime deletedAt = dateTimeService.getNow();
-		return persistenceContextFactory.withTransaction(tx -> userDao.tombstoneByIdmId(tx, idmId, deletedAt));
+		return persistenceContextFactory.withTransaction(tx ->
+				personalInfoDao.deleteByUser(tx, user)
+						.chain(() -> userRecipeStatsEntityDao.deleteByUser(tx, userId))
+						.chain(() -> userSuggestionStatsEntityDao.deleteByUser(tx, userId))
+						.chain(() -> userStatsEntityDao.deleteByUser(tx, userId))
+						.chain(() -> userDao.tombstoneByIdmId(tx, idmId, deletedAt))
+		);
 	}
 
 	private String requireAccessToken(Map<String, Object> tokenResponse) {

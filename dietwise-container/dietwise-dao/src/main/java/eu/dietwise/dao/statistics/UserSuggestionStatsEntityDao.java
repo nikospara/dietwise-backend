@@ -2,6 +2,7 @@ package eu.dietwise.dao.statistics;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
@@ -55,4 +56,7 @@ public interface UserSuggestionStatsEntityDao {
 
 	/** Decrease times, return new value, does not decrement below zero. */
 	Uni<Integer> decreaseTimesRejected(ReactivePersistenceTxContext tx, String applicationId, HasUserId userId, SuggestionTemplateId suggestionId);
+
+	/** Delete all per-suggestion statistics for the given user, if any. */
+	Uni<Void> deleteByUser(ReactivePersistenceTxContext tx, UUID userId);
 }

@@ -28,4 +28,13 @@ public interface PersonalInfoDao {
 	 * @return The personal information object with the update values
 	 */
 	Uni<PersonalInfo> storeForUser(ReactivePersistenceTxContext tx, HasUserId hasUserId, PersonalInfo personalInfo);
+
+	/**
+	 * Delete the personal information of the given user, if any.
+	 *
+	 * @param tx        The reactive transactional persistence context
+	 * @param hasUserId Something that contains the user id
+	 * @return A void {@code Uni}
+	 */
+	Uni<Void> deleteByUser(ReactivePersistenceTxContext tx, HasUserId hasUserId);
 }

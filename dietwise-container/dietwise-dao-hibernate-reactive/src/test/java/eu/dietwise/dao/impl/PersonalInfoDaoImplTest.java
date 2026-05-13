@@ -90,4 +90,19 @@ public class PersonalInfoDaoImplTest {
 		assertThat(pi.getGender()).isEqualTo(FEMALE);
 		assertThat(pi.getYearOfBirth()).isEqualTo(1987);
 	}
+
+	/**
+	 * Deletion test, keep it last.
+	 */
+	@Test
+	@Order(10)
+	void testDeleteByUser(Mutiny.SessionFactory sessionFactory) {
+		var sut = new PersonalInfoDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		factory.withTransaction(tx -> sut.deleteByUser(tx, new UserIdImpl(USER_ID.toString())))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		PersonalInfo pi = factory.withTransaction(tx -> sut.findByUser(tx, new UserIdImpl(USER_ID.toString())))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(pi).isNull();
+	}
 }
