@@ -1,6 +1,7 @@
 package eu.dietwise.common.v1.model;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.Optional;
 
@@ -36,6 +37,22 @@ public interface User extends Principal, HasUserId {
 	 * @return The IDM id string; empty for the unauthenticated user
 	 */
 	Optional<String> getIdmId();
+
+	/**
+	 * The instant at which this account was marked deleted locally.
+	 *
+	 * @return The deletion timestamp; empty for active users
+	 */
+	Optional<LocalDateTime> getDeletedAt();
+
+	/**
+	 * Check if this user represents a locally deleted account.
+	 *
+	 * @return {@code true} if the account has a deletion tombstone
+	 */
+	default boolean isDeleted() {
+		return getDeletedAt().isPresent();
+	}
 
 	/**
 	 * Check if this user is the system user.

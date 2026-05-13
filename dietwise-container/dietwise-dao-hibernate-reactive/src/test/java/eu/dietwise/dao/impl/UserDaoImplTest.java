@@ -50,6 +50,9 @@ public class UserDaoImplTest {
 	void testStartingEmpty(Mutiny.SessionFactory sessionFactory) {
 		var sut = new UserDaoImpl();
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		UserData missingUserData = factory.withoutTransaction(em -> sut.findByIdmId(em, USER_IDM_ID.toString()))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(missingUserData).isNull();
 		UserData userData1 = factory.withTransaction(tx -> sut.findOrCreateByIdmId(tx, USER_IDM_ID.toString()))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(userData1).isNotNull();
@@ -65,6 +68,10 @@ public class UserDaoImplTest {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		factory.withTransaction(tx -> sut.tombstoneByIdmId(tx, DELETED_USER_IDM_ID.toString(), DELETED_AT))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		UserData deletedUserData = factory.withoutTransaction(em -> sut.findByIdmId(em, DELETED_USER_IDM_ID.toString()))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(deletedUserData).isNotNull();
+		assertThat(deletedUserData.getDeletedAt()).contains(DELETED_AT);
 
 		assertThatThrownBy(() ->
 				factory.withTransaction(tx -> sut.findOrCreateByIdmId(tx, DELETED_USER_IDM_ID.toString()))

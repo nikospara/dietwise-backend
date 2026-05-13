@@ -21,4 +21,9 @@ class UserServiceImpl implements UserService {
 	public Uni<UserData> findOrCreateByIdmId(String idmId) {
 		return persistenceContextFactory.withTransaction(tx -> userDao.findOrCreateByIdmId(tx, idmId));
 	}
+
+	@Override
+	public Uni<UserData> findByIdmId(String idmId) {
+		return persistenceContextFactory.withoutTransaction(em -> userDao.findByIdmId(em, idmId));
+	}
 }

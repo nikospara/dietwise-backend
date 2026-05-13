@@ -24,16 +24,22 @@ import io.smallrye.mutiny.Uni;
 public class UserDaoImpl implements UserDao {
 	@Override
 	public Uni<UserData> findOrCreateByIdmId(ReactivePersistenceTxContext tx, String idmId) {
-		return findByIdmId(tx, idmId)
+		return findEntityByIdmId(tx, idmId)
 				.flatMap(userEntityOpt -> userEntityOpt
 						.map(this::requireNotDeleted)
 						.orElseGet(() -> createUser(tx, idmId)))
-				.map(userEntity -> ImmutableUserData.builder().id(new UserIdImpl(userEntity.getId().toString())).build());
+				.map(this::toUserData);
+	}
+
+	@Override
+	public Uni<UserData> findByIdmId(ReactivePersistenceContext em, String idmId) {
+		return findEntityByIdmId(em, idmId)
+				.map(userEntityOpt -> userEntityOpt.map(this::toUserData).orElse(null));
 	}
 
 	@Override
 	public Uni<Void> tombstoneByIdmId(ReactivePersistenceTxContext tx, String idmId, LocalDateTime deletedAt) {
-		return findByIdmId(tx, idmId)
+		return findEntityByIdmId(tx, idmId)
 				.flatMap(userEntityOpt -> userEntityOpt
 						.map(userEntity -> Uni.createFrom().item(userEntity))
 						.orElseGet(() -> createUser(tx, idmId)))
@@ -41,7 +47,7 @@ public class UserDaoImpl implements UserDao {
 				.flatMap(userEntity -> tx.merge(userEntity).replaceWithVoid());
 	}
 
-	private Uni<Optional<UserEntity>> findByIdmId(ReactivePersistenceContext em, String idmId) {
+	private Uni<Optional<UserEntity>> findEntityByIdmId(ReactivePersistenceContext em, String idmId) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(UserEntity.class);
 		Root<UserEntity> userEntity = q.from(UserEntity.class);
@@ -61,5 +67,12 @@ public class UserDaoImpl implements UserDao {
 			return Uni.createFrom().failure(new NotAuthenticatedException("the account has been deleted"));
 		}
 		return Uni.createFrom().item(userEntity);
+	}
+
+	private UserData toUserData(UserEntity userEntity) {
+		return ImmutableUserData.builder()
+				.id(new UserIdImpl(userEntity.getId().toString()))
+				.deletedAt(Optional.ofNullable(userEntity.getDeletedAt()))
+				.build();
 	}
 }

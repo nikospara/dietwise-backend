@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Response;
 
 import eu.dietwise.common.types.authorization.NotAuthenticatedException;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.jaxrs.v1.security.AllowDeletedAccount;
 import eu.dietwise.services.v1.AccountService;
 import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.jwt.Claims;
@@ -28,9 +29,13 @@ public class UsersResource {
 
 	@DELETE
 	@Path("me")
+	@AllowDeletedAccount
 	public Uni<Response> deleteCurrentUser(@Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		requireFreshAuthentication();
+		if (user.isDeleted()) {
+			return Uni.createFrom().item(Response.noContent().build());
+		}
 		return accountService
 				.deleteAccount(user)
 				.replaceWith(Response.noContent().build());

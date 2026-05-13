@@ -5,4 +5,6 @@ import io.smallrye.mutiny.Uni;
 
 public interface UserService {
 	Uni<UserData> findOrCreateByIdmId(String idmId);
+
+	Uni<UserData> findByIdmId(String idmId);
 }
