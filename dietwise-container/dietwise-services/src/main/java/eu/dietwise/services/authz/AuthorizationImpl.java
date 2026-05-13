@@ -16,6 +16,13 @@ public class AuthorizationImpl implements Authorization {
 	}
 
 	@Override
+	public String requireIdmId(User user) {
+		return user.getIdmId()
+				.filter(id -> !id.isBlank())
+				.orElseThrow(() -> new NotAuthenticatedException("this operation requires a user with an IDM id"));
+	}
+
+	@Override
 	public String requireApplicationId(User user) {
 		if (user == null || user.getApplicationId().isEmpty()) {
 			throw new NotAuthorizedException("this operation requires the user to be associated with an application");

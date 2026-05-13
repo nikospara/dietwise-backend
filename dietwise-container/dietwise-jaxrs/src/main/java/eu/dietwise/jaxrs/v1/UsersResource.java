@@ -2,7 +2,6 @@ package eu.dietwise.jaxrs.v1;
 
 import java.time.Duration;
 import java.time.Instant;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.Path;
@@ -25,17 +24,14 @@ public class UsersResource {
 	JsonWebToken jwt;
 
 	@Inject
-	Instance<AccountService> accountService;
+	AccountService accountService;
 
 	@DELETE
 	@Path("me")
 	public Uni<Response> deleteCurrentUser(@Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		requireFreshAuthentication();
-		if (!accountService.isResolvable()) {
-			return Uni.createFrom().item(Response.status(Response.Status.NOT_IMPLEMENTED).build());
-		}
-		return accountService.get()
+		return accountService
 				.deleteAccount(user)
 				.replaceWith(Response.noContent().build());
 	}

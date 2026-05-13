@@ -10,6 +10,8 @@ public interface Authorization {
 	 */
 	void requireLogin(User user);
 
+	String requireIdmId(User user);
+
 	/**
 	 * Require a valid, non-null, application, throw {@code NotAuthorizedException} if not.
 	 *
