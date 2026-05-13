@@ -136,6 +136,7 @@ The public client:
 		- (empty)
 	- Web origins:
 		- http://localhost:8180
+        - https://gaia.ispatial.survey.ntua.gr
 		- **FOR PRODUCTION:**
 			- https://dietwise.ispatial.survey.ntua.gr
 - Save & finish the new client wizard
@@ -150,11 +151,13 @@ The confidential service-account client:
 	- Client authentication: On
 	- Authorization: Off
 	- Authentication flow: Check *only* "Service accounts roles"
+<!--
 	- Require PKCE: On
 	- PKCE Method: S256
+-->
 - Login settings (leave blank, as long as this is not intended to be used by people)
 - Save & finish the new client wizard
-- Go to Service account roles tab, Assign role -> Client roles -> `manage-users` This appears as "(realm-management) manage-users" in the UI
+- Go to Service account roles tab, Assign role → Client roles -> `manage-users` This appears as "(realm-management) manage-users" in the UI
 - Go to the Credentials tab, define the "Client Secret"
 
 ### Create some test users

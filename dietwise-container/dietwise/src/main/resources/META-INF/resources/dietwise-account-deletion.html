@@ -133,7 +133,8 @@
 
 <script>
 	const config = {
-		realmUrl: 'http://localhost:8280/realms/dietwise',
+		configEndpoint: '/api/v1/users/account-deletion-config',
+		realmUrl: null,
 		clientId: 'account-deletion',
 		deleteEndpoint: '/api/v1/users/me',
 	};
@@ -153,6 +154,8 @@
 	run().catch(error => renderError(error));
 
 	async function run() {
+		await loadConfig();
+
 		const params = new URLSearchParams(location.search);
 		if (params.has('error')) {
 			clearCallbackUrl();
@@ -209,9 +212,37 @@
 		notice.hidden = false;
 		setStatus(error.message || 'Unexpected error.');
 		setActions([
-			button('Start again', 'primary', renderStart),
+			button('Start again', 'primary', restart),
 		]);
 		accessToken = null;
+	}
+
+	async function restart() {
+		clearCallbackUrl();
+		await loadConfig();
+		renderStart();
+	}
+
+	async function loadConfig() {
+		if (config.realmUrl) {
+			return;
+		}
+
+		const response = await fetch(config.configEndpoint, {
+			headers: {
+				'Accept': 'application/json',
+			},
+			cache: 'no-store',
+		});
+		if (!response.ok) {
+			throw new Error('The account deletion configuration could not be loaded.');
+		}
+
+		const accountDeletionConfig = await response.json();
+		if (!accountDeletionConfig.realmUrl) {
+			throw new Error('The account deletion configuration is incomplete.');
+		}
+		config.realmUrl = accountDeletionConfig.realmUrl.replace(/\/+$/, '');
 	}
 
 	async function startSignIn() {

@@ -4,9 +4,12 @@ import java.time.Duration;
 import java.time.Instant;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import eu.dietwise.common.types.authorization.NotAuthenticatedException;
@@ -14,6 +17,7 @@ import eu.dietwise.common.v1.model.User;
 import eu.dietwise.jaxrs.v1.security.AllowDeletedAccount;
 import eu.dietwise.services.v1.AccountService;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -26,6 +30,17 @@ public class UsersResource {
 
 	@Inject
 	AccountService accountService;
+
+	@Inject
+	@ConfigProperty(name = "dietwise.keycloak.deletion.base-url")
+	String oidcAuthServerUrl;
+
+	@GET
+	@Path("account-deletion-config")
+	@Produces(MediaType.APPLICATION_JSON)
+	public AccountDeletionConfigResponse getAccountDeletionConfig() {
+		return new AccountDeletionConfigResponse(stripTrailingSlash(oidcAuthServerUrl));
+	}
 
 	@DELETE
 	@Path("me")
@@ -65,5 +80,15 @@ public class UsersResource {
 			}
 		}
 		return null;
+	}
+
+	private static String stripTrailingSlash(String value) {
+		while (value.endsWith("/")) {
+			value = value.substring(0, value.length() - 1);
+		}
+		return value;
+	}
+
+	public record AccountDeletionConfigResponse(String realmUrl) {
 	}
 }
