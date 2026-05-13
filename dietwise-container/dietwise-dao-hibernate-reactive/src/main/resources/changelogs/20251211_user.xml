@@ -30,4 +30,10 @@
 		</createTable>
 		<addForeignKeyConstraint baseTableName="DW_PERSONAL_INFO" baseColumnNames="user_id" constraintName="FK_DW_PERSONAL_INFO__USER_ID__DW_USER__ID" referencedTableName="DW_USER" referencedColumnNames="id" />
 	</changeSet>
+
+	<changeSet id="user_tombstone" author="codex">
+		<addColumn tableName="DW_USER">
+			<column name="deleted_at" type="TIMESTAMP" remarks="The time at which the account was deleted, if it was deleted" />
+		</addColumn>
+	</changeSet>
 </databaseChangeLog>

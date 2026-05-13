@@ -1,5 +1,6 @@
 package eu.dietwise.dao.jpa;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,6 +23,9 @@ public class UserEntity {
 	@Column(name = "idm_id")
 	private String idmId;
 
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
+
 	public UUID getId() {
 		return id;
 	}
@@ -36,5 +40,13 @@ public class UserEntity {
 
 	public void setIdmId(String idmId) {
 		this.idmId = idmId;
+	}
+
+	public LocalDateTime getDeletedAt() {
+		return deletedAt;
+	}
+
+	public void setDeletedAt(LocalDateTime deletedAt) {
+		this.deletedAt = deletedAt;
 	}
 }
