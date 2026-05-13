@@ -1,5 +1,12 @@
 # AGENTS Guide for DietWise Backend
 
+This application is the backend for a mobile app, called "MyRecipeWatch" and a browser extension, called
+"Responsible Cooking Alliance" (or RCA). Their functionality is similar, to assess a recipe from a web page and suggest
+healthier and more sustainable alternatives.
+
+User login is handled by a Keycloak server, the development version of which is built in the Maven module
+`dietwise-docker-keycloak` (path: dietwise-docker/dietwise-docker-keycloak).
+
 ## Scope
 These instructions apply to the entire repository.
 

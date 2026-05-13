@@ -110,6 +110,53 @@ Create a new client in the Realm:
 		- (empty)
 - Save & finish the new client wizard
 
+### Create two clients for the account deletion
+
+The public client:
+
+- General settings:
+	- Client type: OpenID Connect
+	- Client ID: account-deletion
+	- Name: Account deletion
+- Capability config:
+	- Client authentication: Off
+	- Authorization: Off
+	- Authentication flow: Check *only* "Standard flow"
+	- Require PKCE: On
+	- PKCE Method: S256
+- Login settings:
+	- Root URL: (empty)
+	- Home URL: (empty)
+	- Valid redirect URIs:
+		- http://localhost:8180/dietwise-account-deletion.html
+		- https://gaia.ispatial.survey.ntua.gr/dietwise-account-deletion.html
+		- **FOR PRODUCTION:**
+			- https://dietwise.ispatial.survey.ntua.gr/dietwise-account-deletion.html
+	- Valid post logout redirect URIs:
+		- (empty)
+	- Web origins:
+		- http://localhost:8180
+		- **FOR PRODUCTION:**
+			- https://dietwise.ispatial.survey.ntua.gr
+- Save & finish the new client wizard
+
+The confidential service-account client:
+
+- General settings:
+	- Client type: OpenID Connect
+	- Client ID: backend-account
+	- Name: Backend account
+- Capability config:
+	- Client authentication: On
+	- Authorization: Off
+	- Authentication flow: Check *only* "Service accounts roles"
+	- Require PKCE: On
+	- PKCE Method: S256
+- Login settings (leave blank, as long as this is not intended to be used by people)
+- Save & finish the new client wizard
+- Go to Service account roles tab, Assign role -> Client roles -> `manage-users` This appears as "(realm-management) manage-users" in the UI
+- Go to the Credentials tab, define the "Client Secret"
+
 ### Create some test users
 
 Go to Manage → Users in the left menu, press "Create new user"
