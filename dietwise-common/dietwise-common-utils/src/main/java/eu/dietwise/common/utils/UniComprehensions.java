@@ -21,6 +21,10 @@ import io.smallrye.mutiny.tuples.Functions.Function9;
  * There are two flavors of each function: {@code forc} applies a chain of {@code Uni.flatMap} operations, while
  * {@code forcm} applies a chain of {@code Uni.flatMap} operations, followed by a single {@code Uni.map} operation.
  * </p>
+ * <p>
+ * To avoid chaos, the N-th {@code Uni.flatMap} operation may depend on the results of the 1...(N-1) previous operations.
+ * It is not allowed to skip a result, even if it is unnecessary for the operation.
+ * </p>
  */
 public interface UniComprehensions {
 

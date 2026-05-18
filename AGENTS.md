@@ -12,7 +12,6 @@ These instructions apply to the entire repository.
 
 ## Required Reading
 Before making code changes, read:
-- `AGENTS.md` (this file)
 - `dietwise-architecture/src/site/markdown/CodingConventions.md`
 
 Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authoritative for coding style and conventions.
@@ -27,7 +26,7 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
 - `dietwise-architecture`: shared domain models and service interfaces.
 - `dietwise-common`: shared utilities, common DAO abstractions, test utilities.
 - `dietwise-container`: deployable/runtime modules.
-  - `dietwise`: Quarkus application module (final executable artifact).
+  - `dietwise`: Quarkus application module (final executable artifact), effective configuration lives in `dietwise-container/dietwise/src/main/resources/application.properties`
   - `dietwise-dao-hibernate-reactive`: DAO implementation and Liquibase changelog resources.
 - `dietwise-docker`: peripheral Docker images and compose files.
 
@@ -57,8 +56,6 @@ Treat them as any other code using the database with Hibernate Reactive.
 
 ## Liquibase
 - Runtime Liquibase migrations are enabled in the Quarkus app.
-- Effective configuration lives in:
-  - `dietwise-container/dietwise/src/main/resources/application.properties`
 - Changelog file used at runtime: `changelog.xml` (loaded from classpath via dependency resources from `dietwise-dao-hibernate-reactive`).
 - Master changelog source file:
   - `dietwise-container/dietwise-dao-hibernate-reactive/src/main/resources/changelog.xml`
@@ -93,3 +90,13 @@ Treat them as any other code using the database with Hibernate Reactive.
 - For Docker-related changes:
   - Re-run `./dietwise-architecture/src/scripts/update-dockerfile-pom-copy.sh` if modules changed.
   - Rebuild image.
+
+## Mutiny usage
+
+This project uses SmallRye Mutiny for asynchronous programming.
+
+- The class `UniComprehensions` (`dietwise-common/dietwise-common-utils/src/main/java/eu/dietwise/common/utils/UniComprehensions.java`)
+  includes helpers to make long `Uni.flatMap` chains easier to read. If there is a long chain but the relevant method is
+  missing from `UniComprehensions`, it is ok to add it.
+- The class `MultiComprehensions` contains similar helpers for `Multi`. As of now, they help for a much narrower set of
+  cases.
