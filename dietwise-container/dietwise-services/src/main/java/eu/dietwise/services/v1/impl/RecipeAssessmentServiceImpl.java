@@ -45,6 +45,7 @@ import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.MultiEmitter;
+import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,6 +212,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 					emitter.emit(new RecipeAssessmentErrorMessage(List.of("The supplied URL is not allowed")));
 			case MoreThanOneRecipesDetectedException mto ->
 					emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
+			case CircuitBreakerOpenException _ ->
+					emitter.emit(new RecipeAssessmentErrorMessage(List.of("The AI service is temporarily unavailable, please try again in a few seconds")));
 			case null, default -> {
 				// TODO Create dedicated exceptions for extraction failures, suggestion failures
 				LOG.error("The server failed to assess the recipe", error);

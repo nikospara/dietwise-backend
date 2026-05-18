@@ -2,6 +2,7 @@ package eu.dietwise.services.v1.filtering.impl;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
+import eu.dietwise.services.v1.ai.AiCircuitBreaker;
 import eu.dietwise.services.v1.filtering.RecipeFilterAiFacade;
 import eu.dietwise.services.v1.filtering.RecipeFilterAiSelector;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -13,15 +14,17 @@ import io.vertx.core.Vertx;
 @ApplicationScoped
 public class RecipeFilterAiFacadeImpl implements RecipeFilterAiFacade {
 	private final RecipeFilterAiSelector aiSelector;
+	private final AiCircuitBreaker aiCircuitBreaker;
 
-	public RecipeFilterAiFacadeImpl(RecipeFilterAiSelector aiSelector) {
+	public RecipeFilterAiFacadeImpl(RecipeFilterAiSelector aiSelector, AiCircuitBreaker aiCircuitBreaker) {
 		this.aiSelector = aiSelector;
+		this.aiCircuitBreaker = aiCircuitBreaker;
 	}
 
 	@Override
 	public Uni<String> filterRecipeBlock(RecipeLanguage lang, String block) {
 		Context callerContext = Vertx.currentContext();
-		Uni<String> resultUni = Uni.createFrom().item(() -> aiSelector.filterRecipeBlock(lang, block))
+		Uni<String> resultUni = Uni.createFrom().item(() -> aiCircuitBreaker.guard(() -> aiSelector.filterRecipeBlock(lang, block)))
 				.runSubscriptionOn(Infrastructure.getDefaultExecutor());
 		if (callerContext == null) return resultUni;
 		return resultUni.emitOn(command -> callerContext.runOnContext(_ -> command.run()));
