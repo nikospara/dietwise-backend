@@ -5,7 +5,7 @@
 
 	<groupId>eu.dietwise</groupId>
 	<artifactId>dietwise-parent</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>0.9.0</version>
 
 	<name>DietWise: Backend Parent</name>
 	<description>Parent module defining the base build configuration and further project structure for the entire DietWise backend monorepo</description>
@@ -35,8 +35,8 @@
 		<version.hibernate-validator-cdi>9.1.0.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
 		<version.keycloak>26.6.1</version.keycloak>
-		<version.liquibase>5.0.2</version.liquibase>
-		<version.org.immutables>2.12.1</version.org.immutables>
+		<version.liquibase>5.0.3</version.liquibase>
+		<version.org.immutables>2.12.2</version.org.immutables>
 		<version.postgres>42.7.10</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
 		<version.quarkus-langchain4j>1.10.0</version.quarkus-langchain4j>
 		<version.slf4j>2.0.17</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - needed because quarkus-bom only uses slf4j-api, we use other artifacts too -->
@@ -150,7 +150,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.6.2</version>
+				<version>3.6.3</version>
 				<executions>
 					<execution>
 						<id>enforce-maven</id>
