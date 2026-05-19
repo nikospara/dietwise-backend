@@ -82,13 +82,13 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	@Override
 	public Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride) {
-		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, hasUserId, lang, recipe, countryOverride));
+		return persistenceContextFactory.withTransaction(tx -> makeSuggestions(tx, correlationId, hasUserId, lang, recipe, countryOverride));
 	}
 
-	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride) {
+	private Uni<MakeSuggestionsResult> makeSuggestions(ReactivePersistenceTxContext tx, UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride) {
 		return forcm(
 				readAllNecessaryData(tx, hasUserId, lang, countryOverride),
-				extractSuggestionsForRecipePerIngredient(tx, lang, recipe),
+				extractSuggestionsForRecipePerIngredient(tx, correlationId, lang, recipe),
 				prioritizeSuggestions(tx),
 				data -> new MakeSuggestionsResult(
 						new SuggestionsRecipeAssessmentMessage(data.suggestions()),
@@ -120,13 +120,14 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Function<? super RecipeSuggestionNecessaryData, Uni<? extends SuggestionsAndRecommendationsPerIngredient>> extractSuggestionsForRecipePerIngredient(
 			ReactivePersistenceTxContext tx,
+			UUID correlationId,
 			RecipeLanguage lang,
 			Recipe recipe
 	) {
 		return data -> {
 			String availableRecommendationsAsMarkdownList = suggestionsAiFacade.convertRecommendationsToMarkdownList(data.recommendations().values());
 			return Multi.createFrom().iterable(recipe.getRecipeIngredients())
-					.onItem().transformToUniAndConcatenate(processIngredient(tx, recipe, lang, data, availableRecommendationsAsMarkdownList))
+					.onItem().transformToUniAndConcatenate(processIngredient(tx, correlationId, recipe, lang, data, availableRecommendationsAsMarkdownList))
 					.collect()
 					.in(
 							SuggestionsAndRecommendationsPerIngredient::emptyMutable,
@@ -142,39 +143,51 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Function<? super Ingredient, Uni<? extends SuggestionsAndComponents>> processIngredient(
 			ReactivePersistenceTxContext tx,
+			UUID correlationId,
 			Recipe recipe,
 			RecipeLanguage lang,
 			RecipeSuggestionNecessaryData data,
 			String availableRecommendationsAsMarkdownList
 	) {
 		return ingredient -> forc(
-				determineRoleOrTechnique(recipe, lang, data, ingredient),
-				determineTriggerIngredient(lang, data, ingredient),
-				loadMatchingRulesAndDetermineComposition(tx, lang, data, availableRecommendationsAsMarkdownList, ingredient),
+				determineRoleOrTechnique(correlationId, recipe, lang, data, ingredient),
+				determineTriggerIngredient(correlationId, lang, data, ingredient),
+				loadMatchingRulesAndDetermineComposition(tx, correlationId, lang, data, availableRecommendationsAsMarkdownList, ingredient),
 				identifyBestFittingRule(lang, ingredient),
-				loadAlternativesFromDbAndSelectBest(tx, lang, data, ingredient),
+				loadAlternativesFromDbAndSelectBest(tx, correlationId, lang, data, ingredient),
 				postProcessAlternatives(recipe, data, ingredient, lang)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
-			LOG.warn("Failed to process ingredient <{}>: {}", ingredient.getNameInRecipe(), t.getMessage());
+			LOG.warn("Failed to process ingredient <{}>: {} -> {}", correlationId, ingredient.getNameInRecipe(), t.getMessage());
 			return SuggestionsAndComponents.empty(ingredient);
 		});
 	}
 
-	private Uni<RoleOrTechnique> determineRoleOrTechnique(Recipe recipe, RecipeLanguage lang, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
+	private Uni<RoleOrTechnique> determineRoleOrTechnique(
+			UUID correlationId,
+			Recipe recipe,
+			RecipeLanguage lang,
+			RecipeSuggestionNecessaryData data,
+			Ingredient ingredient
+	) {
 		String rolesMarkdownList = suggestionsAiFacade.convertRolesToMarkdownList(data.roles().values());
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		String instructionsAsMarkdownList = suggestionsAiFacade.convertInstructionsToMarkdownList(recipe.getRecipeInstructions());
 		return suggestionsAiFacade.assessIngredientRole(lang, rolesMarkdownList, ingredientNameInRecipe, instructionsAsMarkdownList)
-				.invoke(r -> LOG.debug("assessIngredientRole for <{}>: {}", ingredientNameInRecipe, r))
+				.invoke(r -> LOG.info("assessIngredientRole for <{}>: {} -> {}", correlationId, ingredientNameInRecipe, r))
 				.map(data.roles()::get);
 	}
 
-	private Function<? super RoleOrTechnique, Uni<? extends TriggerIngredient>> determineTriggerIngredient(RecipeLanguage lang, RecipeSuggestionNecessaryData data, Ingredient ingredient) {
+	private Function<? super RoleOrTechnique, Uni<? extends TriggerIngredient>> determineTriggerIngredient(
+			UUID correlationId,
+			RecipeLanguage lang,
+			RecipeSuggestionNecessaryData data,
+			Ingredient ingredient
+	) {
 		String availableTriggerIngredientsAsMarkdownList = suggestionsAiFacade.convertTriggerIngredientsToMarkdownList(data.triggerIngredients().values());
 		String ingredientNameInRecipe = ingredient.getNameInRecipe();
 		return role -> suggestionsAiFacade.matchIngredientToTrigger(lang, availableTriggerIngredientsAsMarkdownList, ingredientNameInRecipe, role)
 				.flatMap(triggerIngredientFromAi -> {
-					LOG.debug("matchIngredientToTrigger for <{}>: {}", ingredientNameInRecipe, triggerIngredientFromAi);
+					LOG.info("matchIngredientToTrigger for <{}>: {} -> {}", correlationId,  ingredientNameInRecipe, triggerIngredientFromAi);
 					TriggerIngredient triggerIngredient = data.triggerIngredients().get(triggerIngredientFromAi);
 					return triggerIngredient == null
 							? Uni.createFrom().failure(() -> new TriggerIngredientFromAiNotInDbException(ingredient, triggerIngredientFromAi))
@@ -184,6 +197,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Function<? super TriggerIngredient, Uni<? extends RulesAndComponents>> loadMatchingRulesAndDetermineComposition(
 			ReactivePersistenceTxContext tx,
+			UUID correlationId,
 			RecipeLanguage lang,
 			RecipeSuggestionNecessaryData data,
 			String availableRecommendationsAsMarkdownList,
@@ -194,7 +208,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				findByTriggerIngredientAndThrowIfNotFound(tx, triggerIngredient, lang),
 				suggestionsAiFacade.matchIngredientsWithRecommendations(lang, availableRecommendationsAsMarkdownList, ingredient.getNameInRecipe())
 		).with((rules, componentNames) -> {
-			LOG.debug("matchIngredientsWithRecommendations for <{}>: {} -> {}", ingredient.getNameInRecipe(), triggerIngredient.getName(), componentNames);
+			LOG.info("matchIngredientsWithRecommendations for <{}>: {} -> {} -> {}", correlationId, ingredient.getNameInRecipe(), triggerIngredient.getName(), componentNames);
 			var components = componentNames.stream()
 					.filter(Objects::nonNull)
 					.map(name -> name.trim().toLowerCase())
@@ -237,6 +251,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 
 	private Function4<? super RoleOrTechnique, ? super TriggerIngredient, ? super RulesAndComponents, ? super Rule, Uni<? extends List<Suggestion>>> loadAlternativesFromDbAndSelectBest(
 			ReactivePersistenceTxContext tx,
+			UUID correlationId,
 			RecipeLanguage lang,
 			RecipeSuggestionNecessaryData data,
 			Ingredient ingredient
@@ -248,7 +263,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 					// TODO dummy, process response from AI
 					if (LOG.isDebugEnabled()) {
 						var suggestionsStr = suggestions.stream().map(Suggestion::getAlternative).map(RepresentableAsString::asString).collect(Collectors.joining(","));
-						LOG.debug("Suggest alternatives for <{}>, initial list is {}:\n{}", ingredient.getNameInRecipe(), suggestionsStr, responseFromAi);
+						LOG.debug("Suggest alternatives for <{}> {}, initial list is {}:\n{}", correlationId, ingredient.getNameInRecipe(), suggestionsStr, responseFromAi);
 					}
 					return Uni.createFrom().item(suggestions);
 				}
