@@ -28,13 +28,13 @@ directly rather than rely on transitive dependencies.
 
 1. All prefixed by the project prefix, `eu.dietwise`. Do not use the default (unnamed) package!
 2. Packages containing exposed APIs should have a version component following the project or module prefix,
-e.g. `eu.dietwise.v1` or `eu.dietwise.foo.v1` (see 4 below). The version package component should come after the
-package name of the Maven project (module) it is located. Other packages may follow the version component,
-e.g. `eu.dietwise.foo.v1.model` or `eu.dietwise.foo.v1.service.impl`.
+   e.g. `eu.dietwise.v1` or `eu.dietwise.foo.v1` (see 4 below). The version package component should come after the
+   package name of the Maven project (module) it is located. Other packages may follow the version component,
+   e.g. `eu.dietwise.foo.v1.model` or `eu.dietwise.foo.v1.service.impl`.
 3. Place common code i.e., code potentially useful to many modules, under a package name appropriate for the
-implemented functionality. E.g., classes under `eu.dietwise.jpa` implement reusable, JPA-related functionality.
+   implemented functionality. E.g., classes under `eu.dietwise.jpa` implement reusable, JPA-related functionality.
 4. Each bounded context gets its own package under the project prefix (e.g. `eu.dietwise.foo` or `eu.dietwise.user`).
-Create appropriate sub-packages.
+   Create appropriate sub-packages.
 
 ## Classes
 

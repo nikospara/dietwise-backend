@@ -1,0 +1,5 @@
+Komponentai:
+{availableRecommendationsAsMarkdownList}
+
+Ingridientas: {ingredientNameInRecipe}
+

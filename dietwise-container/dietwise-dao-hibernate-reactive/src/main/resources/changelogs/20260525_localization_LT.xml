@@ -1,0 +1,1850 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="localization_alternative-ingredient_LT" author="nikospara">
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="+50-100% pupelių/lęšių"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000041"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="50/50 maišytų (baltų+pilno grūdo)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000017"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pridėti 150-250g daržovių per 4p"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Įdėti miežių (sriuba/troškinys)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000052"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Įdėti ankštinių daržovių į padažą"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Įdėti sėklų mišinio"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000047"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Obuolių padažas (iki 30%)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004c"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Avokadų piure (dalinai)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Rudieji lęšiai (apdoroti)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Rudieji ryžiai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000039"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Bulguras"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000011"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sviestas arba HO margarinas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000024"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Konservuotas šaltinio vandenyje"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000055"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Anakardžių kremas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000019"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Avinžirnių + baklažanų miksas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000056"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Avinžirnių miltai (dalinai)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000025"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kokosų aminorūgštys"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000044"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Tarkuotos cukinijos"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Išgarintas pienas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Ypač tyras rapsų aliejus"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000033"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kietas tofu"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000020"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kieti tofu kubeliai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000048"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Linų sėmėnų aliejus"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Spirituotas avižų gėrimas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000032"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Spirituotas augalinis gėrimas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000007"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Šviežias tunas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000029"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Graikiškas jogurtas (30–50% keitimas)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Keptas portobelo grybas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002c"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pusė rudo/pusė balto"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000046"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pusė sviesto/pusė aliejaus"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000053"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pusė kubelio + papildomos žolelės"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000042"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pusė tuno + pusė pupelių"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000035"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Naminis daržovių sultinys"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000004"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Humusas + graikinis riešutas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Duonvaisio gabalėliai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000045"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Lęšių ir avižų mėsainių mišinys"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000015"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Neriebus pienas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Neriebus jogurtas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000018"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai druskos turintis"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000008"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai druskų turintis sojų padažas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000013"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Skumbrė"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000043"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Japoniška miso pasta + vanduo"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Grybai + sojų padažas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000009"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Grybai + morkos + pipirai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003c"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Grybų ir lęšių mišinys"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000c"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Neutralaus skonio aliejus (75 % sviesto svorio)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000038"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Avižiniai miltai (daliniai)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000000b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Alyvuogių aliejus"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000021"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Alyvuogių aliejus + rūkyta paprika"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Alyvuogių aliejaus keitimas (dalinis)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000036"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Šviežias indiškas sūris &quot;Paneer&quot; (jei vartojate pieno produktus)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000022"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Ankštinių miltų mišinys (20–30 %)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000023"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Ankštinių augalų makaronai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Moliūgų sėklos"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000057"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Bolivinės balandos"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000028"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Rapsų aliejus"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000027"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pakeisti 50-100% sojų faršu"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Keptų avinžirnių užtepėlė"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Lašiša"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000030"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sardinės"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000051"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kvietinė mėsa"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000002"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kvietinės mėsos gabaliukai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000001"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kvietinės mėsos kepsnys"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000049"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Šilkinis tofu kremas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000037"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Nugriebtas pienas + padažas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000050"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Skyras/jogurtas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000003"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Rūkyti tofu kubeliai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pilno grūdo raugas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sojų faršas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Gazuotas vanduo"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000040"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Speltos miltai (dalis)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000026"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Špinatai (kapoti)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000012"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Saulėgrąžų sėklos"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000034"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pakeisti 50% makaronų → daržovių makaronai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000016"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Tempė"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000054"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Tofu kubeliai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Tofu kepsnys"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000031"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Nesaldinta arbata"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000002a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Graikinių riešutų aliejus"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000004d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Graikiniai riešutai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000014"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Vanduo su vaisiais"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000005"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pilno grūdo miltai (50% mišinys)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000010"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pilno grūdo duona"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-000000000006"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pilno grūdo makaronai"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pilno grūdo miltai (25-50%)"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000001c"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pilno grūdo kuskusas"/>
+		</insert>
+
+		<insert tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION">
+			<column name="alternative_ingredient_id" value="70000000-0000-0000-0000-00000000003a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Jauni duonvaisio gabaliukai"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="localization_recommendation_LT" author="nikospara">
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="10584009-a417-45ba-ac6f-e5b58ae5bed4"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumažinkite perdirbtos mėsos kiekį"/>
+			<column name="component_for_scoring" value="Perdirbta mėsa"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="9977a713-0608-4f0c-9933-f7788b4f0225"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumažinkite žalios (neapdirbtos) mėsos kiekį"/>
+			<column name="component_for_scoring" value="Žalia (neapdirbta) mėsa"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="05268010-59c8-4d8f-8508-6e1aa0cf2978"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumažinkite druskos kiekį"/>
+			<column name="component_for_scoring" value="Druska"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="7f056712-5d53-4e8a-babf-0570dfad6f72"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumažinkite cukrumi saldintų gėrimų kiekį"/>
+			<column name="component_for_scoring" value="Saldinti gėrimai"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="e2199ed9-3411-4674-a8f0-8e6c789f8a2d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumažinkite transriebalų rūgščių"/>
+			<column name="component_for_scoring" value="Transriebalų rūgštys"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai kalcio turinti dieta"/>
+			<column name="component_for_scoring" value="Kalcis"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="2eeb6bd2-46db-47fd-a0f3-d44a7643b57d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai skaidulų turinti dieta"/>
+			<column name="component_for_scoring" value="Skaidulos"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="d3c65527-f5e7-46ba-b6f1-8f37bcf6ca81"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Dieta, kurioje mažai vaisių"/>
+			<column name="component_for_scoring" value="Vaisiai"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="bca0db4e-2078-4186-9039-0f39a8518431"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai ankštinių daržovių turinti dieta"/>
+			<column name="component_for_scoring" value="Ankštinės daržovės"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="d2301d58-f648-4e9d-abdc-5ae3c095db01"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Dieta, kurioje mažai pieno"/>
+			<column name="component_for_scoring" value="Pienas"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="ece72115-8e74-4a2f-b9bf-8ce59032ad63"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai riešutų ir sėklų turinti dieta"/>
+			<column name="component_for_scoring" value="Riešutai ir sėklos"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="44f71cf2-df61-4932-a052-f4219e8fd373"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Dieta, kurioje mažai omega-6 polinesočiųjų riebalų rūgščių"/>
+			<column name="component_for_scoring" value="Omega-6 polinesočiųjų riebalų rūgštys"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="c10c7b7f-a727-4f74-a8f4-c57f9a8b7dbf"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Dieta, kurioje mažai jūros gėrybių omega-3 riebalų rūgščių"/>
+			<column name="component_for_scoring" value="Jūros gėrybių Omega-3 riebalų rūgštys"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="5d2b6e34-bfbf-44f3-8d0c-043238f8e5b2"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Dieta, kurioje mažai daržovių"/>
+			<column name="component_for_scoring" value="Daržovės"/>
+		</insert>
+
+		<insert tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="recommendation_id" value="9742cc31-1512-4bb0-8a7e-670fe62420e6"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Dieta, kurioje mažai pilnagrūdžių produktų"/>
+			<column name="component_for_scoring" value="Pilno grūdo produktai"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="localization_role-or-technique_LT" author="nikospara">
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="f56b72c0-4af0-4e4b-99a8-83bd31c6f7d8"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pagrindinė kepsnio dalis"/>
+			<column name="explanation_for_llm" value="Pagrindinis ingredientas, kuris suteikia kramtymo malonumo ir yra lėkštės akcentas."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="29739438-82da-477f-95cd-8dd1218245c4"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumalta padaže"/>
+			<column name="explanation_for_llm" value="Maltas ingredientas, kuris išsisklaido padaže, suteikdamas jam sodrumo, tekstūros ir pikantiškumo."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="34f204c3-86fa-42f5-beca-f6d721acdcda"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kubelių troškinys"/>
+			<column name="explanation_for_llm" value="Susmulkintas ingredientas, kuris išlaiko formą ir suteikia pikantiškumo lėtai ruošiamiems patiekalams."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="f3cead4d-2f32-4fc3-81e1-6d1f1c5491ca"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kvapiosios medžiagos"/>
+			<column name="explanation_for_llm" value="Mažas skonio ingredientas, naudojamas sūrumui, dūmo poskoniui ir skonio gilumui suteikti."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="17b15a95-e6f7-4ffe-80bb-f1195df66f20"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sumuštinio įdaras"/>
+			<column name="explanation_for_llm" value="Pagrindinis sumuštinio įdaras, suteikiantis apimties ir pikantiško skonio."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="e8decf2f-490d-46f6-9f2d-cb8fd4a938b4"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Duonos pica"/>
+			<column name="explanation_for_llm" value="Pagrindinis ingredientas, suteikiantis picos stiliaus patiekalui struktūrą."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="e26f84e8-e4d7-478b-9dcf-62fe1843861f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Makaronai"/>
+			<column name="explanation_for_llm" value="Pagrindinis krakmolo pagrindas, suteikiantis struktūrą ir tūrį."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="7d7df8bd-19fb-4eca-840a-1646e4fef3c4"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sūrymo pakuotė"/>
+			<column name="explanation_for_llm" value="Tunas, konservuotas sūryme ir naudojamas kaip baltymų šaltinis patiekale."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="a48f52f8-a47c-4212-a0d3-bd9c7a64f828"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Prieskoniai"/>
+			<column name="explanation_for_llm" value="Prieskonių ingredientas, naudojamas sūrumui ir umami skoniu suteikti."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="a65f8ec5-f742-4ec7-85f3-3eb6d474977a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Padažo priedas"/>
+			<column name="explanation_for_llm" value="Ingredientas, dedamas į padažą, kad suteiktų jam tirštumo, skonio ir maistingumo."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="be4c1a78-e01e-4067-b42d-c20e79070c6f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Čili mėsainiai"/>
+			<column name="explanation_for_llm" value="Baltymų pagrindas, naudojamas mėsainių arba čili mišinio gamybai."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="52024da0-d7af-414a-aa1b-611fe0ac672d"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sauté riebalai"/>
+			<column name="explanation_for_llm" value="Riebalai, naudojami maisto ruošimui, drėgmės suteikimui ir tekstūros formavimuisi."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="13af976e-e053-4aab-9691-275886aebf61"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pabaigoje įdedamas aliejus"/>
+			<column name="explanation_for_llm" value="Aliejus, įdedamas į produktą gamybos pabaigoje, dėl kvapo ir sodrumo."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="0ec80286-8a15-4e70-8188-5de62032bd66"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Grietinėlės pakaitalas"/>
+			<column name="explanation_for_llm" value="Grietinėlės pakaitalas, naudojamas padažui išlaikyti kreminį."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="aa8763cc-b321-44f8-a156-72f1863f9ad0"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Duona"/>
+			<column name="explanation_for_llm" value="Duonos komponentas, suteikiantis struktūrą ir tūrį."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="11c5ca34-b3a8-4566-973a-30710f6ddc00"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kepimo riebalai"/>
+			<column name="explanation_for_llm" value="Riebalai, naudojami maisto ruošimui, drėgmės suteikimui ir tekstūros formavimuisi."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="520de1cf-849d-4daf-8de7-cc11badfdd34"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Užpilas"/>
+			<column name="explanation_for_llm" value="Traškumui ir papildomoms maistinėms medžiagoms pridėti užpilai."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="c59d848b-d430-4edf-a4d8-c5f16d595557"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Gėrimas"/>
+			<column name="explanation_for_llm" value="Funkcinis patiekalo ingredientas, atliekantis gėrimo funkciją."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="9c5a8aee-df52-4764-ad8b-9235957028f0"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pakaitalas"/>
+			<column name="explanation_for_llm" value="Pakaitinis ingredientas, naudojamas kaip pagrindinis patiekalo pakaitalas."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="c896765e-e7f3-4513-89ac-1975bfd3269a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Greitas kepimas riebaluose"/>
+			<column name="explanation_for_llm" value="Baltymų komponentas, naudojamas greito kepimo metu."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="7f9e1147-a2de-41fb-a611-79c27da38ed2"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Daržovių papildymas"/>
+			<column name="explanation_for_llm" value="Daržovių priedas naudojamas tūriui ir maistinių medžiagų kiekiui padidinti."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="24b87e27-8d07-4ba6-9989-6b342228f6af"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sultinio pagrindas"/>
+			<column name="explanation_for_llm" value="Bazinis ingredientas, naudojamas sriubų ar padažų skoniui sustiprinti."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="17f6b8f6-bf3b-47f9-ab6c-cf1b6b1bd7f3"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kario kubeliai"/>
+			<column name="explanation_for_llm" value="Funkcinis patiekalo ingredientas, atliekantis kario kubelių vaidmenį."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="0b850f2d-5183-4876-b783-0ef50fd0788b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Padažo sodriklis"/>
+			<column name="explanation_for_llm" value="Funkcinis patiekalo ingredientas, kuris atlieka padažo sodrinimo funkciją."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="6f53e9ea-62a9-492d-9ac3-1f877b8ec067"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Miltų ir riebalų mišinio rišamoji medžiaga"/>
+			<column name="explanation_for_llm" value="Miltai, naudojami padažui tirštinti ir surišti."/>
+		</insert>
+
+		<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION">
+			<column name="role_or_technique_id" value="94ee4768-08cb-4bb4-ba7d-b5f4eb6ead85"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Pagrindinis patiekalas"/>
+			<column name="explanation_for_llm" value="Pagrindinis valgio angliavandenių pagrindas."/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="localization_rule_LT" author="nikospara">
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="6629b06b-2756-4e26-ace8-95c1fda46cfe"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Suteikia augalinės kilmės tekstūras, kurios gerai dera su padažais, išlaikant pikantišką sodrumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="86b9386f-7b10-4d54-8278-c5d86c6986ff"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Dėmesys sutelkiamas į stambesnias alternatyvas, kurios išlaiko formą ilgai verdant ar troškinant."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="f5108072-08c1-490a-b29c-877e987af2c4"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Pirmenybę teikia tvirto skonio ir daug umami turintiems variantams, kurie yra pagrindinis patiekalo akcentas."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="79c845bb-ff9c-4a0e-9188-d2f9050f42c1"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Suteikia augalinės kilmės tekstūras, kurios gerai dera su padažais, išlaikant pikantišką sodrumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="d27a01f2-071e-4b18-9a8d-6d86e3ef1dce"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Dėmesys sutelkiamas į stambesnes alternatyvas, kurios išlaiko formą ilgai verdant ar troškinant."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="ef63a7c5-3c90-429c-9e6f-c0855a1d7cfb"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Skonis optimizuotas siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="95fcf98d-fc75-4773-9034-22ad58584a1a"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas sumuštinių įdarui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="a256697c-5499-4092-a396-9f92846c5a96"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Padidina skaidulų ir neskaldytų grūdų kiekį, išsaugant struktūrinį vientisumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="6b785198-5d70-4bb3-8726-d0641b63a136"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Padidina skaidulų ir neskaldytų grūdų kiekį, išsaugant struktūrinį vientisumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="03c6e864-56b9-4021-81d0-8d32237d770d"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuota sūrymo rinkiniui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="a77ad055-68a7-4bf1-8df3-3556b558cc97"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuota sūrymo rinkiniui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="34809532-d1b8-411e-abad-4e555208e90a"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Suteikia augalinės kilmės tekstūras, kurios gerai dera su padažais, išlaikant pikantišką sodrumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="ef71fd4d-9336-48e0-8eda-f17f00049185"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuota čili mėsainiams, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="8ea10b07-f5c2-4e85-b945-e961de04f89a"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Subalansuoja temperatūros stabilumą gaminant maistą su sveikesniu riebalų rūgščių profiliu."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="fd0cea8e-6de5-4f05-92ca-6163800513f1"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Subalansuoja temperatūros stabilumą gaminant maistą su sveikesniu riebalų rūgščių profiliu."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="353761e8-5bfb-463d-9f33-f98f38214003"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Subalansuoja temperatūros stabilumą gaminant maistą su sveikesniu riebalų rūgščių profiliu."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="d4db67a2-014f-4633-8758-a707a98e92f1"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuota grietinėlės pakeitimui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="cced2b7d-20ef-46a9-9436-29ea329e16a9"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas pagrindiniam produktui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="1af76d00-3ce2-4ed1-b4bd-1f62cc47e62a"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Padidina skaidulų ir neskaldytų grūdų kiekį, išsaugant struktūrinį vientisumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="73fadee5-254e-430b-82c6-324f12e055a9"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Subalansuoja temperatūros stabilumą gaminant maistą su sveikesniu riebalų rūgščių profiliu."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="6e1d7e0e-69f8-4674-87a1-3fde00db1db1"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas užpilams, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="34da01e0-a3cb-4103-a2fe-c361d2a0b15d"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="29a0ae17-6496-4bb8-8433-21fcfec1dab9"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuota gėrimams, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="729e0c53-ec38-4235-aefb-e3c5a1448805"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="e360daf9-0f60-4e96-b26b-0694a497c82e"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas kepimui maišant, siekiant užtikrinti, kad pakaitalas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="674d85f1-49b8-4e5b-965e-03fd9a8d362a"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Padidina maistinių medžiagų kiekį nepakenkiant patiekalo skonio profiliui."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="c63dbc46-4de6-43f2-90b2-46416c7603ed"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuota sultinio pagrindui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="efd2ae9e-73af-494a-bced-5f276a8d3e6e"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Dėmesys sutelkiamas į stambesnes alternatyvas, kurios išlaiko formą ilgai verdant ar troškinant."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="b11ed3ed-5f68-4e68-b7d9-aef470ff7500"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Suteikia augalinės kilmės tekstūras, kurios gerai dera su padažais, išlaikant pikantišką sodrumą."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="1a2bc6cd-7489-42ec-a273-2815c5c6f5d2"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas padažo rišikliui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+
+		<insert tableName="DW_RULE_TRANSLATION">
+			<column name="rule_id" value="e4e0d1c6-cd85-48f7-8a6c-cee7e08917b6"/>
+			<column name="lang" value="LT"/>
+			<column name="rationale" value="Optimizuotas pagrindiniam produktui, siekiant užtikrinti, kad pakeitimas atitiktų patiekalo struktūrą ir skonį."/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="localization_suggestion-template_LT" author="nikospara">
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="90984ed6-5e6b-4381-ac0d-92b6dd3cf503"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka mėsainiams be rišiklio"/>
+			<column name="equivalence" value="1:1 (200 g jautienos → 200 g virtų lęšių) arba 200 g jautienos → 120 g lęšių + 150 g pievagrybių"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="ce09b981-0d78-499a-9430-42a324d665a4"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka turintiems alergiją sojoms"/>
+			<column name="equivalence" value="1:1 (200 g jautienos → 200 g virtų lęšių) arba 200 g jautienos → 120 g lęšių + 150 g pievagrybių"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="197b3d2c-2c80-4702-b4fd-72ba94318961"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Naudoti tik padažams"/>
+			<column name="equivalence" value="1:1 (200 g jautienos → 200 g virtų lęšių) arba 200 g jautienos → 120 g lęšių + 150 g pievagrybių"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="153ff634-5f6d-44a7-90d7-4080329ab4fd"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Vengti nevartojantiems gliuteno"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="c9601a0e-515a-47b5-82a6-6007e3950a5a"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka greitam kepimui keptuvėje"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="0263fd54-2dc3-43f4-afcf-40ad5a5e5b6f"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Mažiau proteino"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="faa27b53-6696-4178-8116-1ddccc63cb81"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Vengti nevartojantiems gliuteno"/>
+			<column name="equivalence" value="1:1 pagal vienetų skaičių (apie 150–200 g)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f9d8fdf0-89bc-4a50-a84d-ad4d0061a692"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Nuspausti prieš 20 minučių iki kepimo"/>
+			<column name="equivalence" value="1:1 pagal vienetų skaičių (apie 150–200 g)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="770bbfeb-7a5f-48c1-99d0-91c58856e9df"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Mažiau proteino/geležies"/>
+			<column name="equivalence" value="1:1 pagal vienetų skaičių (apie 150–200 g)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="64f02c55-1763-4940-bfb8-31acadfc40e3"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Vengti turintiems alergiją sojoms"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f52ff745-8b20-4f7d-96f3-a54b89de0185"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Minkštesnė patiekalo struktūra"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="4dd27a45-fb6d-4983-824b-c0a0e8e99862"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Naudoti tik padažams"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="943d545b-5880-4da7-820f-8d64b97a3ad9"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Vengti nevartojantiems gliuteno"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="c535d78d-3cce-4c7c-9eda-7f19b30ca461"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Nuspausti prieš gaminant"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="e781bf4e-dbfb-4f42-a7e7-0cd65ebcff28"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Mažiau proteino"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="5e0b5d4b-6c7d-462d-b380-c299fb3fb2ff"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Tik veganiškas"/>
+			<column name="equivalence" value="50–100 g šoninės pakeiskite 120 g rūkyto tofu."/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="5446a40f-b0f7-4942-99d5-da7fe9f632eb"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka veganams, jei naudojami ančiuviai"/>
+			<column name="equivalence" value="50–100 g šoninės pakeiskite 120 g rūkyto tofu."/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f0c1890d-7f14-4252-bf35-979188185b9a"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Naudoti mažus kiekius"/>
+			<column name="equivalence" value="50–100 g šoninės pakeiskite 120 g rūkyto tofu."/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="2b7fe2ce-0ad3-4999-b3ba-618bd10e56fc"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka turintiems alergiją riešutams"/>
+			<column name="equivalence" value="1 riekė → 40–60 g užtepėlės"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="a3db93ee-2750-43a2-a342-3384847e97b1"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Jei galite vartoti žuvį"/>
+			<column name="equivalence" value="1 riekė → 40–60 g užtepėlės"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="6d46edb5-d4fc-4f5c-8130-3e74125d6bd7"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Mažiau proteino nei mėsoje"/>
+			<column name="equivalence" value="1 riekė → 40–60 g užtepėlės"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="12e06b1e-ef4e-4faf-ac3f-6b7a475e9798"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Hidratacijos + atsparumo reguliavimas"/>
+			<column name="equivalence" value="Pradėkite sumaišant 30–50 % mišinio"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="7936526c-608a-4d1d-92f8-211649a4f111"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi patiekalo struktūra"/>
+			<column name="equivalence" value="Pradėkite sumaišant 30–50 % mišinio"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="90fffe1d-0302-4b97-990f-a80220d5316d"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi gliuteno kiekis patiekale"/>
+			<column name="equivalence" value="Pradėkite sumaišant 30–50 % mišinio"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="2294bf8d-55a5-4b9d-aab2-92d9bbf1ece1"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="c666d842-2cb0-4343-97e1-ee31a9b0c98a"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="c2653d4a-c057-4303-a5a4-a2cf7d2939f8"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="2e8120b9-a1b3-46e4-a465-a9b51770106e"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="69bb34cb-a9ac-4be4-89cb-ea98e5a131f4"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Nuskalauti prieš naudojant"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="cf74c92a-ae6a-4e48-b09a-7f36b1bc44d4"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Susimaišo tekstūra"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="79e7dfd4-7d44-4c9e-8a28-152d37f0067b"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Naudokite 50–75 % pradinio druskų kiekio"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="8dfd52c6-adca-41cc-8090-3e5c5910a010"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Saldesnis patiekalas"/>
+			<column name="equivalence" value="Naudokite 50–75 % pradinio druskų kiekio"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f679699a-4147-4816-935f-d267bf2d2e22"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Nesilaikyti 1:1 proporcijos greitai kepant"/>
+			<column name="equivalence" value="Naudokite 50–75 % pradinio druskų kiekio"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="98776a12-bca9-44e1-8855-e38c350374f3"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="+150-250 g papildomų daržovių keturioms porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="3134c38f-e32a-437c-8caa-b8e8c2a852a0"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Galimas vandens sumažėjimas"/>
+			<column name="equivalence" value="+150-250 g papildomų daržovių keturioms porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="ba74b6fb-d115-400b-896e-acc8fb70cea9"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Stebėkite skiedimą"/>
+			<column name="equivalence" value="+150-250 g papildomų daržovių keturioms porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="6bcb3918-acbd-46f2-8fd0-b6716f04e477"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pakaitalas arba į 200 g mėsos įberkite 80–150 g pupelių"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="989115b3-ce2f-46ef-8369-2b37ac402246"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Pasitikrinti dėl sojų alergenų"/>
+			<column name="equivalence" value="1:1 pakaitalas arba į 200 g mėsos įberkite 80–150 g pupelių"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="d71779c8-9018-40d4-9404-6613903e6fd0"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Reikalingas medžiagų surišiklis"/>
+			<column name="equivalence" value="1:1 pakaitalas arba į 200 g mėsos įberkite 80–150 g pupelių"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="895b0c46-3199-4bcc-9d57-d34aa64ca618"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal tūrį kepimui"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="e83a5eb2-3cf7-467e-a78c-65feb6774dc6"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal tūrį kepimui"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="06e2a74b-880c-4f29-a231-926e16072518"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Vis dar šiek tiek sočiųjų riebalų"/>
+			<column name="equivalence" value="1:1 pagal tūrį kepimui"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="50b55971-9c0b-4df9-a74a-53c7ce1d696f"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi patiekalo struktūra"/>
+			<column name="equivalence" value="100 g sviesto → 75 g aliejaus; jogurto pakaitalai gali skirtis"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="5f1aa6b4-0049-4648-9b83-4c9beb243efc"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Drėgmės pokytis"/>
+			<column name="equivalence" value="100 g sviesto → 75 g aliejaus; jogurto pakaitalai gali skirtis"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f31e5a1c-baf3-4b43-b4e8-c1e27d5751e7"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Gali turėti įtakos skoniui"/>
+			<column name="equivalence" value="100 g sviesto → 75 g aliejaus; jogurto pakaitalai gali skirtis"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="61c52527-25c0-41fc-ae4c-504c106cec9c"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Naudokite 1–2 valgomuosius šaukštus 4 porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="d64e1166-15b4-413a-97e6-d06227775e9d"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka turinties alergiją riešutams"/>
+			<column name="equivalence" value="Naudokite 1–2 valgomuosius šaukštus 4 porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="41d5f0c2-9e01-462a-a986-cf89a6d8ce75"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Naudoti šaltą"/>
+			<column name="equivalence" value="Naudokite 1–2 valgomuosius šaukštus 4 porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="c9f86a5d-b4f0-4c1b-88be-57dc61917f4e"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 grietinėlės (stebėkite kaitinimą)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="5b699100-5322-4d9a-abdf-d7b12ed7d748"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Ne veganiškas"/>
+			<column name="equivalence" value="1:1 grietinėlės (stebėkite kaitinimą)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="643ff15f-fa0c-4f05-827b-bc7ce85276ef"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Tik veganiškas"/>
+			<column name="equivalence" value="1:1 grietinėlės (stebėkite kaitinimą)"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="6305ae93-271c-4f83-bdbf-92ec57fbe476"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="0287e78d-ac72-488b-82fb-6daa82039d8b"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f3d53920-9fc9-4a9f-a114-d26c667f22c2"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Glitimo kiekis"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="28263428-7528-4cf7-856a-2d7e62af303a"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="b3a2db2e-dc86-4e93-9cf2-2cfcf9cbead9"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="5d912cc3-d189-41eb-801c-5a0d7935b86c"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Alergija sėkloms"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="10cc078f-0845-4573-a3fa-e6aa91a117bd"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Patikrinti sočiųjų riebalų kiekį"/>
+			<column name="equivalence" value="Kiekvienu atveju atskirai"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="5b9e6254-0f57-4ccc-afee-c72fedd81b53"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi patiekalo struktūra"/>
+			<column name="equivalence" value="Kiekvienu atveju atskirai"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="90b65da7-9510-4ed6-b5b7-c0e52b674cb1"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi patiekalo skonis"/>
+			<column name="equivalence" value="Kiekvienu atveju atskirai"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="b7350590-3e4b-40b3-b53b-aae4fb59c765"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Įpilkite 20–40 g keturioms porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="fb2c2645-c6d3-4e65-8dbf-83b382466636"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Įpilkite 20–40 g keturioms porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="6f1bea7f-bcdc-4f23-99ca-0ebfc157b80e"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka turintiems alergiją riešutams"/>
+			<column name="equivalence" value="Įpilkite 20–40 g keturioms porcijoms"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="6266574d-0b7f-4d7f-8db3-084f710ea843"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="7df18df6-436e-499d-9e7a-96bf13b33b2f"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="1c284373-e3a3-4748-a4f9-20a769c2271b"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f31a8c7a-1676-4e60-952f-1449b8a60890"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="d72e25fc-c431-4cd4-bc45-e92ca06ea11c"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="e79df781-011f-4e1d-b158-8a4ec4e531fc"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="887069c8-d766-4abe-a155-f52440e717fb"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="e6cdf3c7-30da-4f33-a792-fbd3bed16be1"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="7d0cbf2b-1baa-406d-b344-3ab14ca1750c"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Ne veganiškas"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="60be7368-fd81-4833-ba76-f20ac9fadfd1"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="fd66827c-4d2b-4ead-b597-5691fc6790c5"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="ffe3e621-f7db-4779-aac7-8a44e53e1809"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Turi gliuteno"/>
+			<column name="equivalence" value="1:1 pagal svorį"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="e222b14c-89cf-4c42-a3d4-7817790cf51b"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Žiūrėti pastabas"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="7a5006f1-6b6e-4324-8f39-fc53e25d514a"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Žiūrėti pastabas"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f52a0abe-6101-43d8-9996-da1153e10d5b"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Žiūrėti pastabas"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="0b606207-ff35-46e8-bd93-df30955c9f12"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Naudoti 50% sodos"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="b8bb84c0-7010-473e-98b0-58459aa1f8d9"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Naudoti 50% sodos"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="6f7e8bbb-b949-4a9c-bb48-da384182dfe7"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="Naudoti 50% sodos"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Mažiau proteino"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="89ae6ce0-bf2f-4b17-b382-2bc78c8163b7"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Ne veganiškas"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="0e489ba0-3f89-4753-8f13-bc162fa0bbf1"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="03812cb8-9a02-449d-b479-ce76ad0ac8bb"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Ne veganiškas"/>
+			<column name="equivalence" value="200 ml grietinėlės → 200 ml kondensuoto pieno arba 150 ml nugriebto pieno su riebalų ir miltų padažu"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="d86224b9-55e4-4c48-b393-33b4ce03f01f"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Lieknesnis kūnas"/>
+			<column name="equivalence" value="200 ml grietinėlės → 200 ml kondensuoto pieno arba 150 ml nugriebto pieno su riebalų ir miltų padažu"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="ff55543b-cb07-449e-a34a-6994dd1eaf39"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Netinka turintiems alergiją riešutams"/>
+			<column name="equivalence" value="200 ml grietinėlės → 200 ml kondensuoto pieno arba 150 ml nugriebto pieno su riebalų ir miltų padažu"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="90dd1a72-20d1-4dc4-9ce5-d5bda7c611fe"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Gali patamsinti padažą"/>
+			<column name="equivalence" value="Pakeisti 25–50 %"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="235be467-7de0-4bf2-b67a-3deee39fa561"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi gliuteno kiekis patiekale"/>
+			<column name="equivalence" value="Pakeisti 25–50 %"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="29377189-eaaf-4061-9780-b75d715a4b2e"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" value="Keičiasi patiekalo skonis"/>
+			<column name="equivalence" value="Pakeisti 25–50 %"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="e1a8f6fb-3755-4436-a546-1736fbbe44b6"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="f05607bb-a8a4-4e72-a033-b06641ce85b2"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+
+		<insert tableName="DW_SUGGESTION_TEMPLATE_TRANSLATION">
+			<column name="suggestion_template_id" value="ff36aec6-c876-4e7f-9cd1-0910a30e9845"/>
+			<column name="lang" value="LT"/>
+			<column name="restriction" valueComputed="NULL"/>
+			<column name="equivalence" value="1:1 tūris"/>
+		</insert>
+	</changeSet>
+
+	<changeSet id="localization_trigger-ingredient_LT" author="nikospara">
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="f8e6df4f-72f5-4f92-b3ca-05328707fd5e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Jautiena"/>
+			<column name="explanation_for_llm" value="Raudona mėsa, kurioje natūraliai gausu sočiųjų riebalų rūgščių, yra siejama su padidėjusia lėtinių ligų rizika."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="f3cfdd6d-7f4c-419a-a53b-e6f4b9d17f2b"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Kiauliena"/>
+			<column name="explanation_for_llm" value="Raudona mėsa, kurioje natūraliai gausu sočiųjų riebalų rūgščių, yra siejama su padidėjusia lėtinių ligų rizika."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="4ff9a168-e0ee-4b26-b76a-c432e7f140e9"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Šoninė/Šoninės kubeliai"/>
+			<column name="explanation_for_llm" value="Labai perdirbta mėsa, kurioje yra daug druskų, nitratų ir sočiųjų riebalų."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="5e3ce795-acf3-48f4-a334-d0ff6e2eeb08"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mėsos gaminiai"/>
+			<column name="explanation_for_llm" value="Labai perdirbta mėsa, kurioje yra daug druskų, nitratų ir sočiųjų riebalų."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="8d0ac58d-6d87-4930-9cd8-dc8afb734e34"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Balti makaronai"/>
+			<column name="explanation_for_llm" value="Krakmolingas angliavandenis, iš kurio rafinavimo metu pašalintos natūralios skaidulos, vitaminai ir mineralai."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="764a34fa-26f5-43a7-b4b3-ae8f0f9d7d97"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Konservuotas tunas"/>
+			<column name="explanation_for_llm" value="Supakuotas baltymų šaltinis, kuriame dažnai yra daug pridėtinės druskos, gaunamo konservuojant sūriame vandenyje."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="f2427736-d9d5-4349-a03d-42db3f93df95"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sojų padažas"/>
+			<column name="explanation_for_llm" value="Fermentuotas pagardas; didelis natrio kiekis, kuris labai prisideda prie druskos suvartojimo."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="d607739a-e1ff-46bf-8ac4-f7247fcf2a67"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Bet koks mėsos padažas"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="652da138-84bf-46bc-aa40-0eb2c3f28aad"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Malta mėsa"/>
+			<column name="explanation_for_llm" value="Gyvūninės kilmės baltymų šaltinis, kuriam būdingas didelis sočiųjų riebalų kiekis ir maistinių skaidulų trūkumas."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="fd0450d0-7998-4e57-b6e6-f11f03e67265"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sviestas"/>
+			<column name="explanation_for_llm" value="Koncentruoti pieno riebalai, kuriuose yra daug sočiųjų riebalų rūgščių ir cholesterolio."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="97347f0e-15de-4689-9762-21d30f95d423"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Bendri riebalai"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="5743b9ea-af74-41a5-975d-a61591f2df8e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai pieno produktų turintis padažas"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="728af0fd-f56a-44d0-b2f9-25087934ff26"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Baltieji ryžiai"/>
+			<column name="explanation_for_llm" value="Krakmolingas angliavandenis, iš kurio rafinavimo metu pašalintos natūralios skaidulos, vitaminai ir mineralai."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="46f8f2e1-2ad1-4c4f-8983-540840ec7a80"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Šviesi duona"/>
+			<column name="explanation_for_llm" value="Krakmolingas angliavandenis, iš kurio rafinavimo metu pašalintos natūralios skaidulos, vitaminai ir mineralai."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="da5ee35c-1d75-4019-966f-10e17558f1fb"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Margarinas be hidrintų riebalų"/>
+			<column name="explanation_for_llm" value="Pramoninių riebalų šaltinis, kuriame gali būti iš dalies hidrintų aliejų"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="0cbfe219-6450-40ac-8947-58038ab399f4"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Salotų užpilas"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="d1a039dc-d4c1-4ace-97a7-f03918df1f8e"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Proteino pasirinkimas"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="f23fdc9d-444a-4df1-8ba5-c9231abe4f6f"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Saldintas gėrimas"/>
+			<column name="explanation_for_llm" value="Gėrimas, kuriame yra daug pridėtinio cukraus ir tuščių kalorijų, o maistinė vertė yra nereikšminga."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="9ecae8c4-fb67-4935-9dd0-600619f2fc6a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Mažai pieno produktų turintys pusryčiai"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="8f0125e5-cfcf-4dca-b4cb-cf13125ceff8"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="eb39d54c-11b0-4766-934d-a5bf5112472a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Makaronų patiekalas"/>
+			<column name="explanation_for_llm" valueComputed="NULL"/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="e2a4a35f-37ad-46b6-be35-c11d5a3060ec"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Sultinio kubelis"/>
+			<column name="explanation_for_llm" value="Koncentruoti prieskoniai, paprastai sudaryti iš didelio kiekio druskų ir sukietėjusių riebalų."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="36786d90-0f4d-40d5-98ca-6561514f0f43"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Ėriena"/>
+			<column name="explanation_for_llm" value="Raudona mėsa, kurioje natūraliai gausu sočiųjų riebalų rūgščių, yra siejama su padidėjusia lėtinių ligų rizika."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="c1948f9f-688e-48a8-a6ad-f09e39f7ef42"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Grietinėlė"/>
+			<column name="explanation_for_llm" value="Koncentruoti pieno riebalai, kuriuose yra daug sočiųjų riebalų rūgščių ir cholesterolio."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="f8491158-ef9f-41a4-9f5d-8fd43724b840"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Balti miltai"/>
+			<column name="explanation_for_llm" value="Krakmolingas angliavandenis, iš kurio rafinavimo metu pašalintos natūralios skaidulos, vitaminai ir mineralai."/>
+		</insert>
+
+		<insert tableName="DW_TRIGGER_INGREDIENT_TRANSLATION">
+			<column name="trigger_ingredient_id" value="fb0f7577-2f21-4c34-835a-3fda6567bc4a"/>
+			<column name="lang" value="LT"/>
+			<column name="name" value="Baltas kuskusas"/>
+			<column name="explanation_for_llm" value="Krakmolingas angliavandenis, iš kurio rafinavimo metu pašalintos natūralios skaidulos, vitaminai ir mineralai."/>
+		</insert>
+	</changeSet>
+</databaseChangeLog>

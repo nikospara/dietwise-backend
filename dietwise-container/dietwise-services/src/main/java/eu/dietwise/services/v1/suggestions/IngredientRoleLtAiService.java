@@ -12,7 +12,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 )
 @RequestScoped
 public interface IngredientRoleLtAiService {
-	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/roleOrTechnique-system.md")
-	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/roleOrTechnique-user.md")
+	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/lt/roleOrTechnique-system.md")
+	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/lt/roleOrTechnique-user.md")
 	String assessIngredientRole(String availableRolesAsMarkdownList, String ingredientNameInRecipe, String instructionsAsMarkdownList);
 }
