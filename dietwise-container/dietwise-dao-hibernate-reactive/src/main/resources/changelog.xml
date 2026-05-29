@@ -17,4 +17,5 @@
 	<include relativeToChangelogFile="true" file="changelogs/20260407_changes_after_ga_athens.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260410_internationalization.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260525_localization_LT.xml"/>
+	<include relativeToChangelogFile="true" file="changelogs/20260529_localization_NL.xml"/>
 </databaseChangeLog>

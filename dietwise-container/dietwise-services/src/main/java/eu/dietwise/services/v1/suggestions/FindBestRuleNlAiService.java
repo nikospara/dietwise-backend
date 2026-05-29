@@ -12,7 +12,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 )
 @RequestScoped
 public interface FindBestRuleNlAiService {
-	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/findBestRule-system.md")
-	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/findBestRule-user.md")
+	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/nl/findBestRule-system.md")
+	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/nl/findBestRule-user.md")
 	String findBestRule(String ingredientNameInRecipe, String ingredientRoleOrTechnique, String triggerIngredient, String dietaryComponentsMarkdownList, String filteredRulesMarkdownList);
 }

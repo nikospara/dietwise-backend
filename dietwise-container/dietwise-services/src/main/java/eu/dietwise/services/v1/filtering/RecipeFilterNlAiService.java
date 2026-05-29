@@ -9,7 +9,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 @RegisterAiService(modelName = "filterNl")
 @RequestScoped
 public interface RecipeFilterNlAiService {
-	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/extract-recipe-filter-block.md")
+	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/nl/extract-recipe-filter-block.md")
 	@UserMessage("{block}")
 	String filterRecipeBlock(String block);
 }

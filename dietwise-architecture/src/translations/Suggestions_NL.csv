@@ -1,0 +1,94 @@
+id,Alternative,Restriction,Equivalence,Translation of restriction,Translation of equivalence
+90984ed6-5e6b-4381-ac0d-92b6dd3cf503,Brown lentils (cooked),Not for burgers without binder,1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms,Niet voor burgers zonder bindmiddel,1:1 (200g rundvlees → 200g gekookte linzen) of 200g rundvlees → 120g linzen + 150g champignons
+ce09b981-0d78-499a-9430-42a324d665a4,Soy mince,Avoid if soy allergy,1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms,Vermijd bij soja-allergie,1:1 (200g rundvlees → 200g gekookte linzen) of 200g rundvlees → 120g linzen + 150g champignons
+197b3d2c-2c80-4702-b4fd-72ba94318961,Mushroom–lentil mix,Use only in sauces,1:1 (200g beef → 200g cooked lentils) or 200g beef → 120g lentils + 150g mushrooms,Alleen gebruiken in sauzen,1:1 (200g rundvlees → 200g gekookte linzen) of 200g rundvlees → 120g linzen + 150g champignons
+153ff634-5f6d-44a7-90d7-4080329ab4fd,Seitan chunks,Avoid if gluten-free,1:1 by weight,Vermijd bij glutenvrij dieet,1:1 op gewicht
+c9601a0e-515a-47b5-82a6-6007e3950a5a,Firm tofu cubes,Not suitable for quick stir-fry,1:1 by weight,Niet geschikt voor snelle roerbak,1:1 op gewicht
+0263fd54-2dc3-43f4-afcf-40ad5a5e5b6f,Young jackfruit chunks,Lower protein content,1:1 by weight,Lager eiwitgehalte,1:1 op gewicht
+faa27b53-6696-4178-8116-1ddccc63cb81,Seitan steak,Avoid if gluten-free,1:1 piece count (approx. 150–200g),Vermijd bij glutenvrij dieet,1:1 per stuk (ca. 150–200g)
+f9d8fdf0-89bc-4a50-a84d-ad4d0061a692,Tofu steak,Press 20 min before searing,1:1 piece count (approx. 150–200g),20 min uitpersen voor het aanbraden,1:1 per stuk (ca. 150–200g)
+770bbfeb-7a5f-48c1-99d0-91c58856e9df,Grilled portobello,Lower protein/iron,1:1 piece count (approx. 150–200g),Lager eiwit-/ijzergehalte,1:1 per stuk (ca. 150–200g)
+64f02c55-1763-4940-bfb8-31acadfc40e3,Soy mince,Avoid if soy allergy,1:1 by weight,Vermijd bij soja-allergie,1:1 op gewicht
+f52ff745-8b20-4f7d-96f3-a54b89de0185,Brown lentils (cooked),Texture softer,1:1 by weight,Zachtere textuur,1:1 op gewicht
+4dd27a45-fb6d-4983-824b-c0a0e8e99862,Mushroom–lentil mix,Use only in sauces,1:1 by weight,Alleen gebruiken in sauzen,1:1 op gewicht
+943d545b-5880-4da7-820f-8d64b97a3ad9,Seitan chunks,Avoid if gluten-free,1:1 by weight,Vermijd bij glutenvrij dieet,1:1 op gewicht
+c535d78d-3cce-4c7c-9eda-7f19b30ca461,Firm tofu cubes,Press first,1:1 by weight,Eerst uitpersen,1:1 op gewicht
+e781bf4e-dbfb-4f42-a7e7-0cd65ebcff28,Jackfruit chunks,Lower protein,1:1 by weight,Lager eiwitgehalte,1:1 op gewicht
+5e0b5d4b-6c7d-462d-b380-c299fb3fb2ff,Smoked tofu cubes,Vegan only,Replace 50–100g bacon with 120g smoked tofu,Alleen veganistisch,Vervang 50–100g spek door 120g gerookte tofu
+5446a40f-b0f7-4942-99d5-da7fe9f632eb,Olive oil + smoked paprika,Not suitable for vegan if anchovy used,Replace 50–100g bacon with 120g smoked tofu,Niet geschikt voor veganisten als ansjovis wordt gebruikt,Vervang 50–100g spek door 120g gerookte tofu
+f0c1890d-7f14-4252-bf35-979188185b9a,Mushroom + soy sauce,Use small amounts,Replace 50–100g bacon with 120g smoked tofu,Gebruik kleine hoeveelheden,Vervang 50–100g spek door 120g gerookte tofu
+2b7fe2ce-0ad3-4999-b3ba-618bd10e56fc,Hummus + walnut,Not for nut allergy,1 slice → 40–60g spread,Niet bij notenallergie,1 snee → 40–60g broodbeleg
+a3db93ee-2750-43a2-a342-3384847e97b1,Mackerel,If fish allowed,1 slice → 40–60g spread,Als vis is toegestaan,1 snee → 40–60g broodbeleg
+6d46edb5-d4fc-4f5c-8130-3e74125d6bd7,Roasted chickpea spread,Lower protein than meat,1 slice → 40–60g spread,Lager eiwitgehalte dan vlees,1 snee → 40–60g broodbeleg
+12e06b1e-ef4e-4faf-ac3f-6b7a475e9798,Whole grain flour (blend 50%),Hydration + proofing adjust,Start 30–50% blend,Hydratatie + rijstijd aanpassen,Begin met 30–50% mix
+7936526c-608a-4d1d-92f8-211649a4f111,Pulse flour blend (20–30%),Texture changes,Start 30–50% blend,Textuurveranderingen,Begin met 30–50% mix
+90fffe1d-0302-4b97-990f-a80220d5316d,Spelt (partial),Gluten content differs,Start 30–50% blend,Glutengehalte verschilt,Begin met 30–50% mix
+2294bf8d-55a5-4b9d-aab2-92d9bbf1ece1,Wholegrain pasta,,1:1 weight,,1:1 op gewicht
+c666d842-2cb0-4343-97e1-ee31a9b0c98a,Pulse pasta,,1:1 weight,,1:1 op gewicht
+c2653d4a-c057-4303-a5a4-a2cf7d2939f8,50/50 mix (white+wholegrain),,1:1 weight,,1:1 op gewicht
+2e8120b9-a1b3-46e4-a465-a9b51770106e,Fresh tuna,,1:1 weight,,1:1 op gewicht
+69bb34cb-a9ac-4be4-89cb-ea98e5a131f4,Canned in spring water,Rinse before use,1:1 weight,Afspoelen voor gebruik,1:1 op gewicht
+cf74c92a-ae6a-4e48-b09a-7f36b1bc44d4,Half tuna + half beans,Texture mix,1:1 weight,Textuurmix,1:1 op gewicht
+79e7dfd4-7d44-4c9e-8a28-152d37f0067b,Low-sodium soy sauce,,Use 50–75% of original sodium,,Gebruik 50–75% van het oorspronkelijke natrium
+8dfd52c6-adca-41cc-8090-3e5c5910a010,Coconut aminos,Sweeter profile,Use 50–75% of original sodium,Zoeter smaakprofiel,Gebruik 50–75% van het oorspronkelijke natrium
+f679699a-4147-4816-935f-d267bf2d2e22,Miso paste + water,Not 1:1 in stir-fries,Use 50–75% of original sodium,Niet 1:1 in roerbakgerechten,Gebruik 50–75% van het oorspronkelijke natrium
+98776a12-bca9-44e1-8855-e38c350374f3,Mushrooms + carrot + pepper,,+150–250g extra veg per 4p,,+150–250g extra groenten per 4p
+3134c38f-e32a-437c-8caa-b8e8c2a852a0,Spinach (chopped),Water down risk,+150–250g extra veg per 4p,Risico op verwaterd gerecht,+150–250g extra groenten per 4p
+ba74b6fb-d115-400b-896e-acc8fb70cea9,Courgette (grated),Watch dilution,+150–250g extra veg per 4p,Let op verdunning,+150–250g extra groenten per 4p
+6bcb3918-acbd-46f2-8fd0-b6716f04e477,+50–100% beans/lentils,,1:1 replacement or add 80–150g beans per 200g meat,,1:1 vervanging of voeg 80–150g bonen per 200g vlees toe
+989115b3-ce2f-46ef-8369-2b37ac402246,Replace 50–100% with soy mince,Check soy allergy,1:1 replacement or add 80–150g beans per 200g meat,Controleer op soja-allergie,1:1 vervanging of voeg 80–150g bonen per 200g vlees toe
+d71779c8-9018-40d4-9404-6613903e6fd0,Lentil–oat burger mix,Needs binder,1:1 replacement or add 80–150g beans per 200g meat,Heeft bindmiddel nodig,1:1 vervanging of voeg 80–150g bonen per 200g vlees toe
+895b0c46-3199-4bcc-9d57-d34aa64ca618,Olive oil,,1:1 by volume for sauté,,1:1 op volume voor bakken
+e83a5eb2-3cf7-467e-a78c-65feb6774dc6,Rapeseed oil,,1:1 by volume for sauté,,1:1 op volume voor bakken
+06e2a74b-880c-4f29-a231-926e16072518,Half butter/half oil,Still some sat fat,1:1 by volume for sauté,Nog steeds wat verzadigd vet,1:1 op volume voor bakken
+50b55971-9c0b-4df9-a74a-53c7ce1d696f,Neutral oil (75% of butter weight),Texture changes,100g butter → 75g oil; yogurt swaps vary,Textuurveranderingen,100g boter → 75g olie; yoghurtvervangingen variëren
+5f1aa6b4-0049-4648-9b83-4c9beb243efc,Greek yogurt (30–50% swap),Moisture shift,100g butter → 75g oil; yogurt swaps vary,Verschuiving in vochtigheid,100g boter → 75g olie; yoghurtvervangingen variëren
+f31e5a1c-baf3-4b43-b4e8-c1e27d5751e7,Apple sauce (up to 30%),Flavor impact,100g butter → 75g oil; yogurt swaps vary,Invloed op smaak,100g boter → 75g olie; yoghurtvervangingen variëren
+61c52527-25c0-41fc-ae4c-504c106cec9c,Extra virgin rapeseed oil,,Use 1–2 tbsp per 4p,,Gebruik 1–2 el per 4p
+d64e1166-15b4-413a-97e6-d06227775e9d,Walnut oil,Not for nut allergy,Use 1–2 tbsp per 4p,Niet bij notenallergie,Gebruik 1–2 el per 4p
+41d5f0c2-9e01-462a-a986-cf89a6d8ce75,Flaxseed oil,Use cold only,Use 1–2 tbsp per 4p,Alleen koud gebruiken,Gebruik 1–2 el per 4p
+c9f86a5d-b4f0-4c1b-88be-57dc61917f4e,Fortified oat drink,,1:1 for cream (watch heat),,1:1 voor room (let op warmte)
+5b699100-5322-4d9a-abdf-d7b12ed7d748,Low-fat yogurt,Not vegan,1:1 for cream (watch heat),Niet veganistisch,1:1 voor room (let op warmte)
+643ff15f-fa0c-4f05-827b-bc7ce85276ef,Silken tofu cream,Vegan only,1:1 for cream (watch heat),Alleen veganistisch,1:1 voor room (let op warmte)
+6305ae93-271c-4f83-bdbf-92ec57fbe476,Brown rice,,1:1 weight,,1:1 op gewicht
+0287e78d-ac72-488b-82fb-6daa82039d8b,Half brown/half white,,1:1 weight,,1:1 op gewicht
+f3d53920-9fc9-4a9f-a114-d26c667f22c2,Add barley (soup/stews),Gluten content,1:1 weight,Glutengehalte,1:1 op gewicht
+28263428-7528-4cf7-856a-2d7e62af303a,Wholegrain bread,,1:1 weight,,1:1 op gewicht
+b3a2db2e-dc86-4e93-9cf2-2cfcf9cbead9,Sourdough wholegrain,,1:1 weight,,1:1 op gewicht
+5d912cc3-d189-41eb-801c-5a0d7935b86c,Add seeds mix,Allergy seeds,1:1 weight,Allergie voor zaden,1:1 op gewicht
+10cc078f-0845-4573-a3fa-e6aa91a117bd,Butter or HO margarine,Check sat fat,Case-by-case,Controleer verzadigd vet,Per geval
+5b9e6254-0f57-4ccc-afee-c72fedd81b53,Olive oil swap (partial),Texture changes,Case-by-case,Textuurveranderingen,Per geval
+90b65da7-9510-4ed6-b5b7-c0e52b674cb1,Avocado purée (partial),Flavor shift,Case-by-case,Smaakverandering,Per geval
+b7350590-3e4b-40b3-b53b-aae4fb59c765,Sunflower seeds,,Add 20–40g per 4p,,Voeg 20–40g per 4p toe
+fb2c2645-c6d3-4e65-8dbf-83b382466636,Pumpkin seeds,,Add 20–40g per 4p,,Voeg 20–40g per 4p toe
+6f1bea7f-bcdc-4f23-99ca-0ebfc157b80e,Walnuts,Not for nut allergy,Add 20–40g per 4p,Niet bij notenallergie,Voeg 20–40g per 4p toe
+6266574d-0b7f-4d7f-8db3-084f710ea843,Mackerel,,1:1 weight,,1:1 op gewicht
+7df18df6-436e-499d-9e7a-96bf13b33b2f,Sardines,,1:1 weight,,1:1 op gewicht
+1c284373-e3a3-4748-a4f9-20a769c2271b,Salmon,,1:1 weight,,1:1 op gewicht
+f31a8c7a-1676-4e60-952f-1449b8a60890,Water + fruit infusion,,,,
+d72e25fc-c431-4cd4-bc45-e92ca06ea11c,Unsweetened tea,,,,
+e79df781-011f-4e1d-b158-8a4ec4e531fc,Sparkling water,,,,
+887069c8-d766-4abe-a155-f52440e717fb,Low-fat milk,,1:1 volume,,1:1 op volume
+e6cdf3c7-30da-4f33-a792-fbd3bed16be1,Fortified plant drink,,1:1 volume,,1:1 op volume
+7d0cbf2b-1baa-406d-b344-3ab14ca1750c,Skyr/yogurt,Not vegan,1:1 volume,Niet veganistisch,1:1 op volume
+60be7368-fd81-4833-ba76-f20ac9fadfd1,Tempeh,,1:1 weight,,1:1 op gewicht
+fd66827c-4d2b-4ead-b597-5691fc6790c5,Firm tofu,,1:1 weight,,1:1 op gewicht
+ffe3e621-f7db-4779-aac7-8a44e53e1809,Seitan,Not gluten-free,1:1 weight,Niet glutenvrij,1:1 op gewicht
+e222b14c-89cf-4c42-a3d4-7817790cf51b,Add 150–250g veg per 4p,,See note,,Zie opmerking
+7a5006f1-6b6e-4324-8f39-fc53e25d514a,Swap 50% pasta → veg noodles,,See note,,Zie opmerking
+f52a0abe-6101-43d8-9996-da1153e10d5b,Add legumes to sauce,,See note,,Zie opmerking
+0b606207-ff35-46e8-bd93-df30955c9f12,Low-salt stock,,Use 50% sodium,,Gebruik 50% natrium
+b8bb84c0-7010-473e-98b0-58459aa1f8d9,Homemade veg stock,,Use 50% sodium,,Gebruik 50% natrium
+6f7e8bbb-b949-4a9c-bb48-da384182dfe7,Half cube + extra herbs,,Use 50% sodium,,Gebruik 50% natrium
+b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c,Chickpea + aubergine mix,Lower protein,1:1 by volume,Lager eiwitgehalte,1:1 op volume
+89ae6ce0-bf2f-4b17-b382-2bc78c8163b7,Paneer (if dairy ok),Not vegan,1:1 by volume,Niet veganistisch,1:1 op volume
+0e489ba0-3f89-4753-8f13-bc162fa0bbf1,Tofu cubes,,1:1 by volume,,1:1 op volume
+03812cb8-9a02-449d-b479-ce76ad0ac8bb,Evaporated milk,Not vegan,200ml cream → 200ml evap or 150ml skim + roux,Niet veganistisch,200ml room → 200ml gecondenseerde melk of 150ml magere melk + roux
+d86224b9-55e4-4c48-b393-33b4ce03f01f,Skimmed milk + roux,Thinner body,200ml cream → 200ml evap or 150ml skim + roux,Dunnere body,200ml room → 200ml gecondenseerde melk of 150ml magere melk + roux
+ff55543b-cb07-449e-a34a-6994dd1eaf39,Cashew cream,Not for nut allergy,200ml cream → 200ml evap or 150ml skim + roux,Niet bij notenallergie,200ml room → 200ml gecondenseerde melk of 150ml magere melk + roux
+90dd1a72-20d1-4dc4-9ce5-d5bda7c611fe,Wholemeal flour (25–50%),May darken sauce,Replace 25–50%,Kan saus donkerder maken,Vervang 25–50%
+235be467-7de0-4bf2-b67a-3deee39fa561,Oat flour (partial),Gluten different,Replace 25–50%,Gluten verschilt,Vervang 25–50%
+29377189-eaaf-4061-9780-b75d715a4b2e,Chickpea flour (partial),Flavor shift,Replace 25–50%,Smaakverandering,Vervang 25–50%
+e1a8f6fb-3755-4436-a546-1736fbbe44b6,Wholewheat couscous,,1:1 volume,,1:1 op volume
+f05607bb-a8a4-4e72-a033-b06641ce85b2,Bulgur,,1:1 volume,,1:1 op volume
+ff36aec6-c876-4e7f-9cd1-0910a30e9845,Quinoa,,1:1 volume,,1:1 op volume

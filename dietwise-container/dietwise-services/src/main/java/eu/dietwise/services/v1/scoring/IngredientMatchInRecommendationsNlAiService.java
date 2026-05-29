@@ -12,7 +12,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 )
 @RequestScoped
 public interface IngredientMatchInRecommendationsNlAiService {
-	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/ingredientMatchInRecommendations-system.md")
-	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/ingredientMatchInRecommendations-user.md")
+	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/nl/ingredientMatchInRecommendations-system.md")
+	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/nl/ingredientMatchInRecommendations-user.md")
 	String matchIngredientsWithRecommendations(String availableRecommendationsAsMarkdownList, String ingredientNameInRecipe);
 }

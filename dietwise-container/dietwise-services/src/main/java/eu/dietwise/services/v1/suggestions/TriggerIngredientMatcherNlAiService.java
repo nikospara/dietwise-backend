@@ -12,7 +12,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 )
 @RequestScoped
 public interface TriggerIngredientMatcherNlAiService {
-	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/triggerIngredient-system.md")
-	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/triggerIngredient-user.md")
+	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/nl/triggerIngredient-system.md")
+	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/nl/triggerIngredient-user.md")
 	String matchIngredientToTrigger(String availableTriggerIngredientsAsMarkdownList, String ingredientNameInRecipe, String ingredientRoleOrTechnique);
 }
