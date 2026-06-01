@@ -21,7 +21,6 @@ import eu.dietwise.services.v1.extraction.impl.InvalidRecipeSourceUrlException;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
-import eu.dietwise.services.v1.suggestions.impl.NoRecipesDetectedException;
 import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
@@ -82,10 +81,8 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return emitInSequence(
 				statisticsService.assessedRecipe(user),
 				(_, _) -> recipeExtractionService.extractRecipeFromJsonLdOrMarkdown(correlationId, param),
-				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
-				(_, message) -> assessedRecipe(user, param.getUrl(), message),
-				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), param.getCountryOverride(), message),
-				(emitter, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
+				(emitter, message) -> emitExtractionAndClassify(emitter, user, correlationId, param.getUrl(), message),
+				(emitter, outcome) -> assessExtractionOutcome(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), param.getCountryOverride(), outcome),
 				this::handleError
 		);
 	}
@@ -99,38 +96,37 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return emitInSequence(
 				statisticsService.assessedRecipe(user),
 				(_, _) -> recipeExtractionService.extractRecipeFromUrl(correlationId, param),
-				(emitter, message) -> emitRecipeExtractionMessageOrNoRecipesError(emitter, correlationId, param.getUrl(), message),
-				(_, message) -> assessedRecipe(user, param.getUrl(), message),
-				(emitter, message) -> assessSingleRecipe(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), null, message),
-				(emitter, suggestionsResult) -> recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), param.getLang()).invoke(emitter::emit),
+				(emitter, message) -> emitExtractionAndClassify(emitter, user, correlationId, param.getUrl(), message),
+				(emitter, outcome) -> assessExtractionOutcome(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), null, outcome),
 				this::handleError
 		);
 	}
 
-	private Uni<? extends RecipeExtractionRecipeAssessmentMessage> emitRecipeExtractionMessageOrNoRecipesError(
+	private Uni<RecipeExtractionOutcome> emitExtractionAndClassify(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
+			User user,
 			UUID correlationId,
 			String url,
-			RecipeExtractionRecipeAssessmentMessage recipeExtractionRecipeAssessmentMessage
+			RecipeExtractionRecipeAssessmentMessage extraction
 	) {
-		if (recipeExtractionRecipeAssessmentMessage.recipes() == null || recipeExtractionRecipeAssessmentMessage.recipes().isEmpty()) {
+		RecipeExtractionOutcome outcome = RecipeExtractionOutcome.classify(extraction);
+		if (outcome instanceof RecipeExtractionOutcome.NoRecipes) {
 			LOG.warn("No recipes detected <{}> in {}", correlationId, url);
-			return Uni.createFrom().failure(new NoRecipesDetectedException());
-		} else {
-			emitter.emit(recipeExtractionRecipeAssessmentMessage);
-			return Uni.createFrom().item(recipeExtractionRecipeAssessmentMessage);
+			return Uni.createFrom().item(outcome);
 		}
+		emitter.emit(extraction);
+		return recordAssessedRecipe(user, url, extraction).replaceWith(outcome);
 	}
 
-	private Uni<? extends RecipeExtractionRecipeAssessmentMessage> assessedRecipe(User user, String url, RecipeExtractionRecipeAssessmentMessage recipeExtractionRecipeAssessmentMessage) {
-		int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
+	private Uni<User> recordAssessedRecipe(User user, String url, RecipeExtractionRecipeAssessmentMessage extraction) {
+		int numberOfRecipes = extraction.recipes().size();
 		String recipeName = numberOfRecipes == 1
-				? recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe().getName().orElse(null)
+				? extraction.recipes().getFirst().recipe().getName().orElse(null)
 				: "(multiple recipes)";
-		return statisticsService.assessedRecipe(user, url, recipeName).replaceWith(recipeExtractionRecipeAssessmentMessage);
+		return statisticsService.assessedRecipe(user, url, recipeName);
 	}
 
-	private Uni<? extends MakeSuggestionsResult> assessSingleRecipe(
+	private Uni<?> assessExtractionOutcome(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
 			UUID correlationId,
 			String applicationId,
@@ -138,22 +134,40 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			String url,
 			RecipeLanguage lang,
 			Country countryOverride,
-			RecipeExtractionRecipeAssessmentMessage recipeExtractionRecipeAssessmentMessage
+			RecipeExtractionOutcome outcome
 	) {
-		int numberOfRecipes = recipeExtractionRecipeAssessmentMessage.recipes().size();
-		if (numberOfRecipes != 1) {
-			LOG.warn("More than one recipe detected, will return error <{}> URL: {} ({} in total)", correlationId, url, numberOfRecipes);
-			// this signals handleError to emit MoreThanOneRecipesAssessmentMessage
-			return Uni.createFrom().failure(new MoreThanOneRecipesDetectedException(numberOfRecipes));
-		} else {
-			Recipe recipe = recipeExtractionRecipeAssessmentMessage.recipes().getFirst().recipe();
-			return forcm(
-					recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, lang, recipe, countryOverride),
-					result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()),
-					(result, _) -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message()),
-					(result, _, message) -> new MakeSuggestionsResult(message, result.recommendations())
-			).invoke(result -> emitter.emit(result.message()));
-		}
+		return switch (outcome) {
+			case RecipeExtractionOutcome.NoRecipes _ -> {
+				emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
+				yield Uni.createFrom().nullItem();
+			}
+			case RecipeExtractionOutcome.MultipleRecipes(int count) -> {
+				LOG.warn("More than one recipe detected, will return error <{}> URL: {} ({} in total)", correlationId, url, count);
+				emitter.emit(new MoreThanOneRecipesAssessmentMessage(count));
+				yield Uni.createFrom().nullItem();
+			}
+			case RecipeExtractionOutcome.SingleRecipe(Recipe recipe) ->
+					assessSingleRecipe(emitter, correlationId, applicationId, hasUserId, lang, countryOverride, recipe);
+		};
+	}
+
+	private Uni<?> assessSingleRecipe(
+			MultiEmitter<? super RecipeAssessmentMessage> emitter,
+			UUID correlationId,
+			String applicationId,
+			HasUserId hasUserId,
+			RecipeLanguage lang,
+			Country countryOverride,
+			Recipe recipe
+	) {
+		return forcm(
+				recipeSuggestionsService.makeSuggestions(correlationId, hasUserId, lang, recipe, countryOverride),
+				result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()),
+				(result, _) -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message()),
+				(result, _, message) -> new MakeSuggestionsResult(message, result.recommendations())
+		)
+				.invoke(result -> emitter.emit(result.message()))
+				.flatMap(result -> recipeScoringService.makeScoringMessage(result.recommendations(), lang).invoke(emitter::emit));
 	}
 
 	@Override
@@ -204,14 +218,10 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 
 	private <T extends Throwable> void handleError(MultiEmitter<? super RecipeAssessmentMessage> emitter, T error) {
 		switch (error) {
-			case NoRecipesDetectedException _ ->
-					emitter.emit(new RecipeAssessmentErrorMessage(List.of("No recipes detected on the page")));
 			case NoIngredientsInRecipeException _ ->
 					emitter.emit(new RecipeAssessmentErrorMessage(List.of("No ingredients could be detected")));
 			case InvalidRecipeSourceUrlException _ ->
 					emitter.emit(new RecipeAssessmentErrorMessage(List.of("The supplied URL is not allowed")));
-			case MoreThanOneRecipesDetectedException mto ->
-					emitter.emit(new MoreThanOneRecipesAssessmentMessage(mto.getNumberOfRecipes()));
 			case CircuitBreakerOpenException _ ->
 					emitter.emit(new RecipeAssessmentErrorMessage(List.of("The AI service is temporarily unavailable, please try again in a few seconds")));
 			case null, default -> {
