@@ -83,6 +83,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(_, _) -> recipeExtractionService.extractRecipeFromJsonLdOrMarkdown(correlationId, param),
 				(emitter, message) -> emitExtractionAndClassify(emitter, user, correlationId, param.getUrl(), message),
 				(emitter, outcome) -> assessExtractionOutcome(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), param.getCountryOverride(), outcome),
+				(emitter, suggestionsResult) -> emitScoringMessage(emitter, suggestionsResult, param.getLang()),
 				this::handleError
 		);
 	}
@@ -98,6 +99,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				(_, _) -> recipeExtractionService.extractRecipeFromUrl(correlationId, param),
 				(emitter, message) -> emitExtractionAndClassify(emitter, user, correlationId, param.getUrl(), message),
 				(emitter, outcome) -> assessExtractionOutcome(emitter, correlationId, applicationId, user, param.getUrl(), param.getLang(), null, outcome),
+				(emitter, suggestionsResult) -> emitScoringMessage(emitter, suggestionsResult, param.getLang()),
 				this::handleError
 		);
 	}
@@ -126,7 +128,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return statisticsService.assessedRecipe(user, url, recipeName);
 	}
 
-	private Uni<?> assessExtractionOutcome(
+	private Uni<MakeSuggestionsResult> assessExtractionOutcome(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
 			UUID correlationId,
 			String applicationId,
@@ -151,7 +153,7 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		};
 	}
 
-	private Uni<?> assessSingleRecipe(
+	private Uni<MakeSuggestionsResult> assessSingleRecipe(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
 			UUID correlationId,
 			String applicationId,
@@ -165,9 +167,22 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 				result -> recipeSuggestionsService.increaseTimesSuggested(correlationId, applicationId, hasUserId, result.message()),
 				(result, _) -> recipeSuggestionsService.enrichWithStatistics(correlationId, applicationId, hasUserId, result.message()),
 				(result, _, message) -> new MakeSuggestionsResult(message, result.recommendations())
-		)
-				.invoke(result -> emitter.emit(result.message()))
-				.flatMap(result -> recipeScoringService.makeScoringMessage(result.recommendations(), lang).invoke(emitter::emit));
+		).invoke(result -> emitter.emit(result.message()));
+	}
+
+	private Uni<?> emitScoringMessage(
+			MultiEmitter<? super RecipeAssessmentMessage> emitter,
+			MakeSuggestionsResult suggestionsResult,
+			RecipeLanguage lang
+	) {
+		// After the introduction of the RecipeExtractionOutcome, no exception is thrown in the previous stages. Now
+		// that there are no exceptions, the chain runs to completion on every path. Therefore, this explicit guard
+		// because assessExtractionOutcome yields a nullItem for the terminal NoRecipes/MultipleRecipes cases, and that
+		// null flows down to the scoring stage (Mutiny passes null items through flatMap).
+		if (suggestionsResult == null) {
+			return Uni.createFrom().nullItem();
+		}
+		return recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), lang).invoke(emitter::emit);
 	}
 
 	@Override
