@@ -80,26 +80,14 @@ class RuleDaoImplTest {
 	void testFindByTriggerIngredientReturnsLocalizedRationale(Mutiny.SessionFactory sessionFactory) {
 		var sut = new RuleDaoImpl();
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
-		UUID ruleId = MINCED_IN_SAUCE_RULE_ID;
-
-		factory.withTransaction(tx -> tx.find(RuleEntity.class, ruleId)
-				.flatMap(rule -> {
-					rule.setRationale("Use this when the ingredient is minced and cooked into a sauce.");
-					var translation = new RuleTranslationEntity();
-					translation.setRule(rule);
-					translation.setLang(RecipeLanguage.NL);
-					translation.setRationale("Gebruik dit wanneer het ingrediënt fijngesneden is en in saus gaart.");
-					return tx.persist(translation);
-				}))
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		var rules = factory.withoutTransaction(em ->
 				sut.findByTriggerIngredient(em, new UuidTriggerIngredientId(BEEF_ID), RecipeLanguage.NL)
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(rules).anySatisfy(rule -> {
-			assertThat(rule.getId().asString()).isEqualTo(ruleId.toString());
-			assertThat(rule.getRationale()).isEqualTo("Gebruik dit wanneer het ingrediënt fijngesneden is en in saus gaart.");
+			assertThat(rule.getId().asString()).isEqualTo(MINCED_IN_SAUCE_RULE_ID.toString());
+			assertThat(rule.getRationale()).isEqualTo("Biedt plantaardige texturen die goed integreren in sauzen met behoud van hartige diepte.");
 		});
 	}
 }

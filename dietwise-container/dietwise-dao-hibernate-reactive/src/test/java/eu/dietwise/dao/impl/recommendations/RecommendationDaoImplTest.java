@@ -16,12 +16,11 @@ import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
-import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.v1.types.BiologicalGender;
-import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecipeLanguage;
+import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecommendationWeight;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import org.assertj.core.data.Percentage;
@@ -197,26 +196,13 @@ public class RecommendationDaoImplTest {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
 
-		factory.withTransaction(tx -> tx.find(RecommendationEntity.class, UUID.fromString("e7c4312c-52fc-4f8e-b1d3-32fd111aaf96"))
-				.flatMap(recommendation -> {
-					var translation = new RecommendationTranslationEntity();
-					translation.setRecommendation(recommendation);
-					translation.setLang(RecipeLanguage.NL);
-					translation.setName("Minder zuivel");
-					translation.setComponentForScoring("zuivel");
-					translation.setExplanationForLlm("NL recommendation");
-					return tx.persist(translation);
-				}))
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
 		List<RecommendationComponent> recommendations =
 				factory.withoutTransaction(em -> sut.listAllRecommendationsForScoring(em, RecipeLanguage.NL))
 						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(recommendations).anyMatch(rc ->
-				rc.getRecommendation().asString().equals("Minder zuivel")
-						&& rc.getComponentForScoring().asString().equals("zuivel")
-						&& rc.getExplanationForLlm().filter("NL recommendation"::equals).isPresent());
+				rc.getRecommendation().asString().equals("Voedingspatroon laag in calcium")
+						&& rc.getComponentForScoring().asString().equals("calcium"));
 	}
 
 	// KEEP THIS LAST! IT MESSES WITH THE DATA

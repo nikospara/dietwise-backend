@@ -16,8 +16,6 @@ import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientCostEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
-import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
-import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity;
 import eu.dietwise.v1.model.AppliesTo;
 import eu.dietwise.v1.model.ImmutableIngredient;
 import eu.dietwise.v1.types.ImmutableSeasonality;
@@ -41,8 +39,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 class SuggestionDaoImplTest {
 	private static final long ASYNC_WAIT_SECONDS = 300;
 
-	private static final UUID CURRY_CUBES_ID = UUID.fromString("17f6b8f6-bf3b-47f9-ab6c-cf1b6b1bd7f3");
-	private static final UUID LAMB_ID = UUID.fromString("36786d90-0f4d-40d5-98ca-6561514f0f43");
 	private static final UUID RULE_ID = UUID.fromString("efd2ae9e-73af-494a-bced-5f276a8d3e6e");
 	private static final UUID INGREDIENT_ID = UUID.fromString("67c852ee-f6d9-459e-94ff-93df60449da8");
 	private static final UUID CHICKPEA_AUBERGINE_MIX_ID = UUID.fromString("70000000-0000-0000-0000-000000000019");
@@ -180,27 +176,14 @@ class SuggestionDaoImplTest {
 				.nameInRecipe("beef mince")
 				.build();
 
-		factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, UUID.fromString("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c"))
-				.flatMap(suggestionTemplate -> {
-					var translation = new SuggestionTemplateTranslationEntity();
-					translation.setSuggestionTemplate(suggestionTemplate);
-					translation.setLang(RecipeLanguage.NL);
-					translation.setRestriction("Minder eiwit");
-					translation.setEquivalence("1:1 in volume");
-					translation.setTechniqueNotes("Rooster aubergine eerst");
-					return tx.persist(translation);
-				}))
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
 		var suggestions = factory.withoutTransaction(em ->
 				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient, RecipeLanguage.NL)
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(suggestions).anySatisfy(suggestion -> {
 			assertThat(suggestion.getId().asString()).isEqualTo("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c");
-			assertThat(suggestion.getRestriction()).contains("Minder eiwit");
-			assertThat(suggestion.getEquivalence()).contains("1:1 in volume");
-			assertThat(suggestion.getTechniqueNotes()).contains("Rooster aubergine eerst");
+			assertThat(suggestion.getRestriction()).contains("Lager eiwitgehalte");
+			assertThat(suggestion.getEquivalence()).contains("1:1 op volume");
 		});
 	}
 }

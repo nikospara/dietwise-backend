@@ -9,8 +9,6 @@ import java.util.UUID;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
-import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
-import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueTranslationEntity;
 import eu.dietwise.v1.types.RecipeLanguage;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.MethodOrderer;
@@ -48,17 +46,6 @@ class RoleOrTechniqueDaoImplTest {
 		var sut = new RoleOrTechniqueDaoImpl();
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 
-		factory.withTransaction(tx -> tx.find(RoleOrTechniqueEntity.class, ROLE_OR_TECHNIQUE_ID)
-				.flatMap(roleOrTechnique -> {
-					var translation = new RoleOrTechniqueTranslationEntity();
-					translation.setRoleOrTechnique(roleOrTechnique);
-					translation.setLang(RecipeLanguage.NL);
-					translation.setName("biefstuk middelpunt");
-					translation.setExplanationForLlm("NL explanation");
-					return tx.persist(translation);
-				}))
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
 		var roles = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.NL))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var role = roles.stream()
@@ -66,7 +53,7 @@ class RoleOrTechniqueDaoImplTest {
 				.findFirst()
 				.orElseThrow();
 
-		assertThat(role.getName()).isEqualTo("biefstuk middelpunt");
-		assertThat(role.getExplanationForLlm()).contains("NL explanation");
+		assertThat(role.getName()).isEqualTo("steak hoofdgerecht");
+		assertThat(role.getExplanationForLlm()).contains("Hoofd ingrediënt dat zorgt voor bijt en fungeert als het middelpunt van het bord.");
 	}
 }

@@ -136,4 +136,16 @@
 			referencedColumnNames="id"
 		/>
 	</changeSet>
+
+	<changeSet id="explanation_for_llm_increase_size_to_300" author="nikospara">
+		<modifyDataType tableName="DW_RECOMMENDATION" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_TRIGGER_INGREDIENT" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ROLE_OR_TECHNIQUE" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ALTERNATIVE_INGREDIENT" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<!-- Corresponding translation tables -->
+		<modifyDataType tableName="DW_RECOMMENDATION_TRANSLATION" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_TRIGGER_INGREDIENT_TRANSLATION" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+	</changeSet>
 </databaseChangeLog>

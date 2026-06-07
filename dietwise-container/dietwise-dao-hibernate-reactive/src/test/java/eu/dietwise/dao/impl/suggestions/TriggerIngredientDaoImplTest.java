@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.UUID;
+import jakarta.persistence.criteria.CriteriaDelete;
 
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity;
+import eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity_;
 import eu.dietwise.v1.types.RecipeLanguage;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.MethodOrderer;
@@ -48,6 +50,17 @@ class TriggerIngredientDaoImplTest {
 		var sut = new TriggerIngredientDaoImpl();
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 
+		factory.withTransaction(tx -> {
+			var cb = tx.getCriteriaBuilder();
+			CriteriaDelete<TriggerIngredientTranslationEntity> delete = cb.createCriteriaDelete(TriggerIngredientTranslationEntity.class);
+			var root = delete.from(TriggerIngredientTranslationEntity.class);
+			delete.where(cb.and(
+					cb.equal(root.get(TriggerIngredientTranslationEntity_.lang), "NL"),
+					cb.equal(root.get(TriggerIngredientTranslationEntity_.name), "Rundvlees")
+			));
+			return tx.createDelete(delete).execute();
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
 		var triggerIngredients = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.NL))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var triggerIngredient = triggerIngredients.stream()
@@ -66,14 +79,14 @@ class TriggerIngredientDaoImplTest {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 
 		factory.withTransaction(tx -> tx.find(TriggerIngredientEntity.class, TRIGGER_INGREDIENT_ID)
-				.flatMap(triggerIngredient -> {
-					var translation = new TriggerIngredientTranslationEntity();
-					translation.setTriggerIngredient(triggerIngredient);
-					translation.setLang(RecipeLanguage.NL);
-					translation.setName("Rundvlees");
-					translation.setExplanationForLlm("NL trigger");
-					return tx.persist(translation);
-				}))
+						.flatMap(triggerIngredient -> {
+							var translation = new TriggerIngredientTranslationEntity();
+							translation.setTriggerIngredient(triggerIngredient);
+							translation.setLang(RecipeLanguage.NL);
+							translation.setName("Rundvlees");
+							translation.setExplanationForLlm("NL trigger");
+							return tx.persist(translation);
+						}))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		var triggerIngredients = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.NL))

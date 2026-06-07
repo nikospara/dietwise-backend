@@ -14,7 +14,6 @@ import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
-import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Seasonality;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -91,17 +90,6 @@ class AlternativeIngredientDaoImplTest {
 		var sut = new AlternativeIngredientDaoImpl();
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 
-		factory.withTransaction(tx -> tx.find(AlternativeIngredientEntity.class, ALTERNATIVE_INGREDIENT_ID)
-						.flatMap(alternativeIngredient -> {
-							var translation = new AlternativeIngredientTranslationEntity();
-							translation.setAlternativeIngredient(alternativeIngredient);
-							translation.setLang(RecipeLanguage.NL);
-							translation.setName("Volkoren wrap");
-							translation.setExplanationForLlm(null);
-							return tx.persist(translation);
-						}))
-				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
 		var alternatives = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.NL))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var alternative = alternatives.stream()
@@ -109,7 +97,7 @@ class AlternativeIngredientDaoImplTest {
 				.findFirst()
 				.orElseThrow();
 
-		assertThat(alternative.getName()).isEqualTo("Volkoren wrap");
+		assertThat(alternative.getName()).isEqualTo("Bruine linzen (gekookt)");
 		assertThat(alternative.getExplanationForLlm()).isEmpty();
 	}
 
