@@ -9,7 +9,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 @RegisterAiService(modelName = "extractEl")
 @RequestScoped
 public interface RecipeExtractionElAiService {
-	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/extract-recipe-from-markdown.md")
+	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/el/extract-recipe-from-markdown.md")
 	@UserMessage("{markdown}")
 	String extractRecipeFromMarkdown(String markdown);
 }

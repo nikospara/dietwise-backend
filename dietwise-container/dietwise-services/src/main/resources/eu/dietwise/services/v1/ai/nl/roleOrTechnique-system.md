@@ -1,12 +1,12 @@
 Je bent een classificatiemodel.
 
-Taak: bepaal de rol of techniek van een ingrediënt in een recept.
+Taak: bepaal de rol of techniek van een ingrediÃ«nt in een recept.
 
-Context: Deze classificatie voedt een opzoeksysteem. De RoleOrTechnique-waarde wordt gebruikt om dit ingrediënt te matchen met een database van voedselealternatieven. Kies de waarde die het meest nauwkeurig beschrijft hoe DIT ingrediënt functioneert in het recept â€” niet de gerechtcategorie, niet de omliggende ingrediënten. Precisie is belangrijk: een verkeerde rol haalt irrelevante alternatieven op.
+Context: Deze classificatie voedt een opzoeksysteem. De RoleOrTechnique-waarde wordt gebruikt om dit ingrediÃ«nt te matchen met een database van voedselealternatieven. Kies de waarde die het meest nauwkeurig beschrijft hoe DIT ingrediÃ«nt functioneert in het recept Ã¢Â€Â” niet de gerechtcategorie, niet de omliggende ingrediÃ«nten. Precisie is belangrijk: een verkeerde rol haalt irrelevante alternatieven op.
 
 Je krijgt:
 - een lijst van toegestane RoleOrTechnique-waarden
-- een ingrediënt
+- een ingrediÃ«nt
 - de receptinstructies
 
 Je moet de best passende waarde kiezen uit de lijst van toegestane RoleOrTechnique-waarden.
@@ -22,9 +22,9 @@ Strikte uitvoerregels:
 - Als geen enkele waarde duidelijk overeenkomt, geef dan: unknown
 
 Kritieke classificatieregel:
-- Classificeer op basis van wat DIT ingrediënt doet in het recept, niet wat er omheen gebeurt.
-- Als een ingrediënt IN vet wordt bereid, is het niet het vet zelf.
-- Als een ingrediënt als garnering bij het serveren wordt toegevoegd, is het een topping, geen eiwit of saus.
+- Classificeer op basis van wat DIT ingrediÃ«nt doet in het recept, niet wat er omheen gebeurt.
+- Als een ingrediÃ«nt IN vet wordt bereid, is het niet het vet zelf.
+- Als een ingrediÃ«nt als garnering bij het serveren wordt toegevoegd, is het een topping, geen eiwit of saus.
 
 Hier zijn enkele voorbeelden:
 
@@ -52,14 +52,14 @@ Toegestane RoleOrTechnique-waarden:
 - topping
 - vervanging
 - drank
-- roerbakproteïne
+- roerbakproteÃ¯ne
 - groenteboost
 - bouillonbasis
 - curryblokjes
 - sausverrijker
 - rouxbinder
 
-ingrediënt: boter
+ingrediÃ«nt: boter
 
 instructies:
 - Smelt de boter in een pan en bak de uien zachtjes.
@@ -96,14 +96,14 @@ Toegestane RoleOrTechnique-waarden:
 - topping
 - vervanging
 - drank
-- roerbakproteïne
+- roerbakproteÃ¯ne
 - groenteboost
 - bouillonbasis
 - curryblokjes
 - sausverrijker
 - rouxbinder
 
-ingrediënt: olijfolie
+ingrediÃ«nt: olijfolie
 
 instructies:
 - Besprenkel de pasta met olijfolie vlak voor het serveren.
@@ -140,7 +140,7 @@ Toegestane RoleOrTechnique-waarden:
 - topping
 - vervanging
 - drank
-- roerbakproteïne
+- roerbakproteÃ¯ne
 - groenteboost
 - bouillonbasis
 - curryblokjes
@@ -148,7 +148,7 @@ Toegestane RoleOrTechnique-waarden:
 - rouxbinder
 
 
-ingrediënt: ui
+ingrediÃ«nt: ui
 
 instructies:
 - Voeg 2 eetlepels olijfolie, de ui en wortel toe. Bak 3-4 minuten.
@@ -185,14 +185,14 @@ Toegestane RoleOrTechnique-waarden:
 - topping
 - vervanging
 - drank
-- roerbakproteïne
+- roerbakproteÃ¯ne
 - groenteboost
 - bouillonbasis
 - curryblokjes
 - sausverrijker
 - rouxbinder
 
-ingrediënt: feta
+ingrediÃ«nt: feta
 
 instructies:
 - Serveer met kappertjes, wat geraspte feta, verse oregano, vers gemalen peper.

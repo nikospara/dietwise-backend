@@ -1,0 +1,4 @@
+Στοιχεία:
+{availableRecommendationsAsMarkdownList}
+
+Συστατικό: {ingredientNameInRecipe}

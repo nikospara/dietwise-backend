@@ -1,4 +1,4 @@
-We moeten volgend ingrediënt vervangen {ingredientNameInRecipe}.
+We moeten volgend ingrediÃ«nt vervangen {ingredientNameInRecipe}.
 De rol in het recept is {ingredientRoleOrTechnique}.
 De toegestane alternatieven zijn:
 {alternativesAsMarkdownList}

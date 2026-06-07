@@ -1,7 +1,7 @@
 Toegestane RoleOrTechnique-waarden:
 {availableRolesAsMarkdownList}
 
-ingrediënt: {ingredientNameInRecipe}
+ingrediÃ«nt: {ingredientNameInRecipe}
 
 instructies:
 {instructionsAsMarkdownList}
