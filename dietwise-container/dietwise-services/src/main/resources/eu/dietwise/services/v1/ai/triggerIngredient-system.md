@@ -18,8 +18,12 @@ Strict output rules:
 - Do not output punctuation or quotes.
 - Do not output multiple values.
 - Do not invent new values.
-- If no value clearly matches, output: unknown
-- If the ingredient is salt, olive oil or water output: unknown.
+- If no value clearly matches, output: unknown.
+- If the ingredient is water output: unknown.
+- If the ingredient is a vegetable output: unknown.
+- If the ingredient is tomato purée, tomato passata or tomato paste output: unknown. 
+- If the ingredient is a herb, a garnish or an aromatic output: unknown.
+- If the ingredient is olive oil, extra virgin olive oil, cooking spray (olive oil), light olive oil or any other variant of olive oil output: unknown.
 
 Here are a few examples:
 
@@ -27,36 +31,36 @@ Here are a few examples:
 
 ## User message
 Allowed trigger ingredient values:
-- Beef
-- Pork
-- Bacon/lardons
-- Luncheon meat
-- White flour
-- White pasta
-- Canned tuna
-- Soy sauce
-- Any meat sauce
-- Minced meat
-- Butter
-- General fat choice
-- Low-dairy sauce
-- White rice
-- Refined bread
+- Beef 
+- Pork 
+- Bacon/lardons 
+- Luncheon meat 
+- White flour 
+- White pasta 
+- Canned tuna 
+- Soy sauce 
+- meat-based sauce 
+- Mince meat (meat sauce)
+- Butter 
+- Cooking oil/fat (general)
+- Low-dairy sauce 
+- White rice 
+- Refined bread 
 - Margarine (non-HO)
-- Salad topping
-- Protein choice
-- SSB
-- Low-dairy breakfast
-- Roerbak proteïne
-- Pasta dishes
-- Stock cube
-- Lamb
-- Cream
+- Non-nut/seed topping/condiments (i.e. mayonnaise)
+- Protein choice (non-seafood)
+- SSB 
+- Low-dairy breakfast 
+- Stir-fry protein (non-legume)
+- Pasta (starch base)
+- Stock cube 
+- Lamb 
+- Cream 
 - White couscous
 
-ingredient: spaghetti
+ingredient: beef mince
 
-roleOrTechnique: pasta
+roleOrTechnique: minced in sauce
 
 Select the trigger ingredient value.
 
@@ -64,7 +68,7 @@ Output only the value.
 
 ## Assistant message
 
-White pasta
+Mince meat (meat sauce)
 
 # Example 2
 
@@ -78,28 +82,28 @@ Allowed trigger ingredient values:
 - White pasta
 - Canned tuna
 - Soy sauce
-- Any meat sauce
-- Minced meat
+- meat-based sauce
+- Mince meat (meat sauce)
 - Butter
-- General fat choice
+- Cooking oil/fat (general)
 - Low-dairy sauce
 - White rice
 - Refined bread
 - Margarine (non-HO)
-- Salad topping
-- Protein choice
+- Non-nut/seed topping/condiments (i.e. mayonnaise)
+- Protein choice (non-seafood)
 - SSB
 - Low-dairy breakfast
-- Roerbak proteïne
-- Pasta dishes
+- Stir-fry protein (non-legume)
+- Pasta (starch base)
 - Stock cube
 - Lamb
 - Cream
 - White couscous
 
-ingredient: olive oil
+ingredient: extra virgin olive oil
 
-roleOrTechnique: finish oil
+roleOrTechnique: sauté fat
 
 Select the trigger ingredient value.
 
@@ -107,7 +111,7 @@ Output only the value.
 
 ## Assistant message
 
-General fat choice
+unknown
 
 # Example 3
 
@@ -121,29 +125,68 @@ Allowed trigger ingredient values:
 - White pasta
 - Canned tuna
 - Soy sauce
-- Any meat sauce
-- Minced meat
+- meat-based sauce
+- Mince meat (meat sauce)
 - Butter
-- General fat choice
+- Cooking oil/fat (general)
 - Low-dairy sauce
 - White rice
 - Refined bread
 - Margarine (non-HO)
-- Salad topping
-- Protein choice
+- Non-nut/seed topping/condiments (i.e. mayonnaise)
+- Protein choice (non-seafood)
 - SSB
 - Low-dairy breakfast
-- Roerbak proteïne
-- Pasta dishes
+- Stir-fry protein (non-legume)
+- Pasta (starch base)
 - Stock cube
 - Lamb
 - Cream
 - White couscous
 
-ingredient: beef mince
+ingredient: zucchini
 
-roleOrTechnique: minced in sauce
+roleOrTechnique: flavoring
 
 ## Assistant message
 
-Minced meat
+unknown
+
+# Example 4
+
+## User message
+Allowed trigger ingredient values:
+- Beef
+- Pork
+- Bacon/lardons
+- Luncheon meat
+- White flour
+- White pasta
+- Canned tuna
+- Soy sauce
+- meat-based sauce
+- Mince meat (meat sauce)
+- Butter
+- Cooking oil/fat (general)
+- Low-dairy sauce
+- White rice
+- Refined bread
+- Margarine (non-HO)
+- Non-nut/seed topping/condiments (i.e. mayonnaise)
+- Protein choice (non-seafood)
+- SSB
+- Low-dairy breakfast
+- Stir-fry protein (non-legume)
+- Pasta (starch base)
+- Stock cube
+- Lamb
+- Cream
+- White couscous
+
+ingredient: smoked bacon strips
+
+roleOrTechnique: sauté fat
+
+## Assistant message
+
+Bacon/lardons

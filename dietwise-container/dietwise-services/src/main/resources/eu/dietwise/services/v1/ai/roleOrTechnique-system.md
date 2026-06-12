@@ -32,31 +32,32 @@ Here are a few examples:
 
 ## User message
 Allowed RoleOrTechnique values:
-- minced in sauce
-- steak centerpiece
-- cubes stew
-- flavoring
-- sandwich fill
-- bread pizza
-- pasta
-- brine pack
-- seasoning
-- sauce addin
-- chili burgers
-- sauté fat
-- finish oil
-- cream swap
-- staple
-- bread
-- baking fat
-- topping
-- swap in
-- beverage
-- stirfry protein
-- veg boost
-- broth base
-- curry cubes
-- sauce enricher
+- minced in sauce 
+- cubes stew 
+- steak centerpiece 
+- flavoring 
+- sandwich fill 
+- dough 
+- pasta 
+- protein add-in in preservation processing 
+- sauce 
+- sauce base as dish binder 
+- burger patty base 
+- sauté fat 
+- baking fat 
+- finish oil 
+- sauce enricher (creamy element)
+- staple 
+- bread 
+- topping 
+- main protein centerpiece 
+- beverage 
+- breakfast liquid base 
+- stirfry protein 
+- starchy base 
+- broth base 
+- meat base 
+- sauce enricher 
 - roux binder
 
 ingredient: butter
@@ -77,29 +78,30 @@ sauté fat
 ## User message
 Allowed RoleOrTechnique values:
 - minced in sauce
-- steak centerpiece
 - cubes stew
+- steak centerpiece
 - flavoring
 - sandwich fill
-- bread pizza
+- dough
 - pasta
-- brine pack
-- seasoning
-- sauce addin
-- chili burgers
+- protein add-in in preservation processing
+- sauce
+- sauce base as dish binder
+- burger patty base
 - sauté fat
+- baking fat
 - finish oil
-- cream swap
+- sauce enricher (creamy element)
 - staple
 - bread
-- baking fat
 - topping
-- swap in
+- main protein centerpiece
 - beverage
+- breakfast liquid base
 - stirfry protein
-- veg boost
+- starchy base
 - broth base
-- curry cubes
+- meat base
 - sauce enricher
 - roux binder
 
@@ -121,29 +123,30 @@ finish oil
 ## User message
 Allowed RoleOrTechnique values:
 - minced in sauce
-- steak centerpiece
 - cubes stew
+- steak centerpiece
 - flavoring
 - sandwich fill
-- bread pizza
+- dough
 - pasta
-- brine pack
-- seasoning
-- sauce addin
-- chili burgers
+- protein add-in in preservation processing
+- sauce
+- sauce base as dish binder
+- burger patty base
 - sauté fat
+- baking fat
 - finish oil
-- cream swap
+- sauce enricher (creamy element)
 - staple
 - bread
-- baking fat
 - topping
-- swap in
+- main protein centerpiece
 - beverage
+- breakfast liquid base
 - stirfry protein
-- veg boost
+- starchy base
 - broth base
-- curry cubes
+- meat base
 - sauce enricher
 - roux binder
 
@@ -165,29 +168,30 @@ flavoring
 ## User message
 Allowed RoleOrTechnique values:
 - minced in sauce
-- steak centerpiece
 - cubes stew
+- steak centerpiece
 - flavoring
 - sandwich fill
-- bread pizza
+- dough
 - pasta
-- brine pack
-- seasoning
-- sauce addin
-- chili burgers
+- protein add-in in preservation processing
+- sauce
+- sauce base as dish binder
+- burger patty base
 - sauté fat
+- baking fat
 - finish oil
-- cream swap
+- sauce enricher (creamy element)
 - staple
 - bread
-- baking fat
 - topping
-- swap in
+- main protein centerpiece
 - beverage
+- breakfast liquid base
 - stirfry protein
-- veg boost
+- starchy base
 - broth base
-- curry cubes
+- meat base
 - sauce enricher
 - roux binder
 
