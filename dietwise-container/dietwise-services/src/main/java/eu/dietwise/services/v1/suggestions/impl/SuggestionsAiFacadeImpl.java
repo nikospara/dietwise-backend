@@ -283,10 +283,10 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 		return alternatives.stream()
 				.flatMap(a -> Stream.of(
 						"- " + a.getAlternative().asString(),
-						a.getRationale().map(r -> "    - " + rationaleLabel + ": " + r).orElse(null),
-						a.getRestriction().map(r -> "    - " + restrictionsLabel + ": " + r).orElse(null),
-						a.getEquivalence().map(e -> "    - " + equivalenceLabel + ": " + e).orElse(null),
-						a.getTechniqueNotes().map(n -> "    - " + techniqueNotesLabel + ": " + n).orElse(null)
+						a.getRationale().map(r -> "  - " + rationaleLabel + ": " + r).orElse(null),
+						a.getRestriction().map(r -> "  - " + restrictionsLabel + ": " + r).orElse(null),
+						a.getEquivalence().map(e -> "  - " + equivalenceLabel + ": " + e).orElse(null),
+						a.getTechniqueNotes().map(n -> "  - " + techniqueNotesLabel + ": " + n).orElse(null)
 				))
 				.filter(Objects::nonNull)
 				.collect(Collectors.joining("\n"));

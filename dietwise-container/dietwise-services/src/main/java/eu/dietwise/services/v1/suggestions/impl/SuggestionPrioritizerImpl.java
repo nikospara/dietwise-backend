@@ -5,11 +5,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
-import eu.dietwise.dao.PersonalInfoDao;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.nondomain.DateTimeService;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
@@ -31,7 +29,7 @@ public class SuggestionPrioritizerImpl implements SuggestionPrioritizer {
 
 	@Override
 	public Uni<List<Suggestion>> prioritizeSuggestions(ReactivePersistenceContext em, PersonalInfo personalInfo, List<Suggestion> suggestions) {
-		return calculateWeights(em, personalInfo).map(orderSuggestionsAccordingToWeights(suggestions));
+		return calculateWeights(em, personalInfo).map(weights -> orderSuggestionsAccordingToWeights(weights, suggestions));
 	}
 
 	private Uni<? extends Map<Recommendation, BigDecimal>> calculateWeights(ReactivePersistenceContext em, PersonalInfo personalInfo) {
@@ -49,10 +47,8 @@ public class SuggestionPrioritizerImpl implements SuggestionPrioritizer {
 		}
 	}
 
-	private Function<? super Map<Recommendation, BigDecimal>, ? extends List<Suggestion>> orderSuggestionsAccordingToWeights(List<Suggestion> suggestions) {
-		return weights -> {
-			Comparator<Suggestion> comparator = Comparator.comparing(s -> weights.getOrDefault(s.getRecommendation(), BigDecimal.ZERO));
-			return suggestions.stream().sorted(comparator.reversed()).toList();
-		};
+	private List<Suggestion> orderSuggestionsAccordingToWeights(Map<Recommendation, BigDecimal> weights, List<Suggestion> suggestions) {
+		Comparator<Suggestion> comparator = Comparator.comparing(s -> weights.getOrDefault(s.getRecommendation(), BigDecimal.ZERO));
+		return suggestions.stream().sorted(comparator.reversed()).toList();
 	}
 }

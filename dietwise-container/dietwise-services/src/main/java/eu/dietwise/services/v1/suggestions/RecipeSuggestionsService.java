@@ -11,6 +11,9 @@ import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 public interface RecipeSuggestionsService {
+	/**
+	 * This is the core recipe assessment logic for a single extracted recipe.
+	 */
 	Uni<MakeSuggestionsResult> makeSuggestions(UUID correlationId, HasUserId hasUserId, RecipeLanguage lang, Recipe recipe, Country countryOverride);
 
 	/**

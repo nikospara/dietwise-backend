@@ -104,6 +104,10 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		);
 	}
 
+	/**
+	 * Classify the {@code RecipeExtractionRecipeAssessmentMessage} according to the number of recipes (0/1/many),
+	 * emit it to the client, record the statistics.
+	 */
 	private Uni<RecipeExtractionOutcome> emitExtractionAndClassify(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
 			User user,
@@ -128,6 +132,10 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		return statisticsService.assessedRecipe(user, url, recipeName);
 	}
 
+	/**
+	 * Process the {@code RecipeExtractionOutcome} according to the type of recipe (0/1/many), emit it to the client,
+	 * continue with the <em>heart</em> of recipe assessment, {@link #assessSingleRecipe}.
+	 */
 	private Uni<MakeSuggestionsResult> assessExtractionOutcome(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
 			UUID correlationId,
@@ -153,6 +161,9 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 		};
 	}
 
+	/**
+	 * The heart of the recipe assessment workflow, orchestrates the {@link RecipeSuggestionsService}.
+	 */
 	private Uni<MakeSuggestionsResult> assessSingleRecipe(
 			MultiEmitter<? super RecipeAssessmentMessage> emitter,
 			UUID correlationId,
