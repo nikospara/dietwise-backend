@@ -178,7 +178,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(ruleDao.findByTriggerIngredient(any(), any(), eq(RecipeLanguage.EN))).thenAnswer(_ -> Uni.createFrom().item(List.of(RULE1)));
 		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(_ -> Uni.createFrom().item(Set.of("fiber")));
 		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item(RULE1.getId().asString()));
-		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item("DUMMY STRING, REPLACE WHEN SUGGEST ALTERNATIVES IS COMPLETE"));
+		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item("alternative-first"));
 		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), eq(GREECE), eq(RECIPE.getRecipeIngredients().getFirst()), eq(RecipeLanguage.EN)))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 
@@ -243,6 +243,45 @@ class RecipeSuggestionsServiceImplTest {
 		assertThat(result.suggestions().get(1).getUserSuggestionStats()).isEqualTo(SuggestionStats.ALL_ZEROES);
 		assertThat(result.suggestions().get(1).getTotalSuggestionStats()).isEqualTo(totalStats);
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void selectSuggestionsFromAiResponseReturnsAllWhenResponseIsBlank() {
+		List<Suggestion> suggestions = List.of(FIRST_SUGGESTION, SECOND_SUGGESTION);
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, null)).containsExactlyElementsOf(suggestions);
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, "")).containsExactlyElementsOf(suggestions);
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, "   \n  ")).containsExactlyElementsOf(suggestions);
+	}
+
+	@Test
+	void selectSuggestionsFromAiResponseKeepsMatchingSubsetInOriginalOrder() {
+		List<Suggestion> suggestions = List.of(FIRST_SUGGESTION, SECOND_SUGGESTION);
+		String response = "alternative-second\nalternative-first";
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, response))
+				.containsExactly(FIRST_SUGGESTION, SECOND_SUGGESTION);
+	}
+
+	@Test
+	void selectSuggestionsFromAiResponseIgnoresCaseSurroundingWhitespaceAndBullets() {
+		List<Suggestion> suggestions = List.of(FIRST_SUGGESTION, SECOND_SUGGESTION);
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, "  - ALTERNATIVE-FIRST  "))
+				.containsExactly(FIRST_SUGGESTION);
+	}
+
+	@Test
+	void selectSuggestionsFromAiResponseIgnoresUnrecognizedLines() {
+		List<Suggestion> suggestions = List.of(FIRST_SUGGESTION, SECOND_SUGGESTION);
+		String response = "alternative-first\nsomething the model invented";
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, response))
+				.containsExactly(FIRST_SUGGESTION);
+	}
+
+	@Test
+	void selectSuggestionsFromAiResponseReturnsAllWhenNonBlankResponseMatchesNothing() {
+		List<Suggestion> suggestions = List.of(FIRST_SUGGESTION, SECOND_SUGGESTION);
+		String response = "totally\nunrelated";
+		assertThat(RecipeSuggestionsServiceImpl.selectSuggestionsFromAiResponse(suggestions, response))
+				.containsExactlyElementsOf(suggestions);
 	}
 
 	private static eu.dietwise.common.v1.types.HasUserId hasUserId() {

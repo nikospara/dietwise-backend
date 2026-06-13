@@ -260,14 +260,30 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				suggestionDao.retrieveByRule(tx, rule, country(data.personalInfo()), ingredient, lang),
 				suggestions -> suggestionsAiFacade.suggestAlternatives(lang, ingredient.getNameInRecipe(), role, suggestions),
 				(suggestions, responseFromAi) -> {
-					// TODO dummy, process response from AI
 					if (LOG.isDebugEnabled()) {
 						var suggestionsStr = suggestions.stream().map(Suggestion::getAlternative).map(RepresentableAsString::asString).collect(Collectors.joining(","));
 						LOG.debug("Suggest alternatives for <{}> {}, initial list is {}:\n{}", correlationId, ingredient.getNameInRecipe(), suggestionsStr, responseFromAi);
 					}
-					return Uni.createFrom().item(suggestions);
+					return Uni.createFrom().item(selectSuggestionsFromAiResponse(suggestions, responseFromAi));
 				}
 		);
+	}
+
+	static List<Suggestion> selectSuggestionsFromAiResponse(List<Suggestion> suggestions, String responseFromAi) {
+		Set<String> alternativesFromAi = responseFromAi == null ? Set.of() : responseFromAi.lines()
+				.map(RecipeSuggestionsServiceImpl::normalizeAlternative)
+				.filter(line -> !line.isEmpty())
+				.collect(Collectors.toSet());
+		List<Suggestion> selected = suggestions.stream()
+				.filter(s -> alternativesFromAi.contains(normalizeAlternative(s.getAlternative().asString())))
+				.toList();
+		// The AI only refines an already curated list; if it gave us nothing we recognize
+		// (blank, or no matching name), keep all candidates rather than dropping them.
+		return selected.isEmpty() ? suggestions : selected;
+	}
+
+	private static String normalizeAlternative(String value) {
+		return value.replaceFirst("^\\s*[-*]\\s+", "").trim().toLowerCase();
 	}
 
 	private Country country(PersonalInfo personalInfo) {
