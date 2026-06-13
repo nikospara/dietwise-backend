@@ -197,12 +197,16 @@ You need to make sure the IDE runner resolves workspace artifacts.
 ## Releases
 
 ```bash
+git checkout master
+# merge appropriately
 mvn versions:set -DgenerateBackupPoms=false -DnewVersion=x.y.z
 git commit -am "Version x.y.z"
 git tag -am "Version x.y.z" vx.y.z
-git push --tags
+git checkout develop
+git merge master
 mvn versions:set -DnewVersion=1.0.0-SNAPSHOT -DgenerateBackupPoms=false
 git commit -am "Continue development with 1.0.0-SNAPSHOT"
+git push --tags origin master:master develop:develop
 ```
 
 
