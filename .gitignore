@@ -6,3 +6,4 @@ target/
 .idea/
 *.iml
 CLAUDE.local.md
+**/.DS_Store
