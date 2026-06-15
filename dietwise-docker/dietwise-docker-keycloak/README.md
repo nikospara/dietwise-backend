@@ -160,6 +160,49 @@ The confidential service-account client:
 - Go to Service account roles tab, Assign role → Client roles -> `manage-users` This appears as "(realm-management) manage-users" in the UI
 - Go to the Credentials tab, define the "Client Secret"
 
+### Create a client for the Backoffice app
+
+Create a new client in the Realm:
+
+- General settings:
+	- Client type: OpenID Connect
+	- Client ID: backoffice
+	- Name: Backoffice
+- Capability config:
+	- Client authentication: Off
+	- Authorization: Off
+	- Authentication flow: Check *only* "Standard flow"
+	- Require PKCE: On
+	- PKCE Method: S256
+- Login settings:
+	- Root URL: (empty)
+	- Home URL: (empty)
+	- Valid redirect URIs:
+		- http://localhost:5174/*
+		- https://gaia.ispatial.survey.ntua.gr/dietwise-backoffice/*
+		- https://gaia.ispatial.survey.ntua.local/dietwise-backoffice/*
+		- **FOR PRODUCTION:**
+			- https://dietwise.ispatial.survey.ntua.gr/dietwise-backoffice/*
+	- Valid post logout redirect URIs:
+		- http://localhost:5174/*
+		- https://gaia.ispatial.survey.ntua.gr/dietwise-backoffice/*
+		- https://gaia.ispatial.survey.ntua.local/dietwise-backoffice/*
+		- **FOR PRODUCTION:**
+			- https://dietwise.ispatial.survey.ntua.gr/dietwise-backoffice/*
+	- Web origins:
+		- http://localhost:5174
+		- **FOR PRODUCTION:**
+			- https://dietwise.ispatial.survey.ntua.gr
+- Save & finish the new client wizard
+
+#### Realm role for authorization
+
+- Create a **realm role** named `backoffice` and assign it to the users who
+  should have admin access. (Any realm user can authenticate to the client, so the
+  backend gates actual access on this role — do not rely on client membership.)
+- The access token already carries `realm_access.roles`; no extra mapper needed.
+
+
 ### Create some test users
 
 Go to Manage → Users in the left menu, press "Create new user"

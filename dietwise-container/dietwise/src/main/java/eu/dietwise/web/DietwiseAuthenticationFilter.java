@@ -2,6 +2,7 @@ package eu.dietwise.web;
 
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ResourceInfo;
 
@@ -25,6 +26,9 @@ import org.jboss.resteasy.reactive.server.ServerRequestFilter;
  * that knows and uses the application-specific model.
  */
 public class DietwiseAuthenticationFilter {
+	/** Keycloak realm role that grants backoffice/admin access. */
+	static final String BACKOFFICE_REALM_ROLE = "backoffice";
+
 	private final UserService userService;
 	private final SecurityIdentity securityIdentity;
 	private final StatisticsService statisticsService;
@@ -54,10 +58,8 @@ public class DietwiseAuthenticationFilter {
 			String sub = jwtPrincipal.claim(Claims.sub).map(Object::toString).orElse(null);
 			if (sub == null) return Uni.createFrom().failure(() -> new NotAuthenticatedException("sub is null"));
 			String email = jwtPrincipal.claim(Claims.email).map(Object::toString).orElse(null);
-			EnumSet<Role> roles = EnumSet.noneOf(Role.class);
 			Optional<String> applicationId = jwtPrincipal.claim(Claims.azp).map(Object::toString);
-			if (applicationId.filter("recipewatch"::equals).isPresent()) roles.add(Role.CITIZEN);
-			if (applicationId.filter("rca"::equals).isPresent()) roles.add(Role.INFLUENCER);
+			EnumSet<Role> roles = rolesFor(applicationId, securityIdentity.getRoles());
 			boolean allowDeletedAccount = allowsDeletedAccount(resourceInfo);
 			return findUserData(allowDeletedAccount, sub)
 					.map(userData -> toUser(userData, sub, email, roles, applicationId))
@@ -65,6 +67,20 @@ public class DietwiseAuthenticationFilter {
 					.flatMap(user -> markActivityIfNeeded(allowDeletedAccount, user))
 					.replaceWithVoid();
 		}
+	}
+
+	/**
+	 * Derives the application roles from the token. The client ({@code azp}) identifies the consuming application
+	 * (recipewatch &rarr; CITIZEN, rca &rarr; INFLUENCER), while {@link #BACKOFFICE_REALM_ROLE} is a Keycloak realm
+	 * role that must be explicitly granted to a user to obtain {@link Role#ADMIN} &mdash; authenticating against the
+	 * backoffice client is not by itself sufficient.
+	 */
+	static EnumSet<Role> rolesFor(Optional<String> applicationId, Set<String> realmRoles) {
+		EnumSet<Role> roles = EnumSet.noneOf(Role.class);
+		if (applicationId.filter("recipewatch"::equals).isPresent()) roles.add(Role.CITIZEN);
+		if (applicationId.filter("rca"::equals).isPresent()) roles.add(Role.INFLUENCER);
+		if (realmRoles.contains(BACKOFFICE_REALM_ROLE)) roles.add(Role.ADMIN);
+		return roles;
 	}
 
 	private Uni<UserData> findUserData(boolean allowDeletedAccount, String idmId) {
