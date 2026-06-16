@@ -1,6 +1,8 @@
 package eu.dietwise.jaxrs.v1;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.v1.model.Rule;
@@ -9,8 +11,9 @@ import eu.dietwise.v1.types.RoleOrTechnique;
 /**
  * A single Rule as shown in the backoffice grid: the English names of its business key plus the ids of its shared
  * reference entities, its rationale, its effective active state, its change state relative to published master, the set
- * of cells carrying a pending change, and the Working Copy version a subsequent edit must be based on.
- * {@code roleOrTechnique}, {@code roleOrTechniqueId} and {@code rationale} may be {@code null}.
+ * of cells carrying a pending change, the completeness of its rationale translations (language name to state), and the
+ * Working Copy version a subsequent edit must be based on. {@code roleOrTechnique}, {@code roleOrTechniqueId} and
+ * {@code rationale} may be {@code null}.
  */
 public record RuleResponse(
 		String id,
@@ -23,6 +26,7 @@ public record RuleResponse(
 		boolean active,
 		String changeState,
 		List<String> changedFields,
+		Map<String, String> rationaleTranslations,
 		long version
 ) {
 	public static RuleResponse from(StagedRule staged) {
@@ -39,6 +43,8 @@ public record RuleResponse(
 				rule.isActive(),
 				staged.changeState().name(),
 				staged.changedFields().stream().map(Enum::name).toList(),
+				staged.rationaleTranslations().entrySet().stream()
+						.collect(Collectors.toMap(entry -> entry.getKey().name(), entry -> entry.getValue().name())),
 				staged.version()
 		);
 	}

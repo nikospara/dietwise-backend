@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.common.types.VersionedText;
+import eu.dietwise.services.model.suggestions.RationaleTranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -101,4 +103,43 @@ public interface RuleDao {
 	 * references a shared entity with a pending edit.
 	 */
 	Uni<Map<UUID, RuleReferences>> findReferenceIds(ReactivePersistenceContext em);
+
+	/**
+	 * For each Rule with at least one rationale translation (published or staged), which languages are translated in
+	 * published master and which carry a pending change in the Working Copy. Keyed by Rule id; sparse — a Rule with no
+	 * rationale translation at all does not appear. English is the master/fallback and is never a translation language.
+	 */
+	Uni<Map<UUID, RationaleTranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em);
+
+	/**
+	 * The effective rationale translation of one Rule for each non-English language (published master overlaid by any
+	 * Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations
+	 * dialog. The returned map has an entry for every translatable (non-English) language; a language with no
+	 * translation has a {@code null} text and version {@code 0}.
+	 */
+	Uni<Map<RecipeLanguage, VersionedText>> findRationaleTranslationsForEdit(ReactivePersistenceContext em, UUID ruleId);
+
+	/**
+	 * Stage a Rule's rationale translation for one language in the Working Copy, leaving published master untouched.
+	 * Staging the value already in master removes the override; if no translation existed and the proposed value matches
+	 * master (both absent), it is a no-op.
+	 *
+	 * @param ruleId      The Rule whose translation is being staged
+	 * @param lang        The language being translated; must not be English
+	 * @param rationale   The proposed translated rationale; {@code null} clears the translation (falls back to English)
+	 * @param baseVersion The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 */
+	Uni<Void> stageRationaleTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, String rationale, long baseVersion);
+
+	/**
+	 * Revert a Rule's staged rationale translation for one language, restoring the published master translation and
+	 * removing the Working Copy row. Reverting a translation that has no Staged Change is a no-op.
+	 *
+	 * @param ruleId      The Rule whose staged translation is being reverted
+	 * @param lang        The language being reverted; must not be English
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 */
+	Uni<Void> revertRationaleTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, long baseVersion);
 }

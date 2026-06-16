@@ -1,6 +1,7 @@
 package eu.dietwise.jaxrs.v1;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -18,9 +19,11 @@ import jakarta.ws.rs.core.MediaType;
 
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.NewRuleOptions;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.GenericRuleId;
 import io.smallrye.mutiny.Uni;
 
@@ -104,6 +107,29 @@ public class RulesResource {
 	public Uni<Void> editRoleOrTechnique(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.editRoleOrTechnique(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
+	}
+
+	@GET
+	@Path("{id}/rationale-translations")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<Map<RecipeLanguage, VersionedText>> rationaleTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.rationaleTranslationsForEdit(user, new GenericRuleId(id));
+	}
+
+	@PUT
+	@Path("{id}/rationale-translations/{lang}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> stageRationaleTranslation(@PathParam("id") String id, @PathParam("lang") String lang, StageRationaleRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.stageRationaleTranslation(user, new GenericRuleId(id), RecipeLanguage.valueOf(lang), request.rationale(), request.baseVersion());
+	}
+
+	@DELETE
+	@Path("{id}/rationale-translations/{lang}")
+	public Uni<Void> revertRationaleTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertRationaleTranslation(user, new GenericRuleId(id), RecipeLanguage.valueOf(lang), baseVersion);
 	}
 
 	@PUT

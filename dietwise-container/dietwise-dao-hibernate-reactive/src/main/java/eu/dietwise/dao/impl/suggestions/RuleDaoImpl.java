@@ -5,6 +5,9 @@ import static java.util.stream.Collectors.toMap;
 
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -16,11 +19,13 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import jakarta.persistence.metamodel.SingularAttribute;
@@ -29,6 +34,7 @@ import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
@@ -39,6 +45,10 @@ import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity_;
+import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntityId;
+import eu.dietwise.dao.jpa.suggestions.RuleTranslationWcEntity;
+import eu.dietwise.dao.jpa.suggestions.RuleTranslationWcEntity_;
+import eu.dietwise.dao.jpa.suggestions.RuleTranslationWcEntityId;
 import eu.dietwise.dao.jpa.suggestions.RuleWcEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleWcEntity_;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
@@ -46,6 +56,7 @@ import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.RuleDao;
+import eu.dietwise.services.model.suggestions.RationaleTranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -61,6 +72,9 @@ import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class RuleDaoImpl implements RuleDao {
+	private static final List<RecipeLanguage> TRANSLATABLE_LANGUAGES =
+			Arrays.stream(RecipeLanguage.values()).filter(lang -> lang != RecipeLanguage.EN).toList();
+
 	@Override
 	public Uni<List<Rule>> findByTriggerIngredient(ReactivePersistenceContext em, HasTriggerIngredientId triggerIngredientId, RecipeLanguage lang) {
 		var cb = em.getCriteriaBuilder();
@@ -312,6 +326,158 @@ public class RuleDaoImpl implements RuleDao {
 				(existing, ignored) -> existing,
 				LinkedHashMap::new
 		));
+	}
+
+	@Override
+	public Uni<Map<UUID, RationaleTranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em) {
+		return masterTranslationLangs(em).flatMap(master -> stagedTranslationLangs(em).map(staged -> mergeTranslationLangs(master, staged)));
+	}
+
+	private Uni<Map<UUID, Set<RecipeLanguage>>> masterTranslationLangs(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleTranslationEntity> t = q.from(RuleTranslationEntity.class);
+		q.select(cb.tuple(t.get(RuleTranslationEntity_.rule).get(RuleEntity_.id), t.get(RuleTranslationEntity_.lang)))
+				.where(cb.isNotNull(t.get(RuleTranslationEntity_.rationale)));
+		return em.createQuery(q).getResultList().map(RuleDaoImpl::toLangsByRuleId);
+	}
+
+	private Uni<Map<UUID, Set<RecipeLanguage>>> stagedTranslationLangs(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleTranslationWcEntity> t = q.from(RuleTranslationWcEntity.class);
+		q.select(cb.tuple(t.get(RuleTranslationWcEntity_.ruleId), t.get(RuleTranslationWcEntity_.lang)));
+		return em.createQuery(q).getResultList().map(RuleDaoImpl::toLangsByRuleId);
+	}
+
+	private static Map<UUID, Set<RecipeLanguage>> toLangsByRuleId(List<Tuple> rows) {
+		Map<UUID, Set<RecipeLanguage>> byRuleId = new HashMap<>();
+		for (Tuple row : rows) {
+			byRuleId.computeIfAbsent(row.get(0, UUID.class), _ -> EnumSet.noneOf(RecipeLanguage.class))
+					.add(row.get(1, RecipeLanguage.class));
+		}
+		return byRuleId;
+	}
+
+	private static Map<UUID, RationaleTranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
+		Set<UUID> ruleIds = new HashSet<>(master.keySet());
+		ruleIds.addAll(staged.keySet());
+		Map<UUID, RationaleTranslationLangs> result = new HashMap<>();
+		for (UUID ruleId : ruleIds) {
+			result.put(ruleId, new RationaleTranslationLangs(
+					master.getOrDefault(ruleId, EnumSet.noneOf(RecipeLanguage.class)),
+					staged.getOrDefault(ruleId, EnumSet.noneOf(RecipeLanguage.class))));
+		}
+		return result;
+	}
+
+	@Override
+	public Uni<Map<RecipeLanguage, VersionedText>> findRationaleTranslationsForEdit(ReactivePersistenceContext em, UUID ruleId) {
+		return masterTranslationsForRule(em, ruleId).flatMap(master ->
+				stagedTranslationsForRule(em, ruleId).map(staged -> toEditableTranslations(master, staged)));
+	}
+
+	private Uni<Map<RecipeLanguage, String>> masterTranslationsForRule(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleTranslationEntity> t = q.from(RuleTranslationEntity.class);
+		q.select(cb.tuple(t.get(RuleTranslationEntity_.lang), t.get(RuleTranslationEntity_.rationale)))
+				.where(cb.equal(t.get(RuleTranslationEntity_.rule).get(RuleEntity_.id), ruleId));
+		return em.createQuery(q).getResultList().map(rows -> rows.stream()
+				.filter(row -> row.get(1, String.class) != null)
+				.collect(toMap(row -> row.get(0, RecipeLanguage.class), row -> row.get(1, String.class))));
+	}
+
+	private Uni<Map<RecipeLanguage, RuleTranslationWcEntity>> stagedTranslationsForRule(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(RuleTranslationWcEntity.class);
+		Root<RuleTranslationWcEntity> t = q.from(RuleTranslationWcEntity.class);
+		q.select(t).where(cb.equal(t.get(RuleTranslationWcEntity_.ruleId), ruleId));
+		return em.createQuery(q).getResultList().map(list -> list.stream()
+				.collect(toMap(RuleTranslationWcEntity::getLang, identity())));
+	}
+
+	private static Map<RecipeLanguage, VersionedText> toEditableTranslations(Map<RecipeLanguage, String> master, Map<RecipeLanguage, RuleTranslationWcEntity> staged) {
+		Map<RecipeLanguage, VersionedText> result = new EnumMap<>(RecipeLanguage.class);
+		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
+			RuleTranslationWcEntity wc = staged.get(lang);
+			result.put(lang, wc != null
+					? new VersionedText(wc.getRationale(), wc.getVersion())
+					: new VersionedText(master.get(lang), 0L));
+		}
+		return result;
+	}
+
+	@Override
+	public Uni<Void> stageRationaleTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, String rationale, long baseVersion) {
+		return tx.find(RuleTranslationWcEntity.class, new RuleTranslationWcEntityId(ruleId, lang)).flatMap(existing ->
+				tx.find(RuleTranslationEntity.class, new RuleTranslationEntityId(ruleId, lang))
+						.flatMap(master -> applyTranslationEdit(tx, ruleId, lang, rationale, baseVersion, existing, master)));
+	}
+
+	private Uni<Void> applyTranslationEdit(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, String rationale, long baseVersion, RuleTranslationWcEntity existing, RuleTranslationEntity master) {
+		boolean matchesMaster = Objects.equals(rationale, master == null ? null : master.getRationale());
+		if (existing == null) {
+			if (baseVersion != 0L) {
+				return Uni.createFrom().failure(new StaleVersionException(RuleTranslationEntity.class, ruleId));
+			}
+			return matchesMaster ? Uni.createFrom().voidItem() : seedStagedTranslation(tx, ruleId, lang, rationale);
+		}
+		return matchesMaster
+				? deleteStagedTranslation(tx, ruleId, lang, baseVersion)
+				: bumpStagedTranslation(tx, ruleId, lang, rationale, baseVersion);
+	}
+
+	private Uni<Void> seedStagedTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, String rationale) {
+		var entity = new RuleTranslationWcEntity();
+		entity.setRuleId(ruleId);
+		entity.setLang(lang);
+		entity.setRationale(rationale);
+		entity.setVersion(1L);
+		return tx.persist(entity).replaceWithVoid();
+	}
+
+	private Uni<Void> bumpStagedTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, String rationale, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaUpdate<RuleTranslationWcEntity> cu = cb.createCriteriaUpdate(RuleTranslationWcEntity.class);
+		Root<RuleTranslationWcEntity> wc = cu.getRoot();
+		cu.set(wc.get(RuleTranslationWcEntity_.rationale), rationale);
+		cu.set(wc.get(RuleTranslationWcEntity_.version), cb.sum(wc.get(RuleTranslationWcEntity_.version), 1L));
+		cu.where(translationRowAt(cb, wc, ruleId, lang, baseVersion));
+		return tx.createUpdate(cu).execute().flatMap(rows -> rows == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(RuleTranslationEntity.class, ruleId)));
+	}
+
+	@Override
+	public Uni<Void> revertRationaleTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, long baseVersion) {
+		return tx.find(RuleTranslationWcEntity.class, new RuleTranslationWcEntityId(ruleId, lang)).flatMap(existing -> existing == null
+				? Uni.createFrom().voidItem()
+				: deleteStagedTranslation(tx, ruleId, lang, baseVersion));
+	}
+
+	private Uni<Void> deleteStagedTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<RuleTranslationWcEntity> cd = cb.createCriteriaDelete(RuleTranslationWcEntity.class);
+		Root<RuleTranslationWcEntity> wc = cd.getRoot();
+		cd.where(translationRowAt(cb, wc, ruleId, lang, baseVersion));
+		return tx.createDelete(cd).execute().flatMap(rows -> rows == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(RuleTranslationEntity.class, ruleId)));
+	}
+
+	private static Predicate translationRowAt(
+			CriteriaBuilder cb,
+			Root<RuleTranslationWcEntity> wc,
+			UUID ruleId,
+			RecipeLanguage lang,
+			long baseVersion
+	) {
+		return cb.and(
+				cb.equal(wc.get(RuleTranslationWcEntity_.ruleId), ruleId),
+				cb.equal(wc.get(RuleTranslationWcEntity_.lang), lang),
+				cb.equal(wc.get(RuleTranslationWcEntity_.version), baseVersion)
+		);
 	}
 
 	private Uni<Void> applySetActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion, RuleWcEntity existing, RuleEntity master) {

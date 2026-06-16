@@ -17,10 +17,12 @@ import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.types.RepresentableAsString;
+import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueWcEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
+import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.v1.model.Rule;
@@ -77,6 +79,16 @@ class RuleDaoImplTest {
 	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
+	private static final UUID TRANSLATION_EDIT_RULE_ID = UUID.fromString("a1b2c3d4-0001-4e5f-8a9b-0c1d2e3f0001");
+	private static final UUID TRANSLATION_COLLAPSE_RULE_ID = UUID.fromString("a1b2c3d4-0002-4e5f-8a9b-0c1d2e3f0002");
+	private static final UUID TRANSLATION_BUMP_RULE_ID = UUID.fromString("a1b2c3d4-0003-4e5f-8a9b-0c1d2e3f0003");
+	private static final UUID TRANSLATION_REVERT_RULE_ID = UUID.fromString("a1b2c3d4-0004-4e5f-8a9b-0c1d2e3f0004");
+	private static final UUID TRANSLATION_REVERT_STALE_RULE_ID = UUID.fromString("a1b2c3d4-0005-4e5f-8a9b-0c1d2e3f0005");
+	private static final UUID TRANSLATION_NULL_RULE_ID = UUID.fromString("a1b2c3d4-0006-4e5f-8a9b-0c1d2e3f0006");
+	private static final String MASTER_EL_RATIONALE = "Master Greek rationale.";
+	private static final String EDITED_EL_RATIONALE = "Edited Greek rationale.";
+	private static final String STAGED_NL_RATIONALE = "Staged Dutch rationale.";
+	private static final String RESTAGED_NL_RATIONALE = "Re-staged Dutch rationale.";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -666,6 +678,159 @@ class RuleDaoImplTest {
 		assertThat(references.get(REFERENCE_IDS_RULE_ID)).isEqualTo(new RuleReferences(BEEF_ID, REFERENCE_IDS_RULE_ID));
 		assertThat(references.get(newId)).isEqualTo(new RuleReferences(BEEF_ID, REFERENCE_IDS_WC_ROLE_ID));
 		assertThat(references.get(ROLELESS_BEEF_RULE_ID)).isEqualTo(new RuleReferences(BEEF_ID, null));
+	}
+
+	@Test
+	@Order(27)
+	void testFindRationaleTranslationsForEditOverlaysStagedOnMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, TRANSLATION_EDIT_RULE_ID, STAGING_RULE_MASTER_RATIONALE)
+						.chain(() -> persistRuleTranslation(tx, TRANSLATION_EDIT_RULE_ID, RecipeLanguage.EL, MASTER_EL_RATIONALE)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_EDIT_RULE_ID, RecipeLanguage.NL, STAGED_NL_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_EDIT_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new VersionedText(MASTER_EL_RATIONALE, 0L));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new VersionedText(STAGED_NL_RATIONALE, 1L));
+		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new VersionedText(null, 0L));
+
+		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_EDIT_RULE_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_EDIT_RULE_ID).staged()).containsExactly(RecipeLanguage.NL);
+	}
+
+	@Test
+	@Order(28)
+	void testStageRationaleTranslationSeedsThenCollapsesToMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, TRANSLATION_COLLAPSE_RULE_ID, STAGING_RULE_MASTER_RATIONALE)
+						.chain(() -> persistRuleTranslation(tx, TRANSLATION_COLLAPSE_RULE_ID, RecipeLanguage.EL, MASTER_EL_RATIONALE)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_COLLAPSE_RULE_ID, RecipeLanguage.EL, EDITED_EL_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var staged = factory.withoutTransaction(sut::findRationaleTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(staged.get(TRANSLATION_COLLAPSE_RULE_ID).staged()).containsExactly(RecipeLanguage.EL);
+
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_COLLAPSE_RULE_ID, RecipeLanguage.EL, MASTER_EL_RATIONALE, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_COLLAPSE_RULE_ID).staged()).isEmpty();
+		assertThat(langs.get(TRANSLATION_COLLAPSE_RULE_ID).present()).containsExactly(RecipeLanguage.EL);
+		var forEdit = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_COLLAPSE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new VersionedText(MASTER_EL_RATIONALE, 0L));
+	}
+
+	@Test
+	@Order(29)
+	void testStageRationaleTranslationBumpsThenRejectsStaleBaseVersion(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, TRANSLATION_BUMP_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_BUMP_RULE_ID, RecipeLanguage.NL, STAGED_NL_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_BUMP_RULE_ID, RecipeLanguage.NL, RESTAGED_NL_RATIONALE, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_BUMP_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new VersionedText(RESTAGED_NL_RATIONALE, 2L));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_BUMP_RULE_ID, RecipeLanguage.NL, "Stale attempt.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	@Order(30)
+	void testRevertRationaleTranslationRemovesStagedRowRestoringMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, TRANSLATION_REVERT_RULE_ID, STAGING_RULE_MASTER_RATIONALE)
+						.chain(() -> persistRuleTranslation(tx, TRANSLATION_REVERT_RULE_ID, RecipeLanguage.EL, MASTER_EL_RATIONALE)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_REVERT_RULE_ID, RecipeLanguage.EL, EDITED_EL_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertRationaleTranslation(tx, TRANSLATION_REVERT_RULE_ID, RecipeLanguage.EL, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_REVERT_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new VersionedText(MASTER_EL_RATIONALE, 0L));
+		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_REVERT_RULE_ID).staged()).isEmpty();
+		assertThat(langs.get(TRANSLATION_REVERT_RULE_ID).present()).containsExactly(RecipeLanguage.EL);
+	}
+
+	@Test
+	@Order(31)
+	void testRevertRationaleTranslationRejectsStaleBaseVersionLeavingItIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, TRANSLATION_REVERT_STALE_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_REVERT_STALE_RULE_ID, RecipeLanguage.NL, STAGED_NL_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertRationaleTranslation(tx, TRANSLATION_REVERT_STALE_RULE_ID, RecipeLanguage.NL, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var stillStaged = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_REVERT_STALE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new VersionedText(STAGED_NL_RATIONALE, 1L));
+
+		factory.withTransaction(tx -> sut.revertRationaleTranslation(tx, TRANSLATION_REVERT_STALE_RULE_ID, RecipeLanguage.NL, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var afterRevert = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_REVERT_STALE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new VersionedText(null, 0L));
+	}
+
+	@Test
+	@Order(32)
+	void testStageNullTranslationWithNoMasterIsANoOp(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, TRANSLATION_NULL_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageRationaleTranslation(tx, TRANSLATION_NULL_RULE_ID, RecipeLanguage.EL, null, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs).doesNotContainKey(TRANSLATION_NULL_RULE_ID);
+		var forEdit = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_NULL_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new VersionedText(null, 0L));
+	}
+
+	private static Uni<Void> persistRuleTranslation(ReactivePersistenceTxContext tx, UUID ruleId, RecipeLanguage lang, String rationale) {
+		var translation = new RuleTranslationEntity();
+		translation.setRule(tx.getReference(RuleEntity.class, ruleId));
+		translation.setLang(lang);
+		translation.setRationale(rationale);
+		return tx.persist(translation).replaceWithVoid();
 	}
 
 	private static Uni<Void> persistRole(ReactivePersistenceTxContext tx, UUID id, String name) {

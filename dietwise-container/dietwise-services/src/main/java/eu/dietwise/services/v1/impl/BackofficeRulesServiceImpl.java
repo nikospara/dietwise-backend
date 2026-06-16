@@ -2,6 +2,8 @@ package eu.dietwise.services.v1.impl;
 
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -15,12 +17,14 @@ import eu.dietwise.common.dao.DuplicateBusinessKeyException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.Authorization;
+import eu.dietwise.services.model.suggestions.RationaleTranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -30,6 +34,7 @@ import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
 import eu.dietwise.services.v1.types.StagedRule;
+import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.model.ImmutableRule;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -41,6 +46,9 @@ import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class BackofficeRulesServiceImpl implements BackofficeRulesService {
+	private static final List<RecipeLanguage> TRANSLATABLE_LANGUAGES =
+			Arrays.stream(RecipeLanguage.values()).filter(lang -> lang != RecipeLanguage.EN).toList();
+
 	private final RuleDao ruleDao;
 	private final RecommendationDao recommendationDao;
 	private final TriggerIngredientDao triggerIngredientDao;
@@ -74,6 +82,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				(_, _, _) -> ruleDao.findReferenceIds(em),
 				(_, _, _, _) -> triggerIngredientDao.findStagedNames(em),
 				(_, _, _, _, _) -> roleOrTechniqueDao.findStagedNames(em),
+				(_, _, _, _, _, _) -> ruleDao.findRationaleTranslationLangs(em),
 				BackofficeRulesServiceImpl::merge
 		));
 	}
@@ -166,6 +175,32 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				: roleOrTechniqueDao.editRoleOrTechnique(tx, id, name, explanationForLlm, baseVersion)));
 	}
 
+	@Override
+	public Uni<Map<RecipeLanguage, VersionedText>> rationaleTranslationsForEdit(User user, RuleId ruleId) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> ruleDao.findRationaleTranslationsForEdit(em, ruleId.asUuid()));
+	}
+
+	@Override
+	public Uni<Void> stageRationaleTranslation(User user, RuleId ruleId, RecipeLanguage lang, String rationale, long baseVersion) {
+		authorization.requireAdmin(user);
+		requireTranslatableLanguage(lang);
+		return persistenceContextFactory.withTransaction(tx -> ruleDao.stageRationaleTranslation(tx, ruleId.asUuid(), lang, rationale, baseVersion));
+	}
+
+	@Override
+	public Uni<Void> revertRationaleTranslation(User user, RuleId ruleId, RecipeLanguage lang, long baseVersion) {
+		authorization.requireAdmin(user);
+		requireTranslatableLanguage(lang);
+		return persistenceContextFactory.withTransaction(tx -> ruleDao.revertRationaleTranslation(tx, ruleId.asUuid(), lang, baseVersion));
+	}
+
+	private static void requireTranslatableLanguage(RecipeLanguage lang) {
+		if (lang == RecipeLanguage.EN) {
+			throw new IllegalArgumentException("English is the master value and is edited as the rationale, not as a translation");
+		}
+	}
+
 	private static boolean nameExists(List<ReferenceOption> options, String name) {
 		return options.stream().anyMatch(option -> option.name().equalsIgnoreCase(name));
 	}
@@ -180,12 +215,13 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			List<StagedNewRule> newRules,
 			Map<UUID, RuleReferences> referenceIds,
 			Map<UUID, String> triggerStagedNames,
-			Map<UUID, String> roleStagedNames
+			Map<UUID, String> roleStagedNames,
+			Map<UUID, RationaleTranslationLangs> translationLangs
 	) {
 		Stream<StagedRule> published = master.stream().map(rule ->
-				toPublishedStagedRule(rule, overlays.get(rule.getId().asUuid()), referenceIds.get(rule.getId().asUuid()), triggerStagedNames, roleStagedNames));
+				toPublishedStagedRule(rule, overlays.get(rule.getId().asUuid()), referenceIds.get(rule.getId().asUuid()), triggerStagedNames, roleStagedNames, translationLangs));
 		Stream<StagedRule> created = newRules.stream().map(newRule ->
-				toNewStagedRule(newRule, referenceIds.get(newRule.rule().getId().asUuid()), triggerStagedNames, roleStagedNames));
+				toNewStagedRule(newRule, referenceIds.get(newRule.rule().getId().asUuid()), triggerStagedNames, roleStagedNames, translationLangs));
 		return Stream.concat(published, created).toList();
 	}
 
@@ -194,7 +230,8 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			StagedRuleOverlay overlay,
 			RuleReferences references,
 			Map<UUID, String> triggerStagedNames,
-			Map<UUID, String> roleStagedNames
+			Map<UUID, String> roleStagedNames,
+			Map<UUID, RationaleTranslationLangs> translationLangs
 	) {
 		UUID triggerId = references.triggerIngredientId();
 		UUID roleId = references.roleOrTechniqueId();
@@ -218,20 +255,39 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		RuleChangeState changeState = changedFields.contains(RuleField.RATIONALE) || changedFields.contains(RuleField.ACTIVE)
 				? RuleChangeState.CHANGED
 				: RuleChangeState.UNCHANGED;
-		return new StagedRule(effective, triggerId, roleId, changeState, changedFields, version);
+		return new StagedRule(effective, triggerId, roleId, changeState, changedFields, rationaleTranslationStates(master.getId().asUuid(), translationLangs), version);
 	}
 
 	private static StagedRule toNewStagedRule(
 			StagedNewRule newRule,
 			RuleReferences references,
 			Map<UUID, String> triggerStagedNames,
-			Map<UUID, String> roleStagedNames
+			Map<UUID, String> roleStagedNames,
+			Map<UUID, RationaleTranslationLangs> translationLangs
 	) {
 		UUID triggerId = references.triggerIngredientId();
 		UUID roleId = references.roleOrTechniqueId();
 		Set<RuleField> changedFields = EnumSet.noneOf(RuleField.class);
 		addSharedChanges(changedFields, triggerId, roleId, triggerStagedNames, roleStagedNames);
-		return new StagedRule(newRule.rule(), triggerId, roleId, RuleChangeState.NEW, changedFields, newRule.version());
+		return new StagedRule(newRule.rule(), triggerId, roleId, RuleChangeState.NEW, changedFields, rationaleTranslationStates(newRule.rule().getId().asUuid(), translationLangs), newRule.version());
+	}
+
+	private static Map<RecipeLanguage, TranslationState> rationaleTranslationStates(UUID ruleId, Map<UUID, RationaleTranslationLangs> translationLangs) {
+		RationaleTranslationLangs langs = translationLangs.get(ruleId);
+		Set<RecipeLanguage> present = langs == null ? Set.of() : langs.present();
+		Set<RecipeLanguage> staged = langs == null ? Set.of() : langs.staged();
+		Map<RecipeLanguage, TranslationState> states = new EnumMap<>(RecipeLanguage.class);
+		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
+			states.put(lang, translationState(lang, present, staged));
+		}
+		return states;
+	}
+
+	private static TranslationState translationState(RecipeLanguage lang, Set<RecipeLanguage> present, Set<RecipeLanguage> staged) {
+		if (staged.contains(lang)) {
+			return TranslationState.STAGED;
+		}
+		return present.contains(lang) ? TranslationState.PRESENT : TranslationState.MISSING;
 	}
 
 	private static void addSharedChanges(Set<RuleField> changedFields, UUID triggerId, UUID roleId, Map<UUID, String> triggerStagedNames, Map<UUID, String> roleStagedNames) {

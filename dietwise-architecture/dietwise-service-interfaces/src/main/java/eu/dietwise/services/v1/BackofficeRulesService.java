@@ -1,13 +1,16 @@
 package eu.dietwise.services.v1;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.StagedRule;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
 import io.smallrye.mutiny.Uni;
 
@@ -162,4 +165,40 @@ public interface BackofficeRulesService {
 	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Role or Technique exists
 	 */
 	Uni<Void> editRoleOrTechnique(User user, UUID id, String name, String explanationForLlm, long baseVersion);
+
+	/**
+	 * The effective rationale translation of one Rule for each non-English language (published master overlaid by any
+	 * Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations
+	 * dialog. The returned map has an entry for every translatable language; a language with no translation has a {@code
+	 * null} text and version {@code 0}.
+	 *
+	 * @param user   The editor; must have the ADMIN role
+	 * @param ruleId The Rule whose rationale translations are being edited
+	 */
+	Uni<Map<RecipeLanguage, VersionedText>> rationaleTranslationsForEdit(User user, RuleId ruleId);
+
+	/**
+	 * Stage a Rule's rationale translation for one language in the Working Copy, leaving published master and recipe
+	 * assessment untouched. Staging the value already in master removes the override.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param ruleId      The Rule whose translation is being staged
+	 * @param lang        The language being translated; must not be English
+	 * @param rationale   The proposed translated rationale; {@code null} clears the translation (falls back to English)
+	 * @param baseVersion The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> stageRationaleTranslation(User user, RuleId ruleId, RecipeLanguage lang, String rationale, long baseVersion);
+
+	/**
+	 * Revert a Rule's staged rationale translation for one language, restoring the published master translation and
+	 * removing the Working Copy row.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param ruleId      The Rule whose staged translation is being reverted
+	 * @param lang        The language being reverted; must not be English
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> revertRationaleTranslation(User user, RuleId ruleId, RecipeLanguage lang, long baseVersion);
 }
