@@ -8,14 +8,25 @@ import eu.dietwise.common.types.authorization.NotAuthorizedException;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.UserId;
-import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class AuthorizationImpl implements Authorization {
+
+	public static final String REQUIRES_VALID_AUTHENTICATED_USER = "this operation requires a valid, authenticated user";
+
 	@Override
 	public void requireLogin(User user) {
 		if (user == null || user.isUnauthenticated()) {
-			throw new NotAuthenticatedException("this operation requires a valid, authenticated user");
+			throw new NotAuthenticatedException(REQUIRES_VALID_AUTHENTICATED_USER);
+		}
+	}
+
+	@Override
+	public void requireCitizen(User user) {
+		if (user == null || user.isUnauthenticated()) {
+			throw new NotAuthenticatedException(REQUIRES_VALID_AUTHENTICATED_USER);
+		} else if (!user.getRoles().contains(Role.CITIZEN)) {
+			throw new NotAuthorizedException("this operation is only allowed for citizens");
 		}
 	}
 
@@ -50,7 +61,7 @@ public class AuthorizationImpl implements Authorization {
 	@Override
 	public void requireAdmin(User user) {
 		if (user == null || user.isUnauthenticated()) {
-			throw new NotAuthenticatedException("this operation requires a valid, authenticated user");
+			throw new NotAuthenticatedException(REQUIRES_VALID_AUTHENTICATED_USER);
 		} else if (!user.getRoles().contains(Role.ADMIN)) {
 			throw new NotAuthorizedException("this operation requires admin privileges");
 		}

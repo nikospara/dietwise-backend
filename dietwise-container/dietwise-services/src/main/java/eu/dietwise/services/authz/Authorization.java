@@ -12,6 +12,8 @@ public interface Authorization {
 	 */
 	void requireLogin(User user);
 
+	void requireCitizen(User user);
+
 	String requireIdmId(User user);
 
 	UUID requireUserUuid(User user);
