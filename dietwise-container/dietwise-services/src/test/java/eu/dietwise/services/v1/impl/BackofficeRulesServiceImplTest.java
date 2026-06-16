@@ -258,6 +258,35 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	@Test
+	void discardNewRuleRemovesTheStagedNewRuleForAnAdmin() {
+		when(ruleDao.discardNewRule(any(), eq(NEW_RULE_ID), eq(1L))).thenReturn(Uni.createFrom().voidItem());
+
+		newService().discardNewRule(adminUser(), new GenericRuleId(NEW_RULE_ID.toString()), 1L).await().atMost(AWAIT);
+
+		verify(ruleDao).discardNewRule(any(), eq(NEW_RULE_ID), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void discardNewRuleRejectsAStaleBaseVersion() {
+		when(ruleDao.discardNewRule(any(), eq(NEW_RULE_ID), eq(1L)))
+				.thenReturn(Uni.createFrom().failure(new StaleVersionException(null, NEW_RULE_ID)));
+
+		assertThatThrownBy(() -> newService().discardNewRule(adminUser(), new GenericRuleId(NEW_RULE_ID.toString()), 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	void discardNewRuleRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().discardNewRule(nonAdminUser(), new GenericRuleId(NEW_RULE_ID.toString()), 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(ruleDao, never()).discardNewRule(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
 	void listRulesAppendsWorkingCopyOnlyRulesAsNewState() {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
 		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));

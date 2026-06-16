@@ -62,6 +62,9 @@ class RuleDaoImplTest {
 	private static final String NEW_RULE_ROLE_NAME = "Centerpiece for a new rule";
 	private static final UUID BK_MASTER_RULE_ID = UUID.fromString("d5e7f9a1-5c6d-4e7f-9a0b-1c2d3e4f5061");
 	private static final UUID BK_NEW_ROLE_ID = UUID.fromString("e6f8a0b2-6d7e-4f8a-0b1c-2d3e4f506172");
+	private static final UUID DISCARD_ROLE_ID = UUID.fromString("f7a9b1c3-7e8f-4a9b-1c2d-3e4f50617283");
+	private static final UUID DISCARD_STALE_ROLE_ID = UUID.fromString("a8b0c2d4-8f9a-4b0c-2d3e-4f5061728394");
+	private static final UUID DISCARD_PUBLISHED_RULE_ID = UUID.fromString("b9c1d3e5-9a0b-4c1d-3e4f-5061728394a5");
 	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
@@ -523,6 +526,88 @@ class RuleDaoImplTest {
 			assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString());
 			assertThat(staged.rule().getRoleOrTechnique()).isNull();
 		});
+	}
+
+	@Test
+	@Order(21)
+	void testDiscardNewRuleRemovesItFromTheWorkingCopy(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRole(tx, DISCARD_ROLE_ID, "Role for the discard test"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var newId = factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, DISCARD_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var before = factory.withoutTransaction(em -> sut.findNewRules(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(before).anySatisfy(staged -> assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString()));
+
+		factory.withTransaction(tx -> sut.discardNewRule(tx, newId, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory.withoutTransaction(em -> sut.findNewRules(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after).noneSatisfy(staged -> assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString()));
+
+		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).doesNotContainKey(newId);
+	}
+
+	@Test
+	@Order(22)
+	void testDiscardNewRuleRejectsStaleBaseVersionLeavingItIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRole(tx, DISCARD_STALE_ROLE_ID, "Role for the discard stale test"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var newId = factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, DISCARD_STALE_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.discardNewRule(tx, newId, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var stillThere = factory.withoutTransaction(em -> sut.findNewRules(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stillThere).anySatisfy(staged -> assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString()));
+	}
+
+	@Test
+	@Order(23)
+	void testDiscardRefusesAPublishedRuleLeavingItsStagedChangeIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, DISCARD_PUBLISHED_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationale(tx, DISCARD_PUBLISHED_RULE_ID, STAGED_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.discardNewRule(tx, DISCARD_PUBLISHED_RULE_ID, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(EntityNotFoundException.class);
+
+		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).containsKey(DISCARD_PUBLISHED_RULE_ID);
+		assertThat(overlay.get(DISCARD_PUBLISHED_RULE_ID).rationale()).isEqualTo(STAGED_RATIONALE);
+	}
+
+	@Test
+	@Order(24)
+	void testDiscardOnARuleWithNoWorkingCopyRowIsANoOp(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.discardNewRule(tx, UNKNOWN_RULE_ID, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).doesNotContainKey(UNKNOWN_RULE_ID);
 	}
 
 	private static Uni<Void> persistRole(ReactivePersistenceTxContext tx, UUID id, String name) {

@@ -71,6 +71,13 @@ public class RulesResource {
 		return backofficeRulesService.revertRationale(user, new GenericRuleId(id), baseVersion);
 	}
 
+	@DELETE
+	@Path("{id}")
+	public Uni<Void> discardNewRule(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.discardNewRule(user, new GenericRuleId(id), baseVersion);
+	}
+
 	@PUT
 	@Path("{id}/active")
 	@Consumes(MediaType.APPLICATION_JSON)

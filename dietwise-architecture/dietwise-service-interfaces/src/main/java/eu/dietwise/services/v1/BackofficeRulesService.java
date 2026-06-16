@@ -70,6 +70,17 @@ public interface BackofficeRulesService {
 	Uni<RuleId> createRule(User user, UUID recommendationId, UUID triggerIngredientId, UUID roleOrTechniqueId);
 
 	/**
+	 * Discard an unpublished new Rule from the Working Copy, removing it from the grid. Only a Rule that exists solely
+	 * in the Working Copy can be discarded; a published Rule is deactivated instead.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param ruleId      The Working-Copy-only Rule to discard
+	 * @param baseVersion The Working Copy version the discard is based on
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the Rule is published rather than a Working-Copy-only Rule
+	 */
+	Uni<Void> discardNewRule(User user, RuleId ruleId, long baseVersion);
+
+	/**
 	 * The reference data an editor chooses from when creating a new Rule.
 	 *
 	 * @param user The editor; must have the ADMIN role

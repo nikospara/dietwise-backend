@@ -72,6 +72,18 @@ public interface RuleDao {
 	Uni<UUID> createRule(ReactivePersistenceTxContext tx, UUID recommendationId, UUID triggerIngredientId, UUID roleOrTechniqueId);
 
 	/**
+	 * Discard a Rule that exists only in the Working Copy (no published master), removing its Working Copy row.
+	 * Discarding a Rule that has no Working Copy row is a no-op. A Rule that is published (has a master) cannot be
+	 * discarded — it is deactivated instead.
+	 *
+	 * @param ruleId      The Working-Copy-only Rule to discard
+	 * @param baseVersion The Working Copy version the caller based the discard on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the Rule is published rather than a Working-Copy-only Rule
+	 */
+	Uni<Void> discardNewRule(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion);
+
+	/**
 	 * The Rules that exist only in the Working Copy (no published master), with their references resolved to English
 	 * names and their Working Copy version. Sparse: only Working-Copy-only Rules appear.
 	 */

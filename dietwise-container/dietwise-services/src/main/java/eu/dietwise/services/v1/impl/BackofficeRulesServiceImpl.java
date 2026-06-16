@@ -96,6 +96,12 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	}
 
 	@Override
+	public Uni<Void> discardNewRule(User user, RuleId ruleId, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> ruleDao.discardNewRule(tx, ruleId.asUuid(), baseVersion));
+	}
+
+	@Override
 	public Uni<NewRuleOptions> newRuleOptions(User user) {
 		authorization.requireAdmin(user);
 		return persistenceContextFactory.withoutTransaction(em -> forcm(

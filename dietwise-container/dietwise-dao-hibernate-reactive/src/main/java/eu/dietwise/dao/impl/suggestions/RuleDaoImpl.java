@@ -156,6 +156,18 @@ public class RuleDaoImpl implements RuleDao {
 	}
 
 	@Override
+	public Uni<Void> discardNewRule(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion) {
+		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing -> {
+			if (existing == null) {
+				return Uni.createFrom().voidItem();
+			}
+			return tx.find(RuleEntity.class, ruleId).flatMap(master -> master == null
+					? deleteStagedRow(tx, ruleId, baseVersion)
+					: Uni.createFrom().failure(new EntityNotFoundException(RuleEntity.class, ruleId, "No unpublished new Rule to discard")));
+		});
+	}
+
+	@Override
 	public Uni<List<StagedNewRule>> findNewRules(ReactivePersistenceContext em, RecipeLanguage lang) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<RuleWcEntity> q = cb.createQuery(RuleWcEntity.class);
