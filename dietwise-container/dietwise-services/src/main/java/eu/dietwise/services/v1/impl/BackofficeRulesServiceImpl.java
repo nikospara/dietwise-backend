@@ -2,15 +2,18 @@ package eu.dietwise.services.v1.impl;
 
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.DuplicateBusinessKeyException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
+import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
@@ -19,17 +22,21 @@ import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
+import eu.dietwise.services.v1.types.RuleField;
 import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.v1.model.ImmutableRule;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
+import eu.dietwise.v1.types.impl.RoleOrTechniqueImpl;
+import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
@@ -63,7 +70,10 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		return persistenceContextFactory.withoutTransaction(em -> forcm(
 				ruleDao.findAll(em, RecipeLanguage.EN),
 				_ -> ruleDao.findStagedOverlay(em),
-				_ -> ruleDao.findNewRules(em, RecipeLanguage.EN),
+				(_, _) -> ruleDao.findNewRules(em, RecipeLanguage.EN),
+				(_, _, _) -> ruleDao.findReferenceIds(em),
+				(_, _, _, _) -> triggerIngredientDao.findStagedNames(em),
+				(_, _, _, _, _) -> roleOrTechniqueDao.findStagedNames(em),
 				BackofficeRulesServiceImpl::merge
 		));
 	}
@@ -128,22 +138,120 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				: roleOrTechniqueDao.createRoleOrTechnique(tx, name).map(id -> new ReferenceOption(id, name))));
 	}
 
+	@Override
+	public Uni<ReferenceDetails> triggerIngredientForEdit(User user, UUID id) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> triggerIngredientDao.findEditableById(em, id));
+	}
+
+	@Override
+	public Uni<ReferenceDetails> roleOrTechniqueForEdit(User user, UUID id) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> roleOrTechniqueDao.findEditableById(em, id));
+	}
+
+	@Override
+	public Uni<Void> editTriggerIngredient(User user, UUID id, String name, String explanationForLlm, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> triggerIngredientDao.listOptions(tx).flatMap(options -> nameTaken(options, id, name)
+				? Uni.createFrom().failure(new DuplicateBusinessKeyException("A Trigger Ingredient named '" + name + "' already exists"))
+				: triggerIngredientDao.editTriggerIngredient(tx, id, name, explanationForLlm, baseVersion)));
+	}
+
+	@Override
+	public Uni<Void> editRoleOrTechnique(User user, UUID id, String name, String explanationForLlm, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> roleOrTechniqueDao.listOptions(tx).flatMap(options -> nameTaken(options, id, name)
+				? Uni.createFrom().failure(new DuplicateBusinessKeyException("A Role or Technique named '" + name + "' already exists"))
+				: roleOrTechniqueDao.editRoleOrTechnique(tx, id, name, explanationForLlm, baseVersion)));
+	}
+
 	private static boolean nameExists(List<ReferenceOption> options, String name) {
 		return options.stream().anyMatch(option -> option.name().equalsIgnoreCase(name));
 	}
 
-	private static List<StagedRule> merge(List<Rule> master, Map<UUID, StagedRuleOverlay> overlays, List<StagedNewRule> newRules) {
-		Stream<StagedRule> published = master.stream().map(rule -> {
-			StagedRuleOverlay overlay = overlays.get(rule.getId().asUuid());
-			return overlay == null ? new StagedRule(rule, RuleChangeState.UNCHANGED, 0L) : applyOverlay(rule, overlay);
-		});
-		Stream<StagedRule> created = newRules.stream().map(newRule -> new StagedRule(newRule.rule(), RuleChangeState.NEW, newRule.version()));
+	private static boolean nameTaken(List<ReferenceOption> options, UUID id, String name) {
+		return options.stream().anyMatch(option -> !option.id().equals(id) && option.name().equalsIgnoreCase(name));
+	}
+
+	private static List<StagedRule> merge(
+			List<Rule> master,
+			Map<UUID, StagedRuleOverlay> overlays,
+			List<StagedNewRule> newRules,
+			Map<UUID, RuleReferences> referenceIds,
+			Map<UUID, String> triggerStagedNames,
+			Map<UUID, String> roleStagedNames
+	) {
+		Stream<StagedRule> published = master.stream().map(rule ->
+				toPublishedStagedRule(rule, overlays.get(rule.getId().asUuid()), referenceIds.get(rule.getId().asUuid()), triggerStagedNames, roleStagedNames));
+		Stream<StagedRule> created = newRules.stream().map(newRule ->
+				toNewStagedRule(newRule, referenceIds.get(newRule.rule().getId().asUuid()), triggerStagedNames, roleStagedNames));
 		return Stream.concat(published, created).toList();
 	}
 
-	private static StagedRule applyOverlay(Rule master, StagedRuleOverlay overlay) {
-		Rule effective = ImmutableRule.builder().from(master).rationale(overlay.rationale()).isActive(overlay.active()).build();
-		boolean unchanged = Objects.equals(master.getRationale(), overlay.rationale()) && master.isActive() == overlay.active();
-		return new StagedRule(effective, unchanged ? RuleChangeState.UNCHANGED : RuleChangeState.CHANGED, overlay.version());
+	private static StagedRule toPublishedStagedRule(
+			Rule master,
+			StagedRuleOverlay overlay,
+			RuleReferences references,
+			Map<UUID, String> triggerStagedNames,
+			Map<UUID, String> roleStagedNames
+	) {
+		UUID triggerId = references.triggerIngredientId();
+		UUID roleId = references.roleOrTechniqueId();
+		String rationale = overlay == null ? master.getRationale() : overlay.rationale();
+		boolean active = overlay == null ? master.isActive() : overlay.active();
+		long version = overlay == null ? 0L : overlay.version();
+		Rule effective = ImmutableRule.builder().from(master)
+				.triggerIngredient(new TriggerIngredientImpl(effectiveTriggerName(master, triggerId, triggerStagedNames)))
+				.roleOrTechnique(effectiveRole(master, roleId, roleStagedNames))
+				.rationale(rationale)
+				.isActive(active)
+				.build();
+		Set<RuleField> changedFields = EnumSet.noneOf(RuleField.class);
+		if (overlay != null && !Objects.equals(master.getRationale(), overlay.rationale())) {
+			changedFields.add(RuleField.RATIONALE);
+		}
+		if (overlay != null && master.isActive() != overlay.active()) {
+			changedFields.add(RuleField.ACTIVE);
+		}
+		addSharedChanges(changedFields, triggerId, roleId, triggerStagedNames, roleStagedNames);
+		RuleChangeState changeState = changedFields.contains(RuleField.RATIONALE) || changedFields.contains(RuleField.ACTIVE)
+				? RuleChangeState.CHANGED
+				: RuleChangeState.UNCHANGED;
+		return new StagedRule(effective, triggerId, roleId, changeState, changedFields, version);
+	}
+
+	private static StagedRule toNewStagedRule(
+			StagedNewRule newRule,
+			RuleReferences references,
+			Map<UUID, String> triggerStagedNames,
+			Map<UUID, String> roleStagedNames
+	) {
+		UUID triggerId = references.triggerIngredientId();
+		UUID roleId = references.roleOrTechniqueId();
+		Set<RuleField> changedFields = EnumSet.noneOf(RuleField.class);
+		addSharedChanges(changedFields, triggerId, roleId, triggerStagedNames, roleStagedNames);
+		return new StagedRule(newRule.rule(), triggerId, roleId, RuleChangeState.NEW, changedFields, newRule.version());
+	}
+
+	private static void addSharedChanges(Set<RuleField> changedFields, UUID triggerId, UUID roleId, Map<UUID, String> triggerStagedNames, Map<UUID, String> roleStagedNames) {
+		if (triggerStagedNames.containsKey(triggerId)) {
+			changedFields.add(RuleField.TRIGGER_INGREDIENT);
+		}
+		if (roleId != null && roleStagedNames.containsKey(roleId)) {
+			changedFields.add(RuleField.ROLE_OR_TECHNIQUE);
+		}
+	}
+
+	private static String effectiveTriggerName(Rule master, UUID triggerId, Map<UUID, String> triggerStagedNames) {
+		return triggerStagedNames.getOrDefault(triggerId, master.getTriggerIngredient().asString());
+	}
+
+	private static RoleOrTechniqueImpl effectiveRole(Rule master, UUID roleId, Map<UUID, String> roleStagedNames) {
+		if (roleId == null) {
+			return null;
+		}
+		String masterName = master.getRoleOrTechnique() == null ? null : master.getRoleOrTechnique().asString();
+		return new RoleOrTechniqueImpl(roleStagedNames.getOrDefault(roleId, masterName));
 	}
 }

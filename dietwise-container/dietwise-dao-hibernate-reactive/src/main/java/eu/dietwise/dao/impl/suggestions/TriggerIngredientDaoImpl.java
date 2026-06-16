@@ -4,15 +4,21 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Root;
 
+import eu.dietwise.common.dao.EntityNotFoundException;
+import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
@@ -52,6 +58,90 @@ public class TriggerIngredientDaoImpl implements TriggerIngredientDao {
 		entity.setName(name);
 		entity.setVersion(1L);
 		return tx.persist(entity).replaceWith(id);
+	}
+
+	@Override
+	public Uni<Map<UUID, String>> findStagedNames(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<TriggerIngredientWcEntity> root = q.from(TriggerIngredientWcEntity.class);
+		q.select(cb.tuple(root.get(TriggerIngredientWcEntity_.id), root.get(TriggerIngredientWcEntity_.name)));
+		return em.createQuery(q).getResultList().map(rows -> rows.stream()
+				.collect(java.util.stream.Collectors.toMap(t -> t.get(0, UUID.class), t -> t.get(1, String.class))));
+	}
+
+	@Override
+	public Uni<ReferenceDetails> findEditableById(ReactivePersistenceContext em, UUID id) {
+		return em.find(TriggerIngredientWcEntity.class, id).flatMap(mirror -> mirror != null
+				? Uni.createFrom().item(new ReferenceDetails(mirror.getName(), mirror.getExplanationForLlm(), mirror.getVersion()))
+				: em.find(TriggerIngredientEntity.class, id).map(master -> {
+					if (master == null) {
+						throw new EntityNotFoundException(TriggerIngredientEntity.class, id);
+					}
+					return new ReferenceDetails(master.getName(), master.getExplanationForLlm(), 0L);
+				}));
+	}
+
+	@Override
+	public Uni<Void> editTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm, long baseVersion) {
+		return tx.find(TriggerIngredientWcEntity.class, id).flatMap(existing ->
+				tx.find(TriggerIngredientEntity.class, id).flatMap(master -> applyEdit(tx, id, name, explanationForLlm, baseVersion, existing, master)));
+	}
+
+	private Uni<Void> applyEdit(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm, long baseVersion, TriggerIngredientWcEntity existing, TriggerIngredientEntity master) {
+		if (existing == null && master == null) {
+			return Uni.createFrom().failure(new EntityNotFoundException(TriggerIngredientEntity.class, id));
+		}
+		boolean matchesMaster = master != null
+				&& Objects.equals(name, master.getName())
+				&& Objects.equals(explanationForLlm, master.getExplanationForLlm());
+		if (existing == null) {
+			if (baseVersion != 0L) {
+				return Uni.createFrom().failure(new StaleVersionException(TriggerIngredientEntity.class, id));
+			}
+			return matchesMaster ? Uni.createFrom().voidItem() : seedStaged(tx, id, name, explanationForLlm);
+		}
+		return matchesMaster
+				? deleteStaged(tx, id, baseVersion)
+				: bumpStaged(tx, id, name, explanationForLlm, baseVersion);
+	}
+
+	private Uni<Void> seedStaged(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm) {
+		var entity = new TriggerIngredientWcEntity();
+		entity.setId(id);
+		entity.setName(name);
+		entity.setExplanationForLlm(explanationForLlm);
+		entity.setVersion(1L);
+		return tx.persist(entity).replaceWithVoid();
+	}
+
+	private Uni<Void> bumpStaged(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaUpdate<TriggerIngredientWcEntity> cu = cb.createCriteriaUpdate(TriggerIngredientWcEntity.class);
+		Root<TriggerIngredientWcEntity> wc = cu.getRoot();
+		cu.set(wc.get(TriggerIngredientWcEntity_.name), name);
+		cu.set(wc.get(TriggerIngredientWcEntity_.explanationForLlm), explanationForLlm);
+		cu.set(wc.get(TriggerIngredientWcEntity_.version), cb.sum(wc.get(TriggerIngredientWcEntity_.version), 1L));
+		cu.where(cb.and(
+				cb.equal(wc.get(TriggerIngredientWcEntity_.id), id),
+				cb.equal(wc.get(TriggerIngredientWcEntity_.version), baseVersion)
+		));
+		return tx.createUpdate(cu).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(TriggerIngredientEntity.class, id)));
+	}
+
+	private Uni<Void> deleteStaged(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<TriggerIngredientWcEntity> cd = cb.createCriteriaDelete(TriggerIngredientWcEntity.class);
+		Root<TriggerIngredientWcEntity> wc = cd.getRoot();
+		cd.where(cb.and(
+				cb.equal(wc.get(TriggerIngredientWcEntity_.id), id),
+				cb.equal(wc.get(TriggerIngredientWcEntity_.version), baseVersion)
+		));
+		return tx.createDelete(cd).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(TriggerIngredientEntity.class, id)));
 	}
 
 	private Uni<List<ReferenceOption>> masterOptions(ReactivePersistenceContext em) {

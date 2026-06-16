@@ -20,6 +20,7 @@ import java.util.UUID;
 import eu.dietwise.common.dao.DuplicateBusinessKeyException;
 import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.test.jpa.MockReactivePersistenceContextFactory;
+import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.types.authorization.NotAuthenticatedException;
 import eu.dietwise.common.types.authorization.NotAuthorizedException;
@@ -33,10 +34,12 @@ import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.AuthorizationImpl;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
+import eu.dietwise.services.v1.types.RuleField;
 import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.v1.model.ImmutableRule;
 import eu.dietwise.v1.model.Rule;
@@ -61,6 +64,8 @@ class BackofficeRulesServiceImplTest {
 	private static final UUID RECOMMENDATION_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
 	private static final UUID TRIGGER_INGREDIENT_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
 	private static final UUID ROLE_OR_TECHNIQUE_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
+	private static final UUID OTHER_TRIGGER_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
+	private static final UUID OTHER_ROLE_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
 	private static final String MASTER_RATIONALE = "Published rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final Rule RULE = ImmutableRule.builder()
@@ -98,12 +103,16 @@ class BackofficeRulesServiceImplTest {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
 		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
 		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		stubSharedDataForBaseRule();
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
 		assertThat(rules).hasSize(1);
 		assertThat(rules.getFirst().rule()).isEqualTo(RULE);
+		assertThat(rules.getFirst().triggerIngredientId()).isEqualTo(TRIGGER_INGREDIENT_ID);
+		assertThat(rules.getFirst().roleOrTechniqueId()).isEqualTo(ROLE_OR_TECHNIQUE_ID);
 		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+		assertThat(rules.getFirst().changedFields()).isEmpty();
 		assertThat(rules.getFirst().version()).isZero();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
@@ -113,6 +122,7 @@ class BackofficeRulesServiceImplTest {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
 		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
 		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(STAGED_RATIONALE, true, 4L))));
+		stubSharedDataForBaseRule();
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
@@ -120,6 +130,7 @@ class BackofficeRulesServiceImplTest {
 		assertThat(rules.getFirst().rule().getRationale()).isEqualTo(STAGED_RATIONALE);
 		assertThat(rules.getFirst().rule().getTriggerIngredient()).isEqualTo(new TriggerIngredientImpl("Beef"));
 		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.CHANGED);
+		assertThat(rules.getFirst().changedFields()).containsExactly(RuleField.RATIONALE);
 		assertThat(rules.getFirst().version()).isEqualTo(4L);
 	}
 
@@ -128,10 +139,12 @@ class BackofficeRulesServiceImplTest {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
 		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
 		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(MASTER_RATIONALE, true, 2L))));
+		stubSharedDataForBaseRule();
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
 		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+		assertThat(rules.getFirst().changedFields()).isEmpty();
 		assertThat(rules.getFirst().version()).isEqualTo(2L);
 	}
 
@@ -140,12 +153,14 @@ class BackofficeRulesServiceImplTest {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
 		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
 		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(MASTER_RATIONALE, false, 5L))));
+		stubSharedDataForBaseRule();
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
 		assertThat(rules.getFirst().rule().getRationale()).isEqualTo(MASTER_RATIONALE);
 		assertThat(rules.getFirst().rule().isActive()).isFalse();
 		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.CHANGED);
+		assertThat(rules.getFirst().changedFields()).containsExactly(RuleField.ACTIVE);
 		assertThat(rules.getFirst().version()).isEqualTo(5L);
 	}
 
@@ -286,6 +301,11 @@ class BackofficeRulesServiceImplTest {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
 		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(new StagedNewRule(NEW_RULE, 1L))));
+		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(
+				RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID),
+				NEW_RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
+		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
@@ -297,8 +317,161 @@ class BackofficeRulesServiceImplTest {
 		assertThat(rules).anySatisfy(staged -> {
 			assertThat(staged.rule()).isEqualTo(NEW_RULE);
 			assertThat(staged.changeState()).isEqualTo(RuleChangeState.NEW);
+			assertThat(staged.changedFields()).isEmpty();
 			assertThat(staged.version()).isEqualTo(1L);
 		});
+	}
+
+	@Test
+	void listRulesOverlaysAStagedTriggerRenameAndFlagsTheCellLeavingTheRowUnchanged() {
+		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
+		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
+		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_ID, "Bovine")));
+		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+
+		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
+
+		assertThat(staged.rule().getTriggerIngredient()).isEqualTo(new TriggerIngredientImpl("Bovine"));
+		assertThat(staged.changedFields()).containsExactly(RuleField.TRIGGER_INGREDIENT);
+		assertThat(staged.changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+	}
+
+	@Test
+	void listRulesOverlaysAStagedRoleRenameAndFlagsTheCell() {
+		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
+		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
+		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of(ROLE_OR_TECHNIQUE_ID, "folded through")));
+
+		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
+
+		assertThat(staged.rule().getRoleOrTechnique()).isEqualTo(new RoleOrTechniqueImpl("folded through"));
+		assertThat(staged.changedFields()).containsExactly(RuleField.ROLE_OR_TECHNIQUE);
+		assertThat(staged.changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+	}
+
+	@Test
+	void triggerIngredientForEditReturnsEffectiveDetailsForAnAdmin() {
+		when(triggerIngredientDao.findEditableById(any(), eq(TRIGGER_INGREDIENT_ID)))
+				.thenReturn(Uni.createFrom().item(new ReferenceDetails("Beef", "Red meat.", 3L)));
+
+		ReferenceDetails details = newService().triggerIngredientForEdit(adminUser(), TRIGGER_INGREDIENT_ID).await().atMost(AWAIT);
+
+		assertThat(details).isEqualTo(new ReferenceDetails("Beef", "Red meat.", 3L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void triggerIngredientForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().triggerIngredientForEdit(nonAdminUser(), TRIGGER_INGREDIENT_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).findEditableById(any(), any());
+	}
+
+	@Test
+	void roleOrTechniqueForEditReturnsEffectiveDetailsForAnAdmin() {
+		when(roleOrTechniqueDao.findEditableById(any(), eq(ROLE_OR_TECHNIQUE_ID)))
+				.thenReturn(Uni.createFrom().item(new ReferenceDetails("minced in sauce", null, 0L)));
+
+		ReferenceDetails details = newService().roleOrTechniqueForEdit(adminUser(), ROLE_OR_TECHNIQUE_ID).await().atMost(AWAIT);
+
+		assertThat(details).isEqualTo(new ReferenceDetails("minced in sauce", null, 0L));
+	}
+
+	@Test
+	void roleOrTechniqueForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().roleOrTechniqueForEdit(nonAdminUser(), ROLE_OR_TECHNIQUE_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).findEditableById(any(), any());
+	}
+
+	@Test
+	void editTriggerIngredientStagesTheEditForAnAdmin() {
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Beef"))));
+		when(triggerIngredientDao.editTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq("Bovine"), eq("Red meat."), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().editTriggerIngredient(adminUser(), TRIGGER_INGREDIENT_ID, "Bovine", "Red meat.", 1L).await().atMost(AWAIT);
+
+		verify(triggerIngredientDao).editTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq("Bovine"), eq("Red meat."), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void editTriggerIngredientExcludesItselfFromTheUniquenessCheckWhenKeepingItsName() {
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Beef"))));
+		when(triggerIngredientDao.editTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq("Beef"), eq("Updated explanation."), eq(2L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().editTriggerIngredient(adminUser(), TRIGGER_INGREDIENT_ID, "Beef", "Updated explanation.", 2L).await().atMost(AWAIT);
+
+		verify(triggerIngredientDao).editTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq("Beef"), eq("Updated explanation."), eq(2L));
+	}
+
+	@Test
+	void editTriggerIngredientRejectsRenamingToAnotherEntrysNameCaseInsensitively() {
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(
+				new ReferenceOption(TRIGGER_INGREDIENT_ID, "Beef"),
+				new ReferenceOption(OTHER_TRIGGER_ID, "Soy sauce"))));
+
+		assertThatThrownBy(() -> newService().editTriggerIngredient(adminUser(), TRIGGER_INGREDIENT_ID, "soy sauce", "x", 1L).await().atMost(AWAIT))
+				.isInstanceOf(DuplicateBusinessKeyException.class);
+		verify(triggerIngredientDao, never()).editTriggerIngredient(any(), any(), any(), any(), anyLong());
+	}
+
+	@Test
+	void editTriggerIngredientRejectsAStaleBaseVersion() {
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Beef"))));
+		when(triggerIngredientDao.editTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq("Bovine"), eq("x"), eq(9L)))
+				.thenReturn(Uni.createFrom().failure(new StaleVersionException(null, TRIGGER_INGREDIENT_ID)));
+
+		assertThatThrownBy(() -> newService().editTriggerIngredient(adminUser(), TRIGGER_INGREDIENT_ID, "Bovine", "x", 9L).await().atMost(AWAIT))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	void editTriggerIngredientRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().editTriggerIngredient(nonAdminUser(), TRIGGER_INGREDIENT_ID, "Bovine", "x", 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).listOptions(any());
+		verify(triggerIngredientDao, never()).editTriggerIngredient(any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void editRoleOrTechniqueStagesTheEditForAnAdmin() {
+		when(roleOrTechniqueDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(ROLE_OR_TECHNIQUE_ID, "minced in sauce"))));
+		when(roleOrTechniqueDao.editRoleOrTechnique(any(), eq(ROLE_OR_TECHNIQUE_ID), eq("folded through"), eq("Mixed in."), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().editRoleOrTechnique(adminUser(), ROLE_OR_TECHNIQUE_ID, "folded through", "Mixed in.", 1L).await().atMost(AWAIT);
+
+		verify(roleOrTechniqueDao).editRoleOrTechnique(any(), eq(ROLE_OR_TECHNIQUE_ID), eq("folded through"), eq("Mixed in."), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void editRoleOrTechniqueRejectsRenamingToAnotherEntrysNameCaseInsensitively() {
+		when(roleOrTechniqueDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(
+				new ReferenceOption(ROLE_OR_TECHNIQUE_ID, "minced in sauce"),
+				new ReferenceOption(OTHER_ROLE_ID, "seasoning"))));
+
+		assertThatThrownBy(() -> newService().editRoleOrTechnique(adminUser(), ROLE_OR_TECHNIQUE_ID, "Seasoning", "x", 1L).await().atMost(AWAIT))
+				.isInstanceOf(DuplicateBusinessKeyException.class);
+		verify(roleOrTechniqueDao, never()).editRoleOrTechnique(any(), any(), any(), any(), anyLong());
+	}
+
+	@Test
+	void editRoleOrTechniqueRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().editRoleOrTechnique(nonAdminUser(), ROLE_OR_TECHNIQUE_ID, "folded through", "x", 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).listOptions(any());
+		verify(roleOrTechniqueDao, never()).editRoleOrTechnique(any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
 	@Test
@@ -411,6 +584,12 @@ class BackofficeRulesServiceImplTest {
 		verify(roleOrTechniqueDao, never()).listOptions(any());
 		verify(roleOrTechniqueDao, never()).createRoleOrTechnique(any(), any());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	private void stubSharedDataForBaseRule() {
+		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
+		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 	}
 
 	private BackofficeRulesServiceImpl newService() {

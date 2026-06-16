@@ -47,6 +47,7 @@ import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.types.suggestions.HasTriggerIngredientId;
@@ -268,6 +269,49 @@ public class RuleDaoImpl implements RuleDao {
 		return rows.stream()
 				.map(tuple -> new RuleBusinessKey(tuple.get(0, UUID.class), tuple.get(1, UUID.class), tuple.get(2, UUID.class)))
 				.toList();
+	}
+
+	@Override
+	public Uni<Map<UUID, RuleReferences>> findReferenceIds(ReactivePersistenceContext em) {
+		return masterReferenceIds(em).flatMap(master -> workingCopyReferenceIds(em).map(workingCopy -> {
+			Map<UUID, RuleReferences> merged = new HashMap<>(master);
+			merged.putAll(workingCopy);
+			return merged;
+		}));
+	}
+
+	private Uni<Map<UUID, RuleReferences>> masterReferenceIds(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleEntity> rule = q.from(RuleEntity.class);
+		Join<RuleEntity, RoleOrTechniqueEntity> role = rule.join(RuleEntity_.roleOrTechnique, JoinType.LEFT);
+		q.select(cb.tuple(
+				rule.get(RuleEntity_.id),
+				rule.get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id),
+				role.get(RoleOrTechniqueEntity_.id)
+		));
+		return em.createQuery(q).getResultList().map(RuleDaoImpl::toReferenceIds);
+	}
+
+	private Uni<Map<UUID, RuleReferences>> workingCopyReferenceIds(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleWcEntity> wc = q.from(RuleWcEntity.class);
+		q.select(cb.tuple(
+				wc.get(RuleWcEntity_.id),
+				wc.get(RuleWcEntity_.triggerIngredientId),
+				wc.get(RuleWcEntity_.roleOrTechniqueId)
+		));
+		return em.createQuery(q).getResultList().map(RuleDaoImpl::toReferenceIds);
+	}
+
+	private static Map<UUID, RuleReferences> toReferenceIds(List<Tuple> rows) {
+		return rows.stream().collect(toMap(
+				tuple -> tuple.get(0, UUID.class),
+				tuple -> new RuleReferences(tuple.get(1, UUID.class), tuple.get(2, UUID.class)),
+				(existing, ignored) -> existing,
+				LinkedHashMap::new
+		));
 	}
 
 	private Uni<Void> applySetActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion, RuleWcEntity existing, RuleEntity master) {

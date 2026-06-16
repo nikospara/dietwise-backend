@@ -3,6 +3,7 @@ package eu.dietwise.services.v1;
 import java.util.List;
 import java.util.UUID;
 
+import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.NewRuleOptions;
@@ -109,4 +110,56 @@ public interface BackofficeRulesService {
 	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If a Role or Technique with the same name already exists
 	 */
 	Uni<ReferenceOption> createRoleOrTechnique(User user, String name);
+
+	/**
+	 * The effective editable details of one Trigger Ingredient (published master overlaid by any Staged Change), to
+	 * pre-fill the edit dialog.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param id   The Trigger Ingredient to edit
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Trigger Ingredient exists
+	 */
+	Uni<ReferenceDetails> triggerIngredientForEdit(User user, UUID id);
+
+	/**
+	 * The effective editable details of one Role or Technique (published master overlaid by any Staged Change), to
+	 * pre-fill the edit dialog.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param id   The Role or Technique to edit
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Role or Technique exists
+	 */
+	Uni<ReferenceDetails> roleOrTechniqueForEdit(User user, UUID id);
+
+	/**
+	 * Stage an edit to a Trigger Ingredient's name and explanation in the Working Copy. The entity is shared master
+	 * data, so the edit is seen by every Rule that references it. The name must stay unique across published master and
+	 * the Working Copy, excluding this entity itself.
+	 *
+	 * @param user             The editor; must have the ADMIN role
+	 * @param id               The Trigger Ingredient being edited
+	 * @param name             The proposed name
+	 * @param explanationForLlm The proposed explanation for the LLM; may be {@code null}
+	 * @param baseVersion      The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If another Trigger Ingredient already has this name
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Trigger Ingredient exists
+	 */
+	Uni<Void> editTriggerIngredient(User user, UUID id, String name, String explanationForLlm, long baseVersion);
+
+	/**
+	 * Stage an edit to a Role or Technique's name and explanation in the Working Copy. The entity is shared master data,
+	 * so the edit is seen by every Rule that references it. The name must stay unique across published master and the
+	 * Working Copy, excluding this entity itself.
+	 *
+	 * @param user             The editor; must have the ADMIN role
+	 * @param id               The Role or Technique being edited
+	 * @param name             The proposed name
+	 * @param explanationForLlm The proposed explanation for the LLM; may be {@code null}
+	 * @param baseVersion      The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If another Role or Technique already has this name
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Role or Technique exists
+	 */
+	Uni<Void> editRoleOrTechnique(User user, UUID id, String name, String explanationForLlm, long baseVersion);
 }

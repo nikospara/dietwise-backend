@@ -8,6 +8,7 @@ import java.util.UUID;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.types.suggestions.HasTriggerIngredientId;
@@ -93,4 +94,11 @@ public interface RuleDao {
 	 * Every Rule business key currently in use across published master and the Working Copy, for uniqueness checks.
 	 */
 	Uni<Set<RuleBusinessKey>> findBusinessKeys(ReactivePersistenceContext em);
+
+	/**
+	 * The reference-data ids each Rule points at, keyed by Rule id, across published master and the Working Copy. Used
+	 * to overlay effective Trigger Ingredient / Role or Technique names onto the grid and to flag every Rule that
+	 * references a shared entity with a pending edit.
+	 */
+	Uni<Map<UUID, RuleReferences>> findReferenceIds(ReactivePersistenceContext em);
 }

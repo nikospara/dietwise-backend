@@ -13,6 +13,7 @@ import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.types.RepresentableAsString;
@@ -71,6 +72,8 @@ class RuleDaoImplTest {
 	private static final String WC_TRIGGER_NAME = "Working-copy-only trigger";
 	private static final UUID WC_ROLE_ID = UUID.fromString("d1e3f5a7-1c2d-4e3f-5061-728394a5b6c7");
 	private static final String WC_ROLE_NAME = "Working-copy-only role";
+	private static final UUID REFERENCE_IDS_RULE_ID = UUID.fromString("e2f4a6b8-2d3e-4f5a-6b7c-8d9e0f1a2b3c");
+	private static final UUID REFERENCE_IDS_WC_ROLE_ID = UUID.fromString("f3a5b7c9-3e4f-4a5b-7c8d-9e0f1a2b3c4d");
 	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
@@ -644,6 +647,25 @@ class RuleDaoImplTest {
 			assertThat(staged.rule().getTriggerIngredient().asString()).isEqualTo(WC_TRIGGER_NAME);
 			assertThat(staged.rule().getRoleOrTechnique().asString()).isEqualTo(WC_ROLE_NAME);
 		});
+	}
+
+	@Test
+	@Order(26)
+	void testFindReferenceIdsCoversMasterAndWorkingCopyRules(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, REFERENCE_IDS_RULE_ID, "Reference-ids master rule."))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var newId = factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, REFERENCE_IDS_WC_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var references = factory.withoutTransaction(sut::findReferenceIds)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(references.get(REFERENCE_IDS_RULE_ID)).isEqualTo(new RuleReferences(BEEF_ID, REFERENCE_IDS_RULE_ID));
+		assertThat(references.get(newId)).isEqualTo(new RuleReferences(BEEF_ID, REFERENCE_IDS_WC_ROLE_ID));
+		assertThat(references.get(ROLELESS_BEEF_RULE_ID)).isEqualTo(new RuleReferences(BEEF_ID, null));
 	}
 
 	private static Uni<Void> persistRole(ReactivePersistenceTxContext tx, UUID id, String name) {

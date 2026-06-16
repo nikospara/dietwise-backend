@@ -2,10 +2,12 @@ package eu.dietwise.dao.impl.suggestions;
 
 import static eu.dietwise.common.test.testcontainers.DockerImageNames.POSTGRES_IMAGE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
 import java.util.UUID;
 
+import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
@@ -28,6 +30,9 @@ class RoleOrTechniqueDaoImplTest {
 
 	private static final UUID ROLE_OR_TECHNIQUE_ID = UUID.fromString("f56b72c0-4af0-4e4b-99a8-83bd31c6f7d8");
 	private static final String NEW_ROLE_OR_TECHNIQUE_NAME = "Binding agent";
+	private static final String MASTER_NAME = "steak centerpiece";
+	private static final String EDITED_NAME = "centrepiece protein";
+	private static final String EDITED_EXPLANATION = "The dish's main, defining ingredient.";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -84,5 +89,96 @@ class RoleOrTechniqueDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(options).contains(new ReferenceOption(newId, NEW_ROLE_OR_TECHNIQUE_NAME));
 		assertThat(options).anySatisfy(option -> assertThat(option.id()).isEqualTo(ROLE_OR_TECHNIQUE_ID));
+	}
+
+	@Test
+	@Order(4)
+	void testFindEditableByIdReturnsMasterDetailsWhenUnchanged(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, ROLE_OR_TECHNIQUE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(details.name()).isEqualTo(MASTER_NAME);
+		assertThat(details.explanationForLlm()).isNull();
+		assertThat(details.version()).isZero();
+	}
+
+	@Test
+	@Order(5)
+	void testEditRoleOrTechniqueSeedsAMirrorRowOnFirstTouch(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, ROLE_OR_TECHNIQUE_ID, EDITED_NAME, EDITED_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, ROLE_OR_TECHNIQUE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo(EDITED_NAME);
+		assertThat(details.explanationForLlm()).isEqualTo(EDITED_EXPLANATION);
+		assertThat(details.version()).isEqualTo(1L);
+
+		var stagedNames = factory.withoutTransaction(sut::findStagedNames)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stagedNames).containsEntry(ROLE_OR_TECHNIQUE_ID, EDITED_NAME);
+	}
+
+	@Test
+	@Order(6)
+	void testEditRoleOrTechniqueBackToMasterValuesCollapsesTheMirrorRow(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, ROLE_OR_TECHNIQUE_ID, MASTER_NAME, null, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var stagedNames = factory.withoutTransaction(sut::findStagedNames)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stagedNames).doesNotContainKey(ROLE_OR_TECHNIQUE_ID);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, ROLE_OR_TECHNIQUE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo(MASTER_NAME);
+		assertThat(details.version()).isZero();
+	}
+
+	@Test
+	@Order(7)
+	void testEditRoleOrTechniqueRejectsStaleBaseVersionLeavingTheStagedEditIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, ROLE_OR_TECHNIQUE_ID, EDITED_NAME, EDITED_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, ROLE_OR_TECHNIQUE_ID, "garnish", "stale", 99L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, ROLE_OR_TECHNIQUE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo(EDITED_NAME);
+		assertThat(details.version()).isEqualTo(1L);
+	}
+
+	@Test
+	@Order(8)
+	void testEditWorkingCopyOnlyRoleOrTechniqueBumpsItsMirror(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createRoleOrTechnique(tx, "Emulsifier"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, newId, "Emulsifier base", "Binds fat and water.", 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("Emulsifier base");
+		assertThat(details.explanationForLlm()).isEqualTo("Binds fat and water.");
+		assertThat(details.version()).isEqualTo(2L);
 	}
 }

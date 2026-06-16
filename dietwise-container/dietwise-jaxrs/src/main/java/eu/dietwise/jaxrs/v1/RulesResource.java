@@ -16,6 +16,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
+import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.BackofficeRulesService;
@@ -71,6 +72,38 @@ public class RulesResource {
 	public Uni<ReferenceOption> createRoleOrTechnique(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.createRoleOrTechnique(user, request.name());
+	}
+
+	@GET
+	@Path("trigger-ingredients/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<ReferenceDetails> triggerIngredientForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.triggerIngredientForEdit(user, UUID.fromString(id));
+	}
+
+	@GET
+	@Path("roles-or-techniques/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<ReferenceDetails> roleOrTechniqueForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.roleOrTechniqueForEdit(user, UUID.fromString(id));
+	}
+
+	@PUT
+	@Path("trigger-ingredients/{id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> editTriggerIngredient(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.editTriggerIngredient(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
+	}
+
+	@PUT
+	@Path("roles-or-techniques/{id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> editRoleOrTechnique(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.editRoleOrTechnique(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@PUT
