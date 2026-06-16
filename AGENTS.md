@@ -27,8 +27,15 @@ Treat `dietwise-architecture/src/site/markdown/CodingConventions.md` as authorit
 - `dietwise-common`: shared utilities, common DAO abstractions, test utilities.
 - `dietwise-container`: deployable/runtime modules.
   - `dietwise`: Quarkus application module (final executable artifact), effective configuration lives in `dietwise-container/dietwise/src/main/resources/application.properties`
+  - `dietwise-services-model`: data objects shared internally between the DAO and service layers.
   - `dietwise-dao-hibernate-reactive`: DAO implementation and Liquibase changelog resources.
 - `dietwise-docker`: peripheral Docker images and compose files.
+
+## Data Objects Between Layers
+Any data object shared internally between the DAO and service layers belongs in the `dietwise-services-model`
+module (package `eu.dietwise.services.model.*`), e.g. `eu.dietwise.services.model.suggestions.AlternativeIngredient`.
+DAO interfaces in `dietwise-dao` may return these types directly. Do not place such carriers in the `dietwise-dao`
+module itself.
 
 ## Usage of Hibernate Reactive
 

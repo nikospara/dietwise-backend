@@ -2,11 +2,14 @@ package eu.dietwise.dao.impl.suggestions;
 
 import static eu.dietwise.common.test.testcontainers.DockerImageNames.POSTGRES_IMAGE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import eu.dietwise.common.dao.StaleVersionException;
+import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
@@ -19,6 +22,7 @@ import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
+import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -39,6 +43,11 @@ class RuleDaoImplTest {
 	private static final UUID DECREASE_RED_MEAT_RECOMMENDATION_ID = UUID.fromString("9977a713-0608-4f0c-9933-f7788b4f0225");
 	private static final UUID ROLELESS_BEEF_RULE_ID = UUID.fromString("b1d5f3a2-0c44-4f7e-9a2b-7e1c9d6f0a01");
 	private static final UUID PORK_MINCED_RULE_ID = UUID.fromString("79c845bb-ff9c-4a0e-9188-d2f9050f42c1");
+	private static final UUID STAGING_RULE_ID = UUID.fromString("a2c4e6f8-1b3d-4e5f-8a9b-0c1d2e3f4a5b");
+	private static final UUID STAGING_CONFLICT_RULE_ID = UUID.fromString("c7d8e9f0-2a3b-4c5d-9e8f-1a2b3c4d5e6f");
+	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
+	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
+	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -143,5 +152,64 @@ class RuleDaoImplTest {
 		});
 		assertThat(rules.stream().map(rule -> rule.getTriggerIngredient().asString()).distinct().count())
 				.isGreaterThan(1);
+	}
+
+	@Test
+	@Order(5)
+	void testStageRationaleStoresInWorkingCopyLeavingMasterUnchanged(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, STAGING_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newVersion = factory.withTransaction(tx -> sut.stageRationale(tx, STAGING_RULE_ID, STAGED_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newVersion).isEqualTo(1L);
+
+		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).containsKey(STAGING_RULE_ID);
+		assertThat(overlay.get(STAGING_RULE_ID).rationale()).isEqualTo(STAGED_RATIONALE);
+		assertThat(overlay.get(STAGING_RULE_ID).version()).isEqualTo(1L);
+
+		var master = factory.withTransaction(tx -> tx.find(RuleEntity.class, STAGING_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master.getRationale()).isEqualTo(STAGING_RULE_MASTER_RATIONALE);
+	}
+
+	@Test
+	@Order(6)
+	void testStageRationaleRejectsStaleBaseVersionThenAcceptsCurrent(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, STAGING_CONFLICT_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationale(tx, STAGING_CONFLICT_RULE_ID, STAGED_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.stageRationale(tx, STAGING_CONFLICT_RULE_ID, RESTAGED_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var newVersion = factory.withTransaction(tx -> sut.stageRationale(tx, STAGING_CONFLICT_RULE_ID, RESTAGED_RATIONALE, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newVersion).isEqualTo(2L);
+
+		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay.get(STAGING_CONFLICT_RULE_ID).rationale()).isEqualTo(RESTAGED_RATIONALE);
+		assertThat(overlay.get(STAGING_CONFLICT_RULE_ID).version()).isEqualTo(2L);
+	}
+
+	private static Uni<Void> createRule(ReactivePersistenceTxContext tx, UUID id, String rationale) {
+		var rule = new RuleEntity();
+		rule.setId(id);
+		rule.setRecommendation(tx.getReference(RecommendationEntity.class, DECREASE_RED_MEAT_RECOMMENDATION_ID));
+		rule.setTriggerIngredient(tx.getReference(TriggerIngredientEntity.class, BEEF_ID));
+		rule.setRoleOrTechnique(null);
+		rule.setRationale(rationale);
+		return tx.persist(rule).replaceWithVoid();
 	}
 }

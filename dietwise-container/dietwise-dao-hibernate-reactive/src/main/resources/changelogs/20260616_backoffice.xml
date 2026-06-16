@@ -11,4 +11,24 @@
 	<changeSet id="rule_role_optional" author="nikospara">
 		<dropNotNullConstraint tableName="DW_RULE" columnName="role_or_technique_id" columnDataType="UUID"/>
 	</changeSet>
+
+	<changeSet id="rule_working_copy" author="nikospara">
+		<createTable tableName="DW_RULE_WC" remarks="Working Copy mirror of DW_RULE: whole proposed Rule rows staged for publish; sparse, a row exists only for a changed or new Rule">
+			<column name="id" type="UUID" remarks="Primary key; equals the master Rule id for an edited Rule, or a generated id for a Working-Copy-only Rule">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_RULE_WC" />
+			</column>
+			<column name="recommendation_id" type="UUID" remarks="Proposed recommendation reference; resolved against master union Working Copy, not a foreign key">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE_WC__RECOMMENDATION_ID" />
+			</column>
+			<column name="trigger_ingredient_id" type="UUID" remarks="Proposed trigger ingredient reference; resolved against master union Working Copy, not a foreign key">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE_WC__TRIGGER_INGREDIENT_ID" />
+			</column>
+			<column name="role_or_technique_id" type="UUID" remarks="Proposed role or technique reference; optional, resolved against master union Working Copy, not a foreign key" />
+			<column name="cuisine" type="VARCHAR(100)" remarks="Proposed cuisine context, English" />
+			<column name="rationale" type="VARCHAR(300)" remarks="Proposed rationale, English" />
+			<column name="version" type="BIGINT" remarks="Working Copy optimistic-concurrency version; incremented on each staged change to this row">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE_WC__VERSION" />
+			</column>
+		</createTable>
+	</changeSet>
 </databaseChangeLog>
