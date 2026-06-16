@@ -18,8 +18,10 @@ import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.types.RepresentableAsString;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueWcEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
+import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
@@ -65,6 +67,10 @@ class RuleDaoImplTest {
 	private static final UUID DISCARD_ROLE_ID = UUID.fromString("f7a9b1c3-7e8f-4a9b-1c2d-3e4f50617283");
 	private static final UUID DISCARD_STALE_ROLE_ID = UUID.fromString("a8b0c2d4-8f9a-4b0c-2d3e-4f5061728394");
 	private static final UUID DISCARD_PUBLISHED_RULE_ID = UUID.fromString("b9c1d3e5-9a0b-4c1d-3e4f-5061728394a5");
+	private static final UUID WC_TRIGGER_ID = UUID.fromString("c0d2e4f6-0b1c-4d2e-4f50-61728394a5b6");
+	private static final String WC_TRIGGER_NAME = "Working-copy-only trigger";
+	private static final UUID WC_ROLE_ID = UUID.fromString("d1e3f5a7-1c2d-4e3f-5061-728394a5b6c7");
+	private static final String WC_ROLE_NAME = "Working-copy-only role";
 	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
@@ -608,6 +614,36 @@ class RuleDaoImplTest {
 		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(overlay).doesNotContainKey(UNKNOWN_RULE_ID);
+	}
+
+	@Test
+	@Order(25)
+	void testFindNewRulesResolvesReferencesToWorkingCopyOnlyEntities(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> {
+			var trigger = new TriggerIngredientWcEntity();
+			trigger.setId(WC_TRIGGER_ID);
+			trigger.setName(WC_TRIGGER_NAME);
+			trigger.setVersion(1L);
+			var role = new RoleOrTechniqueWcEntity();
+			role.setId(WC_ROLE_ID);
+			role.setName(WC_ROLE_NAME);
+			role.setVersion(1L);
+			return tx.persist(trigger).chain(() -> tx.persist(role));
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newId = factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, WC_TRIGGER_ID, WC_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newRules = factory.withoutTransaction(em -> sut.findNewRules(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newRules).anySatisfy(staged -> {
+			assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString());
+			assertThat(staged.rule().getTriggerIngredient().asString()).isEqualTo(WC_TRIGGER_NAME);
+			assertThat(staged.rule().getRoleOrTechnique().asString()).isEqualTo(WC_ROLE_NAME);
+		});
 	}
 
 	private static Uni<Void> persistRole(ReactivePersistenceTxContext tx, UUID id, String name) {

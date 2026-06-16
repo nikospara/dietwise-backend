@@ -16,6 +16,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.NewRuleOptions;
@@ -52,6 +53,24 @@ public class RulesResource {
 		UUID roleOrTechniqueId = request.roleOrTechniqueId() == null ? null : UUID.fromString(request.roleOrTechniqueId());
 		return backofficeRulesService.createRule(user, recommendationId, triggerIngredientId, roleOrTechniqueId)
 				.map(id -> new CreatedRuleResponse(id.asString()));
+	}
+
+	@POST
+	@Path("trigger-ingredients")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<ReferenceOption> createTriggerIngredient(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.createTriggerIngredient(user, request.name());
+	}
+
+	@POST
+	@Path("roles-or-techniques")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<ReferenceOption> createRoleOrTechnique(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.createRoleOrTechnique(user, request.name());
 	}
 
 	@PUT

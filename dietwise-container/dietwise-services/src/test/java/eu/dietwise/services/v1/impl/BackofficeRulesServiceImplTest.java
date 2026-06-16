@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,13 +32,9 @@ import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.AuthorizationImpl;
-import eu.dietwise.services.model.suggestions.RoleOrTechnique;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
-import eu.dietwise.services.model.suggestions.TriggerIngredient;
-import eu.dietwise.services.types.suggestions.RoleOrTechniqueId;
-import eu.dietwise.services.types.suggestions.TriggerIngredientId;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.StagedRule;
@@ -341,21 +336,10 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	@Test
-	void newRuleOptionsReturnsMappedReferenceDataForAnAdmin() {
-		when(recommendationDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(
-				new ReferenceOption(RECOMMENDATION_ID, "Decrease sodium"))));
-		TriggerIngredientId triggerIngredientId = mock(TriggerIngredientId.class);
-		when(triggerIngredientId.asUuid()).thenReturn(TRIGGER_INGREDIENT_ID);
-		TriggerIngredient triggerIngredient = mock(TriggerIngredient.class);
-		when(triggerIngredient.getId()).thenReturn(triggerIngredientId);
-		when(triggerIngredient.getName()).thenReturn("Soy sauce");
-		when(triggerIngredientDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(triggerIngredient)));
-		RoleOrTechniqueId roleOrTechniqueId = mock(RoleOrTechniqueId.class);
-		when(roleOrTechniqueId.asUuid()).thenReturn(ROLE_OR_TECHNIQUE_ID);
-		RoleOrTechnique roleOrTechnique = mock(RoleOrTechnique.class);
-		when(roleOrTechnique.getId()).thenReturn(roleOrTechniqueId);
-		when(roleOrTechnique.getName()).thenReturn("seasoning");
-		when(roleOrTechniqueDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(roleOrTechnique)));
+	void newRuleOptionsReturnsReferenceDataForAnAdmin() {
+		when(recommendationDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(RECOMMENDATION_ID, "Decrease sodium"))));
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Soy sauce"))));
+		when(roleOrTechniqueDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(ROLE_OR_TECHNIQUE_ID, "seasoning"))));
 
 		NewRuleOptions options = newService().newRuleOptions(adminUser()).await().atMost(AWAIT);
 
@@ -369,6 +353,64 @@ class BackofficeRulesServiceImplTest {
 		assertThatThrownBy(() -> newService().newRuleOptions(nonAdminUser()).await().atMost(AWAIT))
 				.isInstanceOf(NotAuthorizedException.class);
 		verify(recommendationDao, never()).listOptions(any());
+	}
+
+	@Test
+	void createTriggerIngredientStagesANewEntryForAnAdmin() {
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of()));
+		when(triggerIngredientDao.createTriggerIngredient(any(), eq("Quinoa flour"))).thenReturn(Uni.createFrom().item(TRIGGER_INGREDIENT_ID));
+
+		ReferenceOption created = newService().createTriggerIngredient(adminUser(), "Quinoa flour").await().atMost(AWAIT);
+
+		assertThat(created).isEqualTo(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Quinoa flour"));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void createTriggerIngredientRejectsADuplicateNameCaseInsensitivelyWithoutCreating() {
+		when(triggerIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Soy sauce"))));
+
+		assertThatThrownBy(() -> newService().createTriggerIngredient(adminUser(), "soy sauce").await().atMost(AWAIT))
+				.isInstanceOf(DuplicateBusinessKeyException.class);
+		verify(triggerIngredientDao, never()).createTriggerIngredient(any(), any());
+	}
+
+	@Test
+	void createTriggerIngredientRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().createTriggerIngredient(nonAdminUser(), "Quinoa flour").await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).listOptions(any());
+		verify(triggerIngredientDao, never()).createTriggerIngredient(any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void createRoleOrTechniqueStagesANewEntryForAnAdmin() {
+		when(roleOrTechniqueDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of()));
+		when(roleOrTechniqueDao.createRoleOrTechnique(any(), eq("Binding agent"))).thenReturn(Uni.createFrom().item(ROLE_OR_TECHNIQUE_ID));
+
+		ReferenceOption created = newService().createRoleOrTechnique(adminUser(), "Binding agent").await().atMost(AWAIT);
+
+		assertThat(created).isEqualTo(new ReferenceOption(ROLE_OR_TECHNIQUE_ID, "Binding agent"));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void createRoleOrTechniqueRejectsADuplicateNameCaseInsensitivelyWithoutCreating() {
+		when(roleOrTechniqueDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(ROLE_OR_TECHNIQUE_ID, "seasoning"))));
+
+		assertThatThrownBy(() -> newService().createRoleOrTechnique(adminUser(), "Seasoning").await().atMost(AWAIT))
+				.isInstanceOf(DuplicateBusinessKeyException.class);
+		verify(roleOrTechniqueDao, never()).createRoleOrTechnique(any(), any());
+	}
+
+	@Test
+	void createRoleOrTechniqueRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().createRoleOrTechnique(nonAdminUser(), "Binding agent").await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).listOptions(any());
+		verify(roleOrTechniqueDao, never()).createRoleOrTechnique(any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
 	private BackofficeRulesServiceImpl newService() {

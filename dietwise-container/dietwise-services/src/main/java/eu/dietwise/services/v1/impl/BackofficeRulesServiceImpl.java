@@ -106,15 +106,30 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		authorization.requireAdmin(user);
 		return persistenceContextFactory.withoutTransaction(em -> forcm(
 				recommendationDao.listOptions(em),
-				_ -> triggerIngredientDao.findAll(em, RecipeLanguage.EN),
-				_ -> roleOrTechniqueDao.findAll(em, RecipeLanguage.EN),
-				(recommendations, triggerIngredients, rolesOrTechniques) ->
-						new NewRuleOptions(
-								recommendations,
-								triggerIngredients.stream().map(triggerIngredient -> new ReferenceOption(triggerIngredient.getId().asUuid(), triggerIngredient.getName())).toList(),
-								rolesOrTechniques.stream().map(roleOrTechnique -> new ReferenceOption(roleOrTechnique.getId().asUuid(), roleOrTechnique.getName())).toList()
-						)
+				_ -> triggerIngredientDao.listOptions(em),
+				_ -> roleOrTechniqueDao.listOptions(em),
+				NewRuleOptions::new
 		));
+	}
+
+	@Override
+	public Uni<ReferenceOption> createTriggerIngredient(User user, String name) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> triggerIngredientDao.listOptions(tx).flatMap(options -> nameExists(options, name)
+				? Uni.createFrom().failure(new DuplicateBusinessKeyException("A Trigger Ingredient named '" + name + "' already exists"))
+				: triggerIngredientDao.createTriggerIngredient(tx, name).map(id -> new ReferenceOption(id, name))));
+	}
+
+	@Override
+	public Uni<ReferenceOption> createRoleOrTechnique(User user, String name) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> roleOrTechniqueDao.listOptions(tx).flatMap(options -> nameExists(options, name)
+				? Uni.createFrom().failure(new DuplicateBusinessKeyException("A Role or Technique named '" + name + "' already exists"))
+				: roleOrTechniqueDao.createRoleOrTechnique(tx, name).map(id -> new ReferenceOption(id, name))));
+	}
+
+	private static boolean nameExists(List<ReferenceOption> options, String name) {
+		return options.stream().anyMatch(option -> option.name().equalsIgnoreCase(name));
 	}
 
 	private static List<StagedRule> merge(List<Rule> master, Map<UUID, StagedRuleOverlay> overlays, List<StagedNewRule> newRules) {

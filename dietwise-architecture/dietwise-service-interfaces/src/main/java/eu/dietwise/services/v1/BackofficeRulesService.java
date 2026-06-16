@@ -3,6 +3,7 @@ package eu.dietwise.services.v1;
 import java.util.List;
 import java.util.UUID;
 
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.StagedRule;
@@ -86,4 +87,26 @@ public interface BackofficeRulesService {
 	 * @param user The editor; must have the ADMIN role
 	 */
 	Uni<NewRuleOptions> newRuleOptions(User user);
+
+	/**
+	 * Stage a brand-new Trigger Ingredient in the Working Copy. The name must be unique across published master and the
+	 * Working Copy; an existing entry should be selected rather than duplicated.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param name The proposed Trigger Ingredient name
+	 * @return The id and name of the newly staged Trigger Ingredient, selectable for a new Rule
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If a Trigger Ingredient with the same name already exists
+	 */
+	Uni<ReferenceOption> createTriggerIngredient(User user, String name);
+
+	/**
+	 * Stage a brand-new Role or Technique in the Working Copy. The name must be unique across published master and the
+	 * Working Copy; an existing entry should be selected rather than duplicated.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param name The proposed Role or Technique name
+	 * @return The id and name of the newly staged Role or Technique, selectable for a new Rule
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If a Role or Technique with the same name already exists
+	 */
+	Uni<ReferenceOption> createRoleOrTechnique(User user, String name);
 }

@@ -10,6 +10,7 @@ import jakarta.persistence.criteria.CriteriaDelete;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity_;
@@ -30,6 +31,7 @@ class TriggerIngredientDaoImplTest {
 	private static final long ASYNC_WAIT_SECONDS = 300;
 
 	private static final UUID TRIGGER_INGREDIENT_ID = UUID.fromString("f8e6df4f-72f5-4f92-b3ca-05328707fd5e");
+	private static final String NEW_TRIGGER_INGREDIENT_NAME = "Quinoa flour";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -98,5 +100,32 @@ class TriggerIngredientDaoImplTest {
 
 		assertThat(triggerIngredient.getName()).isEqualTo("Rundvlees");
 		assertThat(triggerIngredient.getExplanationForLlm()).contains("NL trigger");
+	}
+
+	@Test
+	@Order(3)
+	void testListOptionsReturnsMasterEntries(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var options = factory.withoutTransaction(sut::listOptions)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(options).contains(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Beef"));
+	}
+
+	@Test
+	@Order(4)
+	void testCreateTriggerIngredientStagesAMirrorRowVisibleInListOptions(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createTriggerIngredient(tx, NEW_TRIGGER_INGREDIENT_NAME))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var options = factory.withoutTransaction(sut::listOptions)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(options).contains(new ReferenceOption(newId, NEW_TRIGGER_INGREDIENT_NAME));
+		assertThat(options).contains(new ReferenceOption(TRIGGER_INGREDIENT_ID, "Beef"));
 	}
 }

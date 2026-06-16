@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toMap;
 
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +33,8 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity_;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueWcEntity;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueWcEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity;
@@ -40,6 +43,8 @@ import eu.dietwise.dao.jpa.suggestions.RuleWcEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleWcEntity_;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
+import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
+import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -183,10 +188,24 @@ public class RuleDaoImpl implements RuleDao {
 		if (rows.isEmpty()) {
 			return Uni.createFrom().item(List.of());
 		}
-		return loadNamesById(em, RecommendationEntity.class, RecommendationEntity_.id, RecommendationEntity_.name).flatMap(recNames ->
-				loadNamesById(em, TriggerIngredientEntity.class, TriggerIngredientEntity_.id, TriggerIngredientEntity_.name).flatMap(triggerNames ->
-						loadNamesById(em, RoleOrTechniqueEntity.class, RoleOrTechniqueEntity_.id, RoleOrTechniqueEntity_.name).map(roleNames ->
-								rows.stream().map(row -> toStagedNewRule(row, recNames, triggerNames, roleNames)).toList())));
+		return forcm(
+				loadNamesById(em, RecommendationEntity.class, RecommendationEntity_.id, RecommendationEntity_.name),
+				_ -> loadNamesById(em, TriggerIngredientEntity.class, TriggerIngredientEntity_.id, TriggerIngredientEntity_.name),
+				_ -> loadNamesById(em, TriggerIngredientWcEntity.class, TriggerIngredientWcEntity_.id, TriggerIngredientWcEntity_.name),
+				_ -> loadNamesById(em, RoleOrTechniqueEntity.class, RoleOrTechniqueEntity_.id, RoleOrTechniqueEntity_.name),
+				_ -> loadNamesById(em, RoleOrTechniqueWcEntity.class, RoleOrTechniqueWcEntity_.id, RoleOrTechniqueWcEntity_.name),
+				(recNames, triggerMaster, triggerMirror, roleMaster, roleMirror) -> {
+					Map<UUID, String> triggerNames = overlay(triggerMaster, triggerMirror);
+					Map<UUID, String> roleNames = overlay(roleMaster, roleMirror);
+					return rows.stream().map(row -> toStagedNewRule(row, recNames, triggerNames, roleNames)).toList();
+				}
+		);
+	}
+
+	private static Map<UUID, String> overlay(Map<UUID, String> master, Map<UUID, String> mirror) {
+		Map<UUID, String> merged = new HashMap<>(master);
+		merged.putAll(mirror);
+		return merged;
 	}
 
 	private static <E> Uni<Map<UUID, String>> loadNamesById(ReactivePersistenceContext em, Class<E> type, SingularAttribute<E, UUID> idAttr, SingularAttribute<E, String> nameAttr) {
