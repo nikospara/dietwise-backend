@@ -12,10 +12,12 @@ import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
+import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.types.RepresentableAsString;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.v1.model.Rule;
@@ -56,6 +58,10 @@ class RuleDaoImplTest {
 	private static final UUID UNKNOWN_RULE_ID = UUID.fromString("f1a3b5c7-1e2f-4a3b-5c6d-7e8f9a0b1c2d");
 	private static final UUID STALE_SEED_RULE_ID = UUID.fromString("a2b4c6d8-2f3a-4b5c-6d7e-8f9a0b1c2d3e");
 	private static final UUID NOOP_ACTIVE_RULE_ID = UUID.fromString("b3c5d7e9-3a4b-4c5d-7e8f-9a0b1c2d3e4f");
+	private static final UUID NEW_RULE_ROLE_ID = UUID.fromString("c4d6e8f0-4b5c-4d6e-8f9a-0b1c2d3e4f50");
+	private static final String NEW_RULE_ROLE_NAME = "Centerpiece for a new rule";
+	private static final UUID BK_MASTER_RULE_ID = UUID.fromString("d5e7f9a1-5c6d-4e7f-9a0b-1c2d3e4f5061");
+	private static final UUID BK_NEW_ROLE_ID = UUID.fromString("e6f8a0b2-6d7e-4f8a-0b1c-2d3e4f506172");
 	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
@@ -453,18 +459,94 @@ class RuleDaoImplTest {
 		assertThat(overlay).doesNotContainKey(NOOP_ACTIVE_RULE_ID);
 	}
 
+	@Test
+	@Order(18)
+	void testCreateRuleStagesAMirrorOnlyRuleResolvedByFindNewRules(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRole(tx, NEW_RULE_ROLE_ID, NEW_RULE_ROLE_NAME))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newId = factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, NEW_RULE_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newRules = factory.withoutTransaction(em -> sut.findNewRules(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newRules).anySatisfy(staged -> {
+			assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString());
+			assertThat(staged.rule().getRecommendation()).isEqualTo(new RecommendationImpl("Decrease red meat"));
+			assertThat(staged.rule().getTriggerIngredient()).isEqualTo(new TriggerIngredientImpl("Beef"));
+			assertThat(staged.rule().getRoleOrTechnique().asString()).isEqualTo(NEW_RULE_ROLE_NAME);
+			assertThat(staged.rule().getRationale()).isNull();
+			assertThat(staged.rule().isActive()).isTrue();
+			assertThat(staged.version()).isEqualTo(1L);
+		});
+
+		var all = factory.withoutTransaction(em -> sut.findAll(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(all).noneSatisfy(rule -> assertThat(rule.getId().asString()).isEqualTo(newId.toString()));
+	}
+
+	@Test
+	@Order(19)
+	void testFindBusinessKeysIncludesMasterAndWorkingCopyTriplets(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, BK_MASTER_RULE_ID, "A master rule for the business-key test."))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> persistRole(tx, BK_NEW_ROLE_ID, "Role for the business-key new rule"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, BK_NEW_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var keys = factory.withoutTransaction(sut::findBusinessKeys)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(keys).contains(new RuleBusinessKey(DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, BK_MASTER_RULE_ID));
+		assertThat(keys).contains(new RuleBusinessKey(DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, BK_NEW_ROLE_ID));
+	}
+
+	@Test
+	@Order(20)
+	void testCreateRuleWithNoRoleResolvesToANullRole(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createRule(tx, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, null))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newRules = factory.withoutTransaction(em -> sut.findNewRules(em, RecipeLanguage.EN))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newRules).anySatisfy(staged -> {
+			assertThat(staged.rule().getId().asString()).isEqualTo(newId.toString());
+			assertThat(staged.rule().getRoleOrTechnique()).isNull();
+		});
+	}
+
+	private static Uni<Void> persistRole(ReactivePersistenceTxContext tx, UUID id, String name) {
+		var role = new RoleOrTechniqueEntity();
+		role.setId(id);
+		role.setName(name);
+		return tx.persist(role).replaceWithVoid();
+	}
+
 	private static Uni<Void> createRule(ReactivePersistenceTxContext tx, UUID id, String rationale) {
 		return createRule(tx, id, rationale, true);
 	}
 
 	private static Uni<Void> createRule(ReactivePersistenceTxContext tx, UUID id, String rationale, boolean active) {
+		var role = new RoleOrTechniqueEntity();
+		role.setId(id);
+		role.setName("Role for rule " + id);
 		var rule = new RuleEntity();
 		rule.setId(id);
 		rule.setRecommendation(tx.getReference(RecommendationEntity.class, DECREASE_RED_MEAT_RECOMMENDATION_ID));
 		rule.setTriggerIngredient(tx.getReference(TriggerIngredientEntity.class, BEEF_ID));
-		rule.setRoleOrTechnique(null);
+		rule.setRoleOrTechnique(role);
 		rule.setRationale(rationale);
 		rule.setActive(active);
-		return tx.persist(rule).replaceWithVoid();
+		return tx.persist(role).chain(() -> tx.persist(rule)).replaceWithVoid();
 	}
 }

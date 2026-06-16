@@ -5,32 +5,44 @@ import static java.util.stream.Collectors.toMap;
 
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import jakarta.persistence.metamodel.SingularAttribute;
 
 import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleWcEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleWcEntity_;
+import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
 import eu.dietwise.dao.suggestions.RuleDao;
+import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.types.suggestions.HasTriggerIngredientId;
 import eu.dietwise.v1.model.ImmutableRule;
@@ -128,6 +140,103 @@ public class RuleDaoImpl implements RuleDao {
 	public Uni<Void> setActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion) {
 		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing ->
 				tx.find(RuleEntity.class, ruleId).flatMap(master -> applySetActive(tx, ruleId, active, baseVersion, existing, master)));
+	}
+
+	@Override
+	public Uni<UUID> createRule(ReactivePersistenceTxContext tx, UUID recommendationId, UUID triggerIngredientId, UUID roleOrTechniqueId) {
+		var wc = new RuleWcEntity();
+		UUID id = UUID.randomUUID();
+		wc.setId(id);
+		wc.setRecommendationId(recommendationId);
+		wc.setTriggerIngredientId(triggerIngredientId);
+		wc.setRoleOrTechniqueId(roleOrTechniqueId);
+		wc.setActive(true);
+		wc.setVersion(1L);
+		return tx.persist(wc).replaceWith(id);
+	}
+
+	@Override
+	public Uni<List<StagedNewRule>> findNewRules(ReactivePersistenceContext em, RecipeLanguage lang) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<RuleWcEntity> q = cb.createQuery(RuleWcEntity.class);
+		Root<RuleWcEntity> wc = q.from(RuleWcEntity.class);
+		Subquery<UUID> master = q.subquery(UUID.class);
+		Root<RuleEntity> masterRule = master.from(RuleEntity.class);
+		master.select(masterRule.get(RuleEntity_.id)).where(cb.equal(masterRule.get(RuleEntity_.id), wc.get(RuleWcEntity_.id)));
+		q.select(wc).where(cb.not(cb.exists(master)));
+		return em.createQuery(q).getResultList().flatMap(rows -> resolveNewRules(em, rows));
+	}
+
+	private Uni<List<StagedNewRule>> resolveNewRules(ReactivePersistenceContext em, List<RuleWcEntity> rows) {
+		if (rows.isEmpty()) {
+			return Uni.createFrom().item(List.of());
+		}
+		return loadNamesById(em, RecommendationEntity.class, RecommendationEntity_.id, RecommendationEntity_.name).flatMap(recNames ->
+				loadNamesById(em, TriggerIngredientEntity.class, TriggerIngredientEntity_.id, TriggerIngredientEntity_.name).flatMap(triggerNames ->
+						loadNamesById(em, RoleOrTechniqueEntity.class, RoleOrTechniqueEntity_.id, RoleOrTechniqueEntity_.name).map(roleNames ->
+								rows.stream().map(row -> toStagedNewRule(row, recNames, triggerNames, roleNames)).toList())));
+	}
+
+	private static <E> Uni<Map<UUID, String>> loadNamesById(ReactivePersistenceContext em, Class<E> type, SingularAttribute<E, UUID> idAttr, SingularAttribute<E, String> nameAttr) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<E> root = q.from(type);
+		q.select(cb.tuple(root.get(idAttr), root.get(nameAttr)));
+		return em.createQuery(q).getResultList().map(rows -> rows.stream()
+				.collect(toMap(tuple -> tuple.get(0, UUID.class), tuple -> tuple.get(1, String.class))));
+	}
+
+	private static StagedNewRule toStagedNewRule(RuleWcEntity row, Map<UUID, String> recNames, Map<UUID, String> triggerNames, Map<UUID, String> roleNames) {
+		Rule rule = ImmutableRule.builder()
+				.id(new UuidRuleId(row.getId()))
+				.recommendation(new RecommendationImpl(recNames.get(row.getRecommendationId())))
+				.triggerIngredient(new TriggerIngredientImpl(triggerNames.get(row.getTriggerIngredientId())))
+				.roleOrTechnique(row.getRoleOrTechniqueId() == null ? null : new RoleOrTechniqueImpl(roleNames.get(row.getRoleOrTechniqueId())))
+				.rationale(row.getRationale())
+				.cuisineContext(row.getCuisine())
+				.isActive(row.isActive())
+				.build();
+		return new StagedNewRule(rule, row.getVersion());
+	}
+
+	@Override
+	public Uni<Set<RuleBusinessKey>> findBusinessKeys(ReactivePersistenceContext em) {
+		return masterBusinessKeys(em).flatMap(masterKeys -> workingCopyBusinessKeys(em).map(workingCopyKeys -> {
+			Set<RuleBusinessKey> all = new HashSet<>(masterKeys);
+			all.addAll(workingCopyKeys);
+			return all;
+		}));
+	}
+
+	private Uni<List<RuleBusinessKey>> masterBusinessKeys(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleEntity> rule = q.from(RuleEntity.class);
+		Join<RuleEntity, RoleOrTechniqueEntity> role = rule.join(RuleEntity_.roleOrTechnique, JoinType.LEFT);
+		q.select(cb.tuple(
+				rule.get(RuleEntity_.recommendation).get(RecommendationEntity_.id),
+				rule.get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id),
+				role.get(RoleOrTechniqueEntity_.id)
+		));
+		return em.createQuery(q).getResultList().map(RuleDaoImpl::toBusinessKeys);
+	}
+
+	private Uni<List<RuleBusinessKey>> workingCopyBusinessKeys(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RuleWcEntity> wc = q.from(RuleWcEntity.class);
+		q.select(cb.tuple(
+				wc.get(RuleWcEntity_.recommendationId),
+				wc.get(RuleWcEntity_.triggerIngredientId),
+				wc.get(RuleWcEntity_.roleOrTechniqueId)
+		));
+		return em.createQuery(q).getResultList().map(RuleDaoImpl::toBusinessKeys);
+	}
+
+	private static List<RuleBusinessKey> toBusinessKeys(List<Tuple> rows) {
+		return rows.stream()
+				.map(tuple -> new RuleBusinessKey(tuple.get(0, UUID.class), tuple.get(1, UUID.class), tuple.get(2, UUID.class)))
+				.toList();
 	}
 
 	private Uni<Void> applySetActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion, RuleWcEntity existing, RuleEntity master) {

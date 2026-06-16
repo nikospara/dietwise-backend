@@ -2,7 +2,7 @@ package eu.dietwise.jaxrs.v1;
 
 import java.util.List;
 
-import eu.dietwise.services.v1.StagedRule;
+import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.types.RoleOrTechnique;
 

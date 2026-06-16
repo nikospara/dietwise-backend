@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import java.util.UUID;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
@@ -203,6 +205,25 @@ public class RecommendationDaoImplTest {
 		assertThat(recommendations).anyMatch(rc ->
 				rc.getRecommendation().asString().equals("Voedingspatroon laag in calcium")
 						&& rc.getComponentForScoring().asString().equals("calcium"));
+	}
+
+	@Test
+	@Order(7)
+	void testListOptionsReturnsEveryRecommendationAsIdAndNameSortedByName(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		List<ReferenceOption> options =
+				factory.withoutTransaction(sut::listOptions)
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(options).hasSize(15);
+		assertThat(options).extracting(ReferenceOption::name).contains("Decrease red meat");
+		assertThat(options).allSatisfy(option -> {
+			assertThat(option.id()).isNotNull();
+			assertThat(option.name()).isNotBlank();
+		});
+		assertThat(options).isSortedAccordingTo(Comparator.comparing(ReferenceOption::name));
 	}
 
 	// KEEP THIS LAST! IT MESSES WITH THE DATA

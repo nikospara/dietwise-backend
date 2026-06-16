@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -30,4 +31,9 @@ public interface RecommendationDao {
 	Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em);
 
 	Uni<List<RecommendationComponent>> listAllRecommendationsForScoring(ReactivePersistenceContext em, RecipeLanguage lang);
+
+	/**
+	 * Every Recommendation as an id + English name, ordered by name, for selection in the backoffice.
+	 */
+	Uni<List<ReferenceOption>> listOptions(ReactivePersistenceContext em);
 }

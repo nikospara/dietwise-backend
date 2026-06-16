@@ -1,8 +1,11 @@
 package eu.dietwise.services.v1;
 
 import java.util.List;
+import java.util.UUID;
 
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.services.v1.types.NewRuleOptions;
+import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.v1.types.RuleId;
 import io.smallrye.mutiny.Uni;
 
@@ -51,4 +54,25 @@ public interface BackofficeRulesService {
 	 * @param baseVersion The Working Copy version the change is based on ({@code 0} when no Staged Change exists yet)
 	 */
 	Uni<Void> setActive(User user, RuleId ruleId, boolean active, long baseVersion);
+
+	/**
+	 * Stage a brand-new Rule in the Working Copy from existing reference data, choosing its business key. The new Rule
+	 * starts active with no rationale and shows as a new row until published.
+	 *
+	 * @param user                The editor; must have the ADMIN role
+	 * @param recommendationId    The chosen Recommendation
+	 * @param triggerIngredientId The chosen Trigger Ingredient
+	 * @param roleOrTechniqueId   The chosen Role or Technique, or {@code null} for none
+	 * @return The id of the newly staged Rule
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If a Rule with the same business key already exists
+	 *                                                              in published master or the Working Copy
+	 */
+	Uni<RuleId> createRule(User user, UUID recommendationId, UUID triggerIngredientId, UUID roleOrTechniqueId);
+
+	/**
+	 * The reference data an editor chooses from when creating a new Rule.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 */
+	Uni<NewRuleOptions> newRuleOptions(User user);
 }

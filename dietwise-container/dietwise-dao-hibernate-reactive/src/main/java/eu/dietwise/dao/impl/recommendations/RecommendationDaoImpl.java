@@ -12,6 +12,7 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
@@ -126,6 +127,19 @@ public class RecommendationDaoImpl implements RecommendationDao {
 						.map(translationsById -> values.stream()
 								.map(value -> toRecommendationComponent(value, translationsById.get(value.getId())))
 								.toList()));
+	}
+
+	@Override
+	public Uni<List<ReferenceOption>> listOptions(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createTupleQuery();
+		var recommendation = q.from(RecommendationEntity.class);
+		q.select(cb.tuple(recommendation.get(RecommendationEntity_.id), recommendation.get(RecommendationEntity_.name)));
+		q.orderBy(cb.asc(recommendation.get(RecommendationEntity_.name)));
+		return em.createQuery(q).getResultList()
+				.map(rows -> rows.stream()
+						.map(tuple -> new ReferenceOption(tuple.get(0, UUID.class), tuple.get(1, String.class)))
+						.toList());
 	}
 
 	private Uni<Map<UUID, RecommendationTranslationEntity>> loadTranslationsByRecommendationId(

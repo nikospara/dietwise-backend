@@ -2,10 +2,13 @@ package eu.dietwise.dao.suggestions;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.services.model.suggestions.RuleBusinessKey;
+import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.types.suggestions.HasTriggerIngredientId;
 import eu.dietwise.v1.model.Rule;
@@ -56,4 +59,26 @@ public interface RuleDao {
 	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Rule exists in master to stage against
 	 */
 	Uni<Void> setActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion);
+
+	/**
+	 * Stage a brand-new Rule in the Working Copy from existing reference data. The references are stored as raw ids;
+	 * they are not validated here (the caller validates the business key). The new row starts active with no rationale.
+	 *
+	 * @param recommendationId    The chosen Recommendation
+	 * @param triggerIngredientId The chosen Trigger Ingredient
+	 * @param roleOrTechniqueId   The chosen Role or Technique, or {@code null} for none
+	 * @return The generated Working Copy id of the new Rule
+	 */
+	Uni<UUID> createRule(ReactivePersistenceTxContext tx, UUID recommendationId, UUID triggerIngredientId, UUID roleOrTechniqueId);
+
+	/**
+	 * The Rules that exist only in the Working Copy (no published master), with their references resolved to English
+	 * names and their Working Copy version. Sparse: only Working-Copy-only Rules appear.
+	 */
+	Uni<List<StagedNewRule>> findNewRules(ReactivePersistenceContext em, RecipeLanguage lang);
+
+	/**
+	 * Every Rule business key currently in use across published master and the Working Copy, for uniqueness checks.
+	 */
+	Uni<Set<RuleBusinessKey>> findBusinessKeys(ReactivePersistenceContext em);
 }

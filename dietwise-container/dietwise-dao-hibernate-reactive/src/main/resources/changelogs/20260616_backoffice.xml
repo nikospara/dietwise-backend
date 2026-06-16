@@ -44,4 +44,15 @@
 			</column>
 		</addColumn>
 	</changeSet>
+
+	<changeSet id="rule_business_key_unique" author="nikospara">
+		<comment>The Rule business key is the triplet (recommendation, trigger ingredient, role or technique), treating a
+			missing role as a value (NULLS NOT DISTINCT). Enforced on both published master and the Working Copy mirror.</comment>
+		<sql>ALTER TABLE dw_rule ADD CONSTRAINT uq_dw_rule__business_key UNIQUE NULLS NOT DISTINCT (recommendation_id, trigger_ingredient_id, role_or_technique_id)</sql>
+		<sql>ALTER TABLE dw_rule_wc ADD CONSTRAINT uq_dw_rule_wc__business_key UNIQUE NULLS NOT DISTINCT (recommendation_id, trigger_ingredient_id, role_or_technique_id)</sql>
+		<rollback>
+			<sql>ALTER TABLE dw_rule_wc DROP CONSTRAINT uq_dw_rule_wc__business_key</sql>
+			<sql>ALTER TABLE dw_rule DROP CONSTRAINT uq_dw_rule__business_key</sql>
+		</rollback>
+	</changeSet>
 </databaseChangeLog>

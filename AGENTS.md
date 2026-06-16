@@ -37,6 +37,20 @@ module (package `eu.dietwise.services.model.*`), e.g. `eu.dietwise.services.mode
 DAO interfaces in `dietwise-dao` may return these types directly. Do not place such carriers in the `dietwise-dao`
 module itself.
 
+Distinguish three homes for data types:
+- **Core domain model** — types central to the domain (e.g. `Rule`, `Recipe`) live in `dietwise-architecture`
+  (`dietwise-model`, package `eu.dietwise.v1.model`). These are the model the whole system is built around.
+- **Service-interface return/parameter types** — types returned or accepted by a service interface (in
+  `eu.dietwise.services.v1`) that are NOT part of the core model belong in `eu.dietwise.services.v1.types`, alongside
+  the existing `RecipeAssessmentMessage`, `StagedRule`, `RuleChangeState`, `NewRuleOptions`, `ReferenceOption`, etc.
+  The `v1` package holds the service interfaces; `v1.types` holds the peripheral data types they exchange.
+- **DAO↔service carriers** — internal, not exposed by any service interface: `dietwise-services-model` as above.
+- **Types shared by both the DAO and a service interface** — a generic data type returned by a DAO *and* carried in a
+  service-interface type can live in neither `services-model` (service-interfaces must not depend on it) nor `v1.types`
+  (the DAO must not depend on service-interfaces). Put such a type in `dietwise-common-types` (`eu.dietwise.common.types`),
+  e.g. `ReferenceOption` (an id + name option used by `RecommendationDao` and by `NewRuleOptions`). Keep it generic — no
+  feature-specific wording — since it sits in a foundational module.
+
 ## Usage of Hibernate Reactive
 
 This project contains a wrapper around Hibernate Reactive that provides a more neutral API, `ReactivePersistenceContext` and `ReactivePersistenceTxContext`.
