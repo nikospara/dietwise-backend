@@ -16,8 +16,9 @@ import eu.dietwise.v1.types.RecipeLanguage;
  * <p>{@code changeState} reflects the Rule's <em>own</em> Staged Changes (rationale, active); {@code changedFields}
  * additionally flags a Trigger Ingredient or Role or Technique cell when that shared entity has a pending edit, so the
  * blast radius of an edit shows on every referencing Rule even when the Rule itself is unchanged. {@code
- * rationaleTranslations} carries, for each non-English language, whether the rationale is translated, missing, or has a
- * pending translation change.
+ * rationaleTranslations}, {@code triggerIngredientTranslations} and {@code roleOrTechniqueTranslations} carry, for each
+ * non-English language, whether that translatable thing is translated, missing, or has a pending translation change;
+ * {@code roleOrTechniqueTranslations} is empty when the Rule has no Role or Technique.
  */
 public record StagedRule(
 		Rule rule,
@@ -26,6 +27,8 @@ public record StagedRule(
 		RuleChangeState changeState,
 		Set<RuleField> changedFields,
 		Map<RecipeLanguage, TranslationState> rationaleTranslations,
+		Map<RecipeLanguage, TranslationState> triggerIngredientTranslations,
+		Map<RecipeLanguage, TranslationState> roleOrTechniqueTranslations,
 		long version
 ) {
 }

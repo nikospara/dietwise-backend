@@ -8,7 +8,7 @@ import java.util.UUID;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.VersionedText;
-import eu.dietwise.services.model.suggestions.RationaleTranslationLangs;
+import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -109,7 +109,7 @@ public interface RuleDao {
 	 * published master and which carry a pending change in the Working Copy. Keyed by Rule id; sparse — a Rule with no
 	 * rationale translation at all does not appear. English is the master/fallback and is never a translation language.
 	 */
-	Uni<Map<UUID, RationaleTranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em);
+	Uni<Map<UUID, TranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em);
 
 	/**
 	 * The effective rationale translation of one Rule for each non-English language (published master overlaid by any

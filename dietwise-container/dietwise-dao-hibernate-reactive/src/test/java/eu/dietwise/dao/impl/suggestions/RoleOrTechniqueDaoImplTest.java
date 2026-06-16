@@ -8,11 +8,16 @@ import java.time.Duration;
 import java.util.UUID;
 
 import eu.dietwise.common.dao.StaleVersionException;
+import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
+import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
+import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueTranslationEntity;
 import eu.dietwise.v1.types.RecipeLanguage;
+import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -33,6 +38,21 @@ class RoleOrTechniqueDaoImplTest {
 	private static final String MASTER_NAME = "steak centerpiece";
 	private static final String EDITED_NAME = "centrepiece protein";
 	private static final String EDITED_EXPLANATION = "The dish's main, defining ingredient.";
+
+	private static final UUID TRANSLATION_ROLE_ID = UUID.fromString("c1d2e3f4-0001-4a5b-8c9d-0e1f2a3b0001");
+	private static final UUID TRANSLATION_COLLAPSE_ROLE_ID = UUID.fromString("c1d2e3f4-0002-4a5b-8c9d-0e1f2a3b0002");
+	private static final UUID TRANSLATION_BUMP_ROLE_ID = UUID.fromString("c1d2e3f4-0003-4a5b-8c9d-0e1f2a3b0003");
+	private static final UUID TRANSLATION_REVERT_ROLE_ID = UUID.fromString("c1d2e3f4-0004-4a5b-8c9d-0e1f2a3b0004");
+	private static final UUID TRANSLATION_REVERT_STALE_ROLE_ID = UUID.fromString("c1d2e3f4-0005-4a5b-8c9d-0e1f2a3b0005");
+	private static final UUID TRANSLATION_NULL_ROLE_ID = UUID.fromString("c1d2e3f4-0006-4a5b-8c9d-0e1f2a3b0006");
+	private static final String MASTER_EL_NAME = "κεντρικό κομμάτι";
+	private static final String MASTER_EL_EXPLANATION = "Το κύριο, καθοριστικό συστατικό.";
+	private static final String EDITED_EL_NAME = "κεντρικό κομμάτι (αναθ.)";
+	private static final String EDITED_EL_EXPLANATION = "Αναθεωρημένη εξήγηση.";
+	private static final String STAGED_NL_NAME = "middelpunt";
+	private static final String STAGED_NL_EXPLANATION = "Het belangrijkste ingrediënt.";
+	private static final String RESTAGED_NL_NAME = "middelpunt herzien";
+	private static final String RESTAGED_NL_EXPLANATION = "Herziene uitleg.";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -180,5 +200,166 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(details.name()).isEqualTo("Emulsifier base");
 		assertThat(details.explanationForLlm()).isEqualTo("Binds fat and water.");
 		assertThat(details.version()).isEqualTo(2L);
+	}
+
+	@Test
+	@Order(9)
+	void testFindTranslationsForEditOverlaysStagedOnMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, TRANSLATION_ROLE_ID, "binder (translation test)")
+						.chain(() -> persistRoleOrTechniqueTranslation(tx, TRANSLATION_ROLE_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_ROLE_ID, RecipeLanguage.NL, STAGED_NL_NAME, STAGED_NL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
+		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new ReferenceDetails(null, null, 0L));
+
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_ROLE_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_ROLE_ID).staged()).containsExactly(RecipeLanguage.NL);
+	}
+
+	@Test
+	@Order(10)
+	void testStageTranslationSeedsThenCollapsesToMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, TRANSLATION_COLLAPSE_ROLE_ID, "thickener (translation test)")
+						.chain(() -> persistRoleOrTechniqueTranslation(tx, TRANSLATION_COLLAPSE_ROLE_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_COLLAPSE_ROLE_ID, RecipeLanguage.EL, EDITED_EL_NAME, EDITED_EL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var staged = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(staged.get(TRANSLATION_COLLAPSE_ROLE_ID).staged()).containsExactly(RecipeLanguage.EL);
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_COLLAPSE_ROLE_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_COLLAPSE_ROLE_ID).staged()).isEmpty();
+		assertThat(langs.get(TRANSLATION_COLLAPSE_ROLE_ID).present()).containsExactly(RecipeLanguage.EL);
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_COLLAPSE_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+	}
+
+	@Test
+	@Order(11)
+	void testStageTranslationBumpsThenRejectsStaleBaseVersion(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, TRANSLATION_BUMP_ROLE_ID, "garnish (translation test)"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_ROLE_ID, RecipeLanguage.NL, STAGED_NL_NAME, STAGED_NL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_ROLE_ID, RecipeLanguage.NL, RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_BUMP_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 2L));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_ROLE_ID, RecipeLanguage.NL, "Stale.", "x", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	@Order(12)
+	void testRevertTranslationRemovesStagedRowRestoringMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, TRANSLATION_REVERT_ROLE_ID, "coating (translation test)")
+						.chain(() -> persistRoleOrTechniqueTranslation(tx, TRANSLATION_REVERT_ROLE_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_REVERT_ROLE_ID, RecipeLanguage.EL, EDITED_EL_NAME, EDITED_EL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_ROLE_ID, RecipeLanguage.EL, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_REVERT_ROLE_ID).staged()).isEmpty();
+		assertThat(langs.get(TRANSLATION_REVERT_ROLE_ID).present()).containsExactly(RecipeLanguage.EL);
+	}
+
+	@Test
+	@Order(13)
+	void testRevertTranslationRejectsStaleBaseVersionLeavingItIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, TRANSLATION_REVERT_STALE_ROLE_ID, "dusting (translation test)"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_REVERT_STALE_ROLE_ID, RecipeLanguage.NL, STAGED_NL_NAME, STAGED_NL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_STALE_ROLE_ID, RecipeLanguage.NL, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var stillStaged = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
+
+		factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_STALE_ROLE_ID, RecipeLanguage.NL, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var afterRevert = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+	}
+
+	@Test
+	@Order(14)
+	void testStageNullTranslationWithNoMasterIsANoOp(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, TRANSLATION_NULL_ROLE_ID, "rub (translation test)"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_NULL_ROLE_ID, RecipeLanguage.EL, null, null, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs).doesNotContainKey(TRANSLATION_NULL_ROLE_ID);
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_NULL_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+	}
+
+	private static Uni<Void> persistRoleOrTechnique(ReactivePersistenceTxContext tx, UUID id, String name) {
+		var entity = new RoleOrTechniqueEntity();
+		entity.setId(id);
+		entity.setName(name);
+		return tx.persist(entity).replaceWithVoid();
+	}
+
+	private static Uni<Void> persistRoleOrTechniqueTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String explanationForLlm) {
+		var translation = new RoleOrTechniqueTranslationEntity();
+		translation.setRoleOrTechnique(tx.getReference(RoleOrTechniqueEntity.class, id));
+		translation.setLang(lang);
+		translation.setName(name);
+		translation.setExplanationForLlm(explanationForLlm);
+		return tx.persist(translation).replaceWithVoid();
 	}
 }

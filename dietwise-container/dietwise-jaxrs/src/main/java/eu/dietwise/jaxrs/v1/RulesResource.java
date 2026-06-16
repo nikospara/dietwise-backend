@@ -110,6 +110,52 @@ public class RulesResource {
 	}
 
 	@GET
+	@Path("trigger-ingredients/{id}/translations")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<Map<RecipeLanguage, ReferenceDetails>> triggerIngredientTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.triggerIngredientTranslationsForEdit(user, UUID.fromString(id));
+	}
+
+	@PUT
+	@Path("trigger-ingredients/{id}/translations/{lang}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> stageTriggerIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.stageTriggerIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
+	}
+
+	@DELETE
+	@Path("trigger-ingredients/{id}/translations/{lang}")
+	public Uni<Void> revertTriggerIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertTriggerIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
+	}
+
+	@GET
+	@Path("roles-or-techniques/{id}/translations")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<Map<RecipeLanguage, ReferenceDetails>> roleOrTechniqueTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.roleOrTechniqueTranslationsForEdit(user, UUID.fromString(id));
+	}
+
+	@PUT
+	@Path("roles-or-techniques/{id}/translations/{lang}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> stageRoleOrTechniqueTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.stageRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
+	}
+
+	@DELETE
+	@Path("roles-or-techniques/{id}/translations/{lang}")
+	public Uni<Void> revertRoleOrTechniqueTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
+	}
+
+	@GET
 	@Path("{id}/rationale-translations")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<Map<RecipeLanguage, VersionedText>> rationaleTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {

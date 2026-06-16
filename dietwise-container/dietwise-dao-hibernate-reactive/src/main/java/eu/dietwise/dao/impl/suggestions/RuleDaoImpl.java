@@ -56,7 +56,7 @@ import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.RuleDao;
-import eu.dietwise.services.model.suggestions.RationaleTranslationLangs;
+import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -329,7 +329,7 @@ public class RuleDaoImpl implements RuleDao {
 	}
 
 	@Override
-	public Uni<Map<UUID, RationaleTranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em) {
+	public Uni<Map<UUID, TranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em) {
 		return masterTranslationLangs(em).flatMap(master -> stagedTranslationLangs(em).map(staged -> mergeTranslationLangs(master, staged)));
 	}
 
@@ -359,12 +359,12 @@ public class RuleDaoImpl implements RuleDao {
 		return byRuleId;
 	}
 
-	private static Map<UUID, RationaleTranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
+	private static Map<UUID, TranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
 		Set<UUID> ruleIds = new HashSet<>(master.keySet());
 		ruleIds.addAll(staged.keySet());
-		Map<UUID, RationaleTranslationLangs> result = new HashMap<>();
+		Map<UUID, TranslationLangs> result = new HashMap<>();
 		for (UUID ruleId : ruleIds) {
-			result.put(ruleId, new RationaleTranslationLangs(
+			result.put(ruleId, new TranslationLangs(
 					master.getOrDefault(ruleId, EnumSet.noneOf(RecipeLanguage.class)),
 					staged.getOrDefault(ruleId, EnumSet.noneOf(RecipeLanguage.class))));
 		}

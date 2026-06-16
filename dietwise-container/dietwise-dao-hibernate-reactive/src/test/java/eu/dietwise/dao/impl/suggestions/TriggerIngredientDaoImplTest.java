@@ -10,6 +10,7 @@ import jakarta.persistence.criteria.CriteriaDelete;
 
 import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
+import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
@@ -19,6 +20,7 @@ import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity_;
 import eu.dietwise.v1.types.RecipeLanguage;
+import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -39,6 +41,21 @@ class TriggerIngredientDaoImplTest {
 	private static final String MASTER_NAME = "Beef";
 	private static final String EDITED_NAME = "Bovine";
 	private static final String EDITED_EXPLANATION = "Red meat; the centrepiece protein.";
+
+	private static final UUID TRANSLATION_TI_ID = UUID.fromString("b1c2d3e4-0001-4f5a-8b9c-0d1e2f3a0001");
+	private static final UUID TRANSLATION_COLLAPSE_TI_ID = UUID.fromString("b1c2d3e4-0002-4f5a-8b9c-0d1e2f3a0002");
+	private static final UUID TRANSLATION_BUMP_TI_ID = UUID.fromString("b1c2d3e4-0003-4f5a-8b9c-0d1e2f3a0003");
+	private static final UUID TRANSLATION_REVERT_TI_ID = UUID.fromString("b1c2d3e4-0004-4f5a-8b9c-0d1e2f3a0004");
+	private static final UUID TRANSLATION_REVERT_STALE_TI_ID = UUID.fromString("b1c2d3e4-0005-4f5a-8b9c-0d1e2f3a0005");
+	private static final UUID TRANSLATION_NULL_TI_ID = UUID.fromString("b1c2d3e4-0006-4f5a-8b9c-0d1e2f3a0006");
+	private static final String MASTER_EL_NAME = "Φακές";
+	private static final String MASTER_EL_EXPLANATION = "Όσπριο πλούσιο σε πρωτεΐνη.";
+	private static final String EDITED_EL_NAME = "Φακές (αναθ.)";
+	private static final String EDITED_EL_EXPLANATION = "Αναθεωρημένη εξήγηση.";
+	private static final String STAGED_NL_NAME = "Linzen";
+	private static final String STAGED_NL_EXPLANATION = "Eiwitrijke peulvrucht.";
+	private static final String RESTAGED_NL_NAME = "Linzen herzien";
+	private static final String RESTAGED_NL_EXPLANATION = "Herziene uitleg.";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -236,5 +253,166 @@ class TriggerIngredientDaoImplTest {
 		assertThatThrownBy(() -> factory.withoutTransaction(em -> sut.findEditableById(em, UUID.randomUUID()))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
 				.isInstanceOf(EntityNotFoundException.class);
+	}
+
+	@Test
+	@Order(11)
+	void testFindTranslationsForEditOverlaysStagedOnMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, TRANSLATION_TI_ID, "Lentils (translation test)")
+						.chain(() -> persistTriggerIngredientTranslation(tx, TRANSLATION_TI_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_TI_ID, RecipeLanguage.NL, STAGED_NL_NAME, STAGED_NL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
+		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new ReferenceDetails(null, null, 0L));
+
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_TI_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_TI_ID).staged()).containsExactly(RecipeLanguage.NL);
+	}
+
+	@Test
+	@Order(12)
+	void testStageTranslationSeedsThenCollapsesToMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, TRANSLATION_COLLAPSE_TI_ID, "Chickpeas (translation test)")
+						.chain(() -> persistTriggerIngredientTranslation(tx, TRANSLATION_COLLAPSE_TI_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_COLLAPSE_TI_ID, RecipeLanguage.EL, EDITED_EL_NAME, EDITED_EL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var staged = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(staged.get(TRANSLATION_COLLAPSE_TI_ID).staged()).containsExactly(RecipeLanguage.EL);
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_COLLAPSE_TI_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_COLLAPSE_TI_ID).staged()).isEmpty();
+		assertThat(langs.get(TRANSLATION_COLLAPSE_TI_ID).present()).containsExactly(RecipeLanguage.EL);
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_COLLAPSE_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+	}
+
+	@Test
+	@Order(13)
+	void testStageTranslationBumpsThenRejectsStaleBaseVersion(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, TRANSLATION_BUMP_TI_ID, "Tofu (translation test)"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_TI_ID, RecipeLanguage.NL, STAGED_NL_NAME, STAGED_NL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_TI_ID, RecipeLanguage.NL, RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_BUMP_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 2L));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_TI_ID, RecipeLanguage.NL, "Stale.", "x", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	@Order(14)
+	void testRevertTranslationRemovesStagedRowRestoringMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, TRANSLATION_REVERT_TI_ID, "Seitan (translation test)")
+						.chain(() -> persistTriggerIngredientTranslation(tx, TRANSLATION_REVERT_TI_ID, RecipeLanguage.EL, MASTER_EL_NAME, MASTER_EL_EXPLANATION)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_REVERT_TI_ID, RecipeLanguage.EL, EDITED_EL_NAME, EDITED_EL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_TI_ID, RecipeLanguage.EL, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs.get(TRANSLATION_REVERT_TI_ID).staged()).isEmpty();
+		assertThat(langs.get(TRANSLATION_REVERT_TI_ID).present()).containsExactly(RecipeLanguage.EL);
+	}
+
+	@Test
+	@Order(15)
+	void testRevertTranslationRejectsStaleBaseVersionLeavingItIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, TRANSLATION_REVERT_STALE_TI_ID, "Edamame (translation test)"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_REVERT_STALE_TI_ID, RecipeLanguage.NL, STAGED_NL_NAME, STAGED_NL_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_STALE_TI_ID, RecipeLanguage.NL, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var stillStaged = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
+
+		factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_STALE_TI_ID, RecipeLanguage.NL, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var afterRevert = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+	}
+
+	@Test
+	@Order(16)
+	void testStageNullTranslationWithNoMasterIsANoOp(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, TRANSLATION_NULL_TI_ID, "Quinoa (translation test)"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_NULL_TI_ID, RecipeLanguage.EL, null, null, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs).doesNotContainKey(TRANSLATION_NULL_TI_ID);
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_NULL_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+	}
+
+	private static Uni<Void> persistTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, String name) {
+		var entity = new TriggerIngredientEntity();
+		entity.setId(id);
+		entity.setName(name);
+		return tx.persist(entity).replaceWithVoid();
+	}
+
+	private static Uni<Void> persistTriggerIngredientTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String explanationForLlm) {
+		var translation = new TriggerIngredientTranslationEntity();
+		translation.setTriggerIngredient(tx.getReference(TriggerIngredientEntity.class, id));
+		translation.setLang(lang);
+		translation.setName(name);
+		translation.setExplanationForLlm(explanationForLlm);
+		return tx.persist(translation).replaceWithVoid();
 	}
 }

@@ -34,7 +34,7 @@ import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.AuthorizationImpl;
-import eu.dietwise.services.model.suggestions.RationaleTranslationLangs;
+import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
@@ -310,6 +310,8 @@ class BackofficeRulesServiceImplTest {
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
@@ -335,6 +337,8 @@ class BackofficeRulesServiceImplTest {
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of(TRIGGER_INGREDIENT_ID, "Bovine")));
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
 		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
 
@@ -352,6 +356,8 @@ class BackofficeRulesServiceImplTest {
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of(ROLE_OR_TECHNIQUE_ID, "folded through")));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
 		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
 
@@ -369,13 +375,38 @@ class BackofficeRulesServiceImplTest {
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				RULE_ID, new RationaleTranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.NL)))));
+				RULE_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.NL)))));
+		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
 		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
 
 		assertThat(staged.rationaleTranslations().get(RecipeLanguage.EL)).isEqualTo(TranslationState.PRESENT);
 		assertThat(staged.rationaleTranslations().get(RecipeLanguage.LT)).isEqualTo(TranslationState.MISSING);
 		assertThat(staged.rationaleTranslations().get(RecipeLanguage.NL)).isEqualTo(TranslationState.STAGED);
+	}
+
+	@Test
+	void listRulesReportsTriggerAndRoleTranslationCompletenessPerLanguage() {
+		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
+		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
+		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
+				TRIGGER_INGREDIENT_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.LT)))));
+		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
+				ROLE_OR_TECHNIQUE_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class)))));
+
+		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
+
+		assertThat(staged.triggerIngredientTranslations().get(RecipeLanguage.EL)).isEqualTo(TranslationState.PRESENT);
+		assertThat(staged.triggerIngredientTranslations().get(RecipeLanguage.LT)).isEqualTo(TranslationState.STAGED);
+		assertThat(staged.triggerIngredientTranslations().get(RecipeLanguage.NL)).isEqualTo(TranslationState.MISSING);
+		assertThat(staged.roleOrTechniqueTranslations().get(RecipeLanguage.NL)).isEqualTo(TranslationState.PRESENT);
+		assertThat(staged.roleOrTechniqueTranslations().get(RecipeLanguage.EL)).isEqualTo(TranslationState.MISSING);
 	}
 
 	@Test
@@ -575,6 +606,154 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	@Test
+	void triggerIngredientTranslationsForEditReturnsEffectivePerLanguageForAnAdmin() {
+		when(triggerIngredientDao.findTranslationsForEdit(any(), eq(TRIGGER_INGREDIENT_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				RecipeLanguage.EL, new ReferenceDetails("Βόειο", "Κόκκινο κρέας.", 2L),
+				RecipeLanguage.LT, new ReferenceDetails(null, null, 0L))));
+
+		Map<RecipeLanguage, ReferenceDetails> translations = newService()
+				.triggerIngredientTranslationsForEdit(adminUser(), TRIGGER_INGREDIENT_ID).await().atMost(AWAIT);
+
+		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("Βόειο", "Κόκκινο κρέας.", 2L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void triggerIngredientTranslationsForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().triggerIngredientTranslationsForEdit(nonAdminUser(), TRIGGER_INGREDIENT_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).findTranslationsForEdit(any(), any());
+	}
+
+	@Test
+	void stageTriggerIngredientTranslationStagesTheEditForAnAdmin() {
+		when(triggerIngredientDao.stageTranslation(any(), eq(TRIGGER_INGREDIENT_ID), eq(RecipeLanguage.EL), eq("Βόειο"), eq("Κόκκινο κρέας."), eq(0L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().stageTriggerIngredientTranslation(adminUser(), TRIGGER_INGREDIENT_ID, RecipeLanguage.EL, "Βόειο", "Κόκκινο κρέας.", 0L).await().atMost(AWAIT);
+
+		verify(triggerIngredientDao).stageTranslation(any(), eq(TRIGGER_INGREDIENT_ID), eq(RecipeLanguage.EL), eq("Βόειο"), eq("Κόκκινο κρέας."), eq(0L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void stageTriggerIngredientTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageTriggerIngredientTranslation(adminUser(), TRIGGER_INGREDIENT_ID, RecipeLanguage.EN, "x", "y", 0L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(triggerIngredientDao, never()).stageTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void stageTriggerIngredientTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageTriggerIngredientTranslation(nonAdminUser(), TRIGGER_INGREDIENT_ID, RecipeLanguage.EL, "x", "y", 0L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).stageTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertTriggerIngredientTranslationRemovesTheStagedTranslationForAnAdmin() {
+		when(triggerIngredientDao.revertTranslation(any(), eq(TRIGGER_INGREDIENT_ID), eq(RecipeLanguage.NL), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertTriggerIngredientTranslation(adminUser(), TRIGGER_INGREDIENT_ID, RecipeLanguage.NL, 1L).await().atMost(AWAIT);
+
+		verify(triggerIngredientDao).revertTranslation(any(), eq(TRIGGER_INGREDIENT_ID), eq(RecipeLanguage.NL), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertTriggerIngredientTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTriggerIngredientTranslation(adminUser(), TRIGGER_INGREDIENT_ID, RecipeLanguage.EN, 1L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(triggerIngredientDao, never()).revertTranslation(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertTriggerIngredientTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTriggerIngredientTranslation(nonAdminUser(), TRIGGER_INGREDIENT_ID, RecipeLanguage.NL, 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).revertTranslation(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void roleOrTechniqueTranslationsForEditReturnsEffectivePerLanguageForAnAdmin() {
+		when(roleOrTechniqueDao.findTranslationsForEdit(any(), eq(ROLE_OR_TECHNIQUE_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				RecipeLanguage.EL, new ReferenceDetails("ανάμεικτο", "Το κύριο συστατικό.", 3L),
+				RecipeLanguage.NL, new ReferenceDetails(null, null, 0L))));
+
+		Map<RecipeLanguage, ReferenceDetails> translations = newService()
+				.roleOrTechniqueTranslationsForEdit(adminUser(), ROLE_OR_TECHNIQUE_ID).await().atMost(AWAIT);
+
+		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("ανάμεικτο", "Το κύριο συστατικό.", 3L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void roleOrTechniqueTranslationsForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().roleOrTechniqueTranslationsForEdit(nonAdminUser(), ROLE_OR_TECHNIQUE_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).findTranslationsForEdit(any(), any());
+	}
+
+	@Test
+	void stageRoleOrTechniqueTranslationStagesTheEditForAnAdmin() {
+		when(roleOrTechniqueDao.stageTranslation(any(), eq(ROLE_OR_TECHNIQUE_ID), eq(RecipeLanguage.NL), eq("vermengd"), eq("Het belangrijkste ingrediënt."), eq(0L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().stageRoleOrTechniqueTranslation(adminUser(), ROLE_OR_TECHNIQUE_ID, RecipeLanguage.NL, "vermengd", "Het belangrijkste ingrediënt.", 0L).await().atMost(AWAIT);
+
+		verify(roleOrTechniqueDao).stageTranslation(any(), eq(ROLE_OR_TECHNIQUE_ID), eq(RecipeLanguage.NL), eq("vermengd"), eq("Het belangrijkste ingrediënt."), eq(0L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void stageRoleOrTechniqueTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageRoleOrTechniqueTranslation(adminUser(), ROLE_OR_TECHNIQUE_ID, RecipeLanguage.EN, "x", "y", 0L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(roleOrTechniqueDao, never()).stageTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void stageRoleOrTechniqueTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageRoleOrTechniqueTranslation(nonAdminUser(), ROLE_OR_TECHNIQUE_ID, RecipeLanguage.NL, "x", "y", 0L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).stageTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertRoleOrTechniqueTranslationRemovesTheStagedTranslationForAnAdmin() {
+		when(roleOrTechniqueDao.revertTranslation(any(), eq(ROLE_OR_TECHNIQUE_ID), eq(RecipeLanguage.EL), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertRoleOrTechniqueTranslation(adminUser(), ROLE_OR_TECHNIQUE_ID, RecipeLanguage.EL, 1L).await().atMost(AWAIT);
+
+		verify(roleOrTechniqueDao).revertTranslation(any(), eq(ROLE_OR_TECHNIQUE_ID), eq(RecipeLanguage.EL), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertRoleOrTechniqueTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertRoleOrTechniqueTranslation(adminUser(), ROLE_OR_TECHNIQUE_ID, RecipeLanguage.EN, 1L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(roleOrTechniqueDao, never()).revertTranslation(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertRoleOrTechniqueTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertRoleOrTechniqueTranslation(nonAdminUser(), ROLE_OR_TECHNIQUE_ID, RecipeLanguage.EL, 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).revertTranslation(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
 	void createRuleStagesANewRuleForAnAdmin() {
 		when(ruleDao.findBusinessKeys(any())).thenReturn(Uni.createFrom().item(Set.of()));
 		when(ruleDao.createRule(any(), eq(RECOMMENDATION_ID), eq(TRIGGER_INGREDIENT_ID), eq(ROLE_OR_TECHNIQUE_ID)))
@@ -691,6 +870,8 @@ class BackofficeRulesServiceImplTest {
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 	}
 
 	private BackofficeRulesServiceImpl newService() {

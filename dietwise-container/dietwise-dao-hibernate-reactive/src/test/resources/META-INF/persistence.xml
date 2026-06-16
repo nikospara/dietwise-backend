@@ -19,6 +19,7 @@
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueTranslationEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueTranslationWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RuleEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity</class>
@@ -28,6 +29,7 @@
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserRecipeStatsEntity</class>
 		<class>eu.dietwise.dao.jpa.statistics.UserStatsEntity</class>

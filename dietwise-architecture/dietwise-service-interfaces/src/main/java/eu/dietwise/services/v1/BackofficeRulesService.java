@@ -201,4 +201,76 @@ public interface BackofficeRulesService {
 	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
 	 */
 	Uni<Void> revertRationaleTranslation(User user, RuleId ruleId, RecipeLanguage lang, long baseVersion);
+
+	/**
+	 * The effective translation of one Trigger Ingredient for each non-English language (published master overlaid by any
+	 * Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations dialog.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param id   The Trigger Ingredient whose translations are being edited
+	 */
+	Uni<Map<RecipeLanguage, ReferenceDetails>> triggerIngredientTranslationsForEdit(User user, UUID id);
+
+	/**
+	 * Stage a Trigger Ingredient's name and explanation translation for one language in the Working Copy. The entity is
+	 * shared master data, so the translation is seen by every Rule that references it. Staging the value already in master
+	 * removes the override.
+	 *
+	 * @param user             The editor; must have the ADMIN role
+	 * @param id               The Trigger Ingredient being translated
+	 * @param lang             The language being translated; must not be English
+	 * @param name             The proposed translated name; {@code null} clears it (falls back to English)
+	 * @param explanationForLlm The proposed translated explanation; {@code null} clears it (falls back to English)
+	 * @param baseVersion      The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> stageTriggerIngredientTranslation(User user, UUID id, RecipeLanguage lang, String name, String explanationForLlm, long baseVersion);
+
+	/**
+	 * Revert a Trigger Ingredient's staged translation for one language, restoring the published master translation and
+	 * removing the Working Copy row.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The Trigger Ingredient whose staged translation is being reverted
+	 * @param lang        The language being reverted; must not be English
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> revertTriggerIngredientTranslation(User user, UUID id, RecipeLanguage lang, long baseVersion);
+
+	/**
+	 * The effective translation of one Role or Technique for each non-English language (published master overlaid by any
+	 * Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations dialog.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param id   The Role or Technique whose translations are being edited
+	 */
+	Uni<Map<RecipeLanguage, ReferenceDetails>> roleOrTechniqueTranslationsForEdit(User user, UUID id);
+
+	/**
+	 * Stage a Role or Technique's name and explanation translation for one language in the Working Copy. The entity is
+	 * shared master data, so the translation is seen by every Rule that references it. Staging the value already in master
+	 * removes the override.
+	 *
+	 * @param user             The editor; must have the ADMIN role
+	 * @param id               The Role or Technique being translated
+	 * @param lang             The language being translated; must not be English
+	 * @param name             The proposed translated name; {@code null} clears it (falls back to English)
+	 * @param explanationForLlm The proposed translated explanation; {@code null} clears it (falls back to English)
+	 * @param baseVersion      The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> stageRoleOrTechniqueTranslation(User user, UUID id, RecipeLanguage lang, String name, String explanationForLlm, long baseVersion);
+
+	/**
+	 * Revert a Role or Technique's staged translation for one language, restoring the published master translation and
+	 * removing the Working Copy row.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The Role or Technique whose staged translation is being reverted
+	 * @param lang        The language being reverted; must not be English
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> revertRoleOrTechniqueTranslation(User user, UUID id, RecipeLanguage lang, long baseVersion);
 }
