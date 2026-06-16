@@ -12,6 +12,7 @@ public interface RuleData {
 
 	TriggerIngredient getTriggerIngredient();
 
+	@Nullable
 	RoleOrTechnique getRoleOrTechnique();
 
 	@Nullable

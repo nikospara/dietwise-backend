@@ -100,3 +100,9 @@ This project uses SmallRye Mutiny for asynchronous programming.
   missing from `UniComprehensions`, it is ok to add it.
 - The class `MultiComprehensions` contains similar helpers for `Multi`. As of now, they help for a much narrower set of
   cases.
+
+## Authorization
+
+For making authorization decisions inside the services implementation layer (module `dietwise-container/dietwise-services`),
+use the `AuthorizationService` interface (defined in `dietwise-architecture/src/main/java/eu/dietwise/architecture/api/AuthorizationService.java`.
+This interface is implemented by the `AuthorizationServiceImpl` class (defined in `dietwise-container/dietwise-services/src/main/java/eu/dietwise/services/impl/AuthorizationServiceImpl.java`).

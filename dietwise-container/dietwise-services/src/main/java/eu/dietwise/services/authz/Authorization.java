@@ -24,4 +24,6 @@ public interface Authorization {
 	 * @throws NotAuthorizedException If the user object contains no application id
 	 */
 	String requireApplicationId(User user);
+
+	void requireAdmin(User user);
 }

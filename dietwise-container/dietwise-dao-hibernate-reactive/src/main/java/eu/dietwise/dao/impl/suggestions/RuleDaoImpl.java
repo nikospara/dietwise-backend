@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
@@ -34,13 +36,31 @@ public class RuleDaoImpl implements RuleDao {
 	public Uni<List<Rule>> findByTriggerIngredient(ReactivePersistenceContext em, HasTriggerIngredientId triggerIngredientId, RecipeLanguage lang) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(RuleEntity.class);
+		Root<RuleEntity> rule = selectRuleWithAssociations(q);
+		q.where(
+				cb.equal(rule.get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid())
+		);
+		return loadRules(em, q, lang);
+	}
+
+	@Override
+	public Uni<List<Rule>> findAll(ReactivePersistenceContext em, RecipeLanguage lang) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(RuleEntity.class);
+		selectRuleWithAssociations(q);
+		return loadRules(em, q, lang);
+	}
+
+	private static Root<RuleEntity> selectRuleWithAssociations(CriteriaQuery<RuleEntity> q) {
 		Root<RuleEntity> rule = q.from(RuleEntity.class);
 		rule.fetch(RuleEntity_.recommendation);
 		rule.fetch(RuleEntity_.triggerIngredient);
-		rule.fetch(RuleEntity_.roleOrTechnique);
-		q.select(rule).where(
-				cb.equal(rule.get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid())
-		);
+		rule.fetch(RuleEntity_.roleOrTechnique, JoinType.LEFT);
+		q.select(rule);
+		return rule;
+	}
+
+	private Uni<List<Rule>> loadRules(ReactivePersistenceContext em, CriteriaQuery<RuleEntity> q, RecipeLanguage lang) {
 		return forcm(
 				em.createQuery(q).getResultList(),
 				_ -> loadTranslationsByRuleId(em, lang),
@@ -69,7 +89,7 @@ public class RuleDaoImpl implements RuleDao {
 				.id(new UuidRuleId(e.getId()))
 				.recommendation(new RecommendationImpl(e.getRecommendation().getName()))
 				.triggerIngredient(new TriggerIngredientImpl(e.getTriggerIngredient().getName()))
-				.roleOrTechnique(new RoleOrTechniqueImpl(e.getRoleOrTechnique().getName()))
+				.roleOrTechnique(e.getRoleOrTechnique() != null ? new RoleOrTechniqueImpl(e.getRoleOrTechnique().getName()) : null)
 				.rationale(t != null && t.getRationale() != null ? t.getRationale() : e.getRationale())
 				.cuisineContext(e.getCuisine())
 				.build();

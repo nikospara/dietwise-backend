@@ -6,7 +6,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import eu.dietwise.common.types.authorization.NotAuthenticatedException;
 import eu.dietwise.common.types.authorization.NotAuthorizedException;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.UserId;
+import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class AuthorizationImpl implements Authorization {
@@ -43,5 +45,14 @@ public class AuthorizationImpl implements Authorization {
 			throw new NotAuthorizedException("this operation requires the user to be associated with an application");
 		}
 		return user.getApplicationId().get();
+	}
+
+	@Override
+	public void requireAdmin(User user) {
+		if (user == null || user.isUnauthenticated()) {
+			throw new NotAuthenticatedException("this operation requires a valid, authenticated user");
+		} else if (!user.getRoles().contains(Role.ADMIN)) {
+			throw new NotAuthorizedException("this operation requires admin privileges");
+		}
 	}
 }

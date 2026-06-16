@@ -31,7 +31,7 @@ public class RuleEntity {
 	@JoinColumn(name = "trigger_ingredient_id")
 	private TriggerIngredientEntity triggerIngredient;
 
-	@ManyToOne(fetch = LAZY, optional = false)
+	@ManyToOne(fetch = LAZY)
 	@JoinColumn(name = "role_or_technique_id")
 	private RoleOrTechniqueEntity roleOrTechnique;
 

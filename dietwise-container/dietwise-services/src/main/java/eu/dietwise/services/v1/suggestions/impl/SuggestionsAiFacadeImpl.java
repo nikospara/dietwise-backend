@@ -255,7 +255,7 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 				.flatMap(e -> Stream.of(
 						"- id: " + e.getKey(),
 						"    - " + recommendationLabel + ": " + e.getValue().getRecommendation().asString(),
-						"    - " + roleLabel + ": " + e.getValue().getRoleOrTechnique().asString()
+						"    - " + roleLabel + ": " + (e.getValue().getRoleOrTechnique() == null ? "-" : e.getValue().getRoleOrTechnique().asString())
 				))
 				.collect(Collectors.joining("\n"));
 	}

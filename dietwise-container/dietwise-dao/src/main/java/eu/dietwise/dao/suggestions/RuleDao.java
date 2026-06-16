@@ -10,4 +10,6 @@ import io.smallrye.mutiny.Uni;
 
 public interface RuleDao {
 	Uni<List<Rule>> findByTriggerIngredient(ReactivePersistenceContext em, HasTriggerIngredientId triggerIngredientId, RecipeLanguage lang);
+
+	Uni<List<Rule>> findAll(ReactivePersistenceContext em, RecipeLanguage lang);
 }

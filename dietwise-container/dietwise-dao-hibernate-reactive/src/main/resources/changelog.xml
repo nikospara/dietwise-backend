@@ -19,4 +19,5 @@
 	<include relativeToChangelogFile="true" file="changelogs/20260525_localization_LT.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260529_localization_NL.xml"/>
 	<include relativeToChangelogFile="true" file="changelogs/20260607_localization_EL.xml"/>
+	<include relativeToChangelogFile="true" file="changelogs/20260616_backoffice.xml"/>
 </databaseChangeLog>
