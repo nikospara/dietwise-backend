@@ -20,4 +20,10 @@ public interface RuleData {
 
 	@Nullable
 	String getCuisineContext();
+
+	/** Whether this Rule is applied by recipe assessment. A deactivated Rule is retained but ignored at assessment time. */
+	@Value.Default
+	default boolean isActive() {
+		return true;
+	}
 }

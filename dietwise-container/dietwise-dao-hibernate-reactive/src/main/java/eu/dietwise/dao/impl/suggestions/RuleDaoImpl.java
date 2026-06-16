@@ -8,13 +8,16 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.metamodel.SingularAttribute;
 
 import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
@@ -45,9 +48,10 @@ public class RuleDaoImpl implements RuleDao {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(RuleEntity.class);
 		Root<RuleEntity> rule = selectRuleWithAssociations(q);
-		q.where(
-				cb.equal(rule.get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid())
-		);
+		q.where(cb.and(
+				cb.equal(rule.get(RuleEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), triggerIngredientId.getId().asUuid()),
+				cb.isTrue(rule.get(RuleEntity_.active))
+		));
 		return loadRules(em, q, lang);
 	}
 
@@ -71,7 +75,7 @@ public class RuleDaoImpl implements RuleDao {
 	public Uni<Long> stageRationale(ReactivePersistenceTxContext tx, UUID ruleId, String rationale, long baseVersion) {
 		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing -> {
 			if (existing != null) {
-				return bumpStagedRationale(tx, ruleId, rationale, baseVersion);
+				return bumpStagedField(tx, ruleId, RuleWcEntity_.rationale, rationale, baseVersion);
 			}
 			if (baseVersion != 0L) {
 				return Uni.createFrom().failure(new StaleVersionException(RuleEntity.class, ruleId));
@@ -80,11 +84,11 @@ public class RuleDaoImpl implements RuleDao {
 		});
 	}
 
-	private Uni<Long> bumpStagedRationale(ReactivePersistenceTxContext tx, UUID ruleId, String rationale, long baseVersion) {
+	private <T> Uni<Long> bumpStagedField(ReactivePersistenceTxContext tx, UUID ruleId, SingularAttribute<RuleWcEntity, T> field, T value, long baseVersion) {
 		var cb = tx.getCriteriaBuilder();
 		CriteriaUpdate<RuleWcEntity> cu = cb.createCriteriaUpdate(RuleWcEntity.class);
 		Root<RuleWcEntity> wc = cu.getRoot();
-		cu.set(wc.get(RuleWcEntity_.rationale), rationale);
+		cu.set(wc.get(field), value);
 		cu.set(wc.get(RuleWcEntity_.version), cb.sum(wc.get(RuleWcEntity_.version), 1L));
 		cu.where(cb.and(
 				cb.equal(wc.get(RuleWcEntity_.id), ruleId),
@@ -97,9 +101,14 @@ public class RuleDaoImpl implements RuleDao {
 
 	@Override
 	public Uni<Void> revertRationale(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion) {
-		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing -> existing == null
-				? Uni.createFrom().voidItem()
-				: deleteStagedRow(tx, ruleId, baseVersion));
+		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing -> {
+			if (existing == null) {
+				return Uni.createFrom().voidItem();
+			}
+			return tx.find(RuleEntity.class, ruleId).flatMap(master -> master == null || existing.isActive() == master.isActive()
+					? deleteStagedRow(tx, ruleId, baseVersion)
+					: bumpStagedField(tx, ruleId, RuleWcEntity_.rationale, master.getRationale(), baseVersion).replaceWithVoid());
+		});
 	}
 
 	private Uni<Void> deleteStagedRow(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion) {
@@ -115,21 +124,48 @@ public class RuleDaoImpl implements RuleDao {
 				: Uni.createFrom().failure(new StaleVersionException(RuleEntity.class, ruleId)));
 	}
 
-	private Uni<Long> seedStagedRationale(ReactivePersistenceTxContext tx, UUID ruleId, String rationale) {
-		return tx.find(RuleEntity.class, ruleId).flatMap(master -> {
-			if (master == null) {
-				return Uni.createFrom().failure(new EntityNotFoundException(RuleEntity.class, ruleId));
+	@Override
+	public Uni<Void> setActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion) {
+		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing ->
+				tx.find(RuleEntity.class, ruleId).flatMap(master -> applySetActive(tx, ruleId, active, baseVersion, existing, master)));
+	}
+
+	private Uni<Void> applySetActive(ReactivePersistenceTxContext tx, UUID ruleId, boolean active, long baseVersion, RuleWcEntity existing, RuleEntity master) {
+		if (master == null) {
+			return Uni.createFrom().failure(new EntityNotFoundException(RuleEntity.class, ruleId));
+		}
+		if (existing == null) {
+			if (baseVersion != 0L) {
+				return Uni.createFrom().failure(new StaleVersionException(RuleEntity.class, ruleId));
 			}
-			var wc = new RuleWcEntity();
-			wc.setId(ruleId);
-			wc.setRecommendationId(master.getRecommendation().getId());
-			wc.setTriggerIngredientId(master.getTriggerIngredient().getId());
-			wc.setRoleOrTechniqueId(master.getRoleOrTechnique() != null ? master.getRoleOrTechnique().getId() : null);
-			wc.setCuisine(master.getCuisine());
-			wc.setRationale(rationale);
-			wc.setVersion(1L);
-			return tx.persist(wc).replaceWith(1L);
-		});
+			return active == master.isActive()
+					? Uni.createFrom().voidItem()
+					: seedSnapshot(tx, master, wc -> wc.setActive(active)).replaceWithVoid();
+		}
+		boolean collapses = active == master.isActive() && Objects.equals(existing.getRationale(), master.getRationale());
+		return collapses
+				? deleteStagedRow(tx, ruleId, baseVersion)
+				: bumpStagedField(tx, ruleId, RuleWcEntity_.active, active, baseVersion).replaceWithVoid();
+	}
+
+	private Uni<Long> seedStagedRationale(ReactivePersistenceTxContext tx, UUID ruleId, String rationale) {
+		return tx.find(RuleEntity.class, ruleId).flatMap(master -> master == null
+				? Uni.createFrom().failure(new EntityNotFoundException(RuleEntity.class, ruleId))
+				: seedSnapshot(tx, master, wc -> wc.setRationale(rationale)).replaceWith(1L));
+	}
+
+	private Uni<RuleWcEntity> seedSnapshot(ReactivePersistenceTxContext tx, RuleEntity master, Consumer<RuleWcEntity> override) {
+		var wc = new RuleWcEntity();
+		wc.setId(master.getId());
+		wc.setRecommendationId(master.getRecommendation().getId());
+		wc.setTriggerIngredientId(master.getTriggerIngredient().getId());
+		wc.setRoleOrTechniqueId(master.getRoleOrTechnique() != null ? master.getRoleOrTechnique().getId() : null);
+		wc.setCuisine(master.getCuisine());
+		wc.setRationale(master.getRationale());
+		wc.setActive(master.isActive());
+		wc.setVersion(1L);
+		override.accept(wc);
+		return tx.persist(wc).replaceWith(wc);
 	}
 
 	private static Root<RuleEntity> selectRuleWithAssociations(CriteriaQuery<RuleEntity> q) {
@@ -168,7 +204,7 @@ public class RuleDaoImpl implements RuleDao {
 	private static Map<UUID, StagedRuleOverlay> toOverlayById(List<RuleWcEntity> rows) {
 		return rows.stream().collect(toMap(
 				RuleWcEntity::getId,
-				row -> new StagedRuleOverlay(row.getRationale(), row.getVersion()),
+				row -> new StagedRuleOverlay(row.getRationale(), row.isActive(), row.getVersion()),
 				(existing, ignored) -> existing,
 				LinkedHashMap::new
 		));
@@ -182,6 +218,7 @@ public class RuleDaoImpl implements RuleDao {
 				.roleOrTechnique(e.getRoleOrTechnique() != null ? new RoleOrTechniqueImpl(e.getRoleOrTechnique().getName()) : null)
 				.rationale(t != null && t.getRationale() != null ? t.getRationale() : e.getRationale())
 				.cuisineContext(e.getCuisine())
+				.isActive(e.isActive())
 				.build();
 	}
 }

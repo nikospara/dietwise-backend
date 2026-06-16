@@ -39,4 +39,16 @@ public interface BackofficeRulesService {
 	 * @param baseVersion The Working Copy version the revert is based on
 	 */
 	Uni<Void> revertRationale(User user, RuleId ruleId, long baseVersion);
+
+	/**
+	 * Stage a Rule's active state in the Working Copy, leaving published master and recipe assessment untouched.
+	 * Deactivating an applied Rule, or activating a deactivated one, is a Staged Change like any other; staging the
+	 * value the Rule already has in master removes the override.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param ruleId      The Rule whose active state is being staged
+	 * @param active      The proposed active state
+	 * @param baseVersion The Working Copy version the change is based on ({@code 0} when no Staged Change exists yet)
+	 */
+	Uni<Void> setActive(User user, RuleId ruleId, boolean active, long baseVersion);
 }

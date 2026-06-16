@@ -31,4 +31,17 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="rule_active" author="nikospara">
+		<addColumn tableName="DW_RULE">
+			<column name="active" type="BOOLEAN" defaultValueBoolean="true" remarks="Whether this Rule is applied by recipe assessment; a deactivated Rule is retained but ignored at assessment time">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE__ACTIVE" />
+			</column>
+		</addColumn>
+		<addColumn tableName="DW_RULE_WC">
+			<column name="active" type="BOOLEAN" defaultValueBoolean="true" remarks="Proposed active state, snapshotted from master and toggled by a staged Deactivate or Activate">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RULE_WC__ACTIVE" />
+			</column>
+		</addColumn>
+	</changeSet>
 </databaseChangeLog>

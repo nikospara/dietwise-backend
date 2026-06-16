@@ -8,8 +8,8 @@ import eu.dietwise.v1.types.RoleOrTechnique;
 
 /**
  * A single Rule as shown in the backoffice grid: the English names of its business key plus its rationale, its
- * change state relative to published master, and the Working Copy version a subsequent edit must be based on.
- * {@code roleOrTechnique} and {@code rationale} may be {@code null}.
+ * effective active state, its change state relative to published master, and the Working Copy version a subsequent
+ * edit must be based on. {@code roleOrTechnique} and {@code rationale} may be {@code null}.
  */
 public record RuleResponse(
 		String id,
@@ -17,6 +17,7 @@ public record RuleResponse(
 		String triggerIngredient,
 		String roleOrTechnique,
 		String rationale,
+		boolean active,
 		String changeState,
 		long version
 ) {
@@ -29,6 +30,7 @@ public record RuleResponse(
 				rule.getTriggerIngredient().asString(),
 				roleOrTechnique == null ? null : roleOrTechnique.asString(),
 				rule.getRationale(),
+				rule.isActive(),
 				staged.changeState().name(),
 				staged.version()
 		);

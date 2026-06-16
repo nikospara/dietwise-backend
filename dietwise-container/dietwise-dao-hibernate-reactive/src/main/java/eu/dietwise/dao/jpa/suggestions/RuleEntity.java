@@ -41,6 +41,9 @@ public class RuleEntity {
 	@Column(name = "rationale")
 	private String rationale;
 
+	@Column(name = "active")
+	private boolean active = true;
+
 	@OneToMany(mappedBy = "rule", fetch = LAZY)
 	@OrderColumn(name = "alternative_order")
 	private List<SuggestionTemplateEntity> alternatives;
@@ -86,6 +89,14 @@ public class RuleEntity {
 
 	public void setRationale(String rationale) {
 		this.rationale = rationale;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public RoleOrTechniqueEntity getRoleOrTechnique() {

@@ -56,6 +56,12 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		return persistenceContextFactory.withTransaction(tx -> ruleDao.revertRationale(tx, ruleId.asUuid(), baseVersion));
 	}
 
+	@Override
+	public Uni<Void> setActive(User user, RuleId ruleId, boolean active, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> ruleDao.setActive(tx, ruleId.asUuid(), active, baseVersion));
+	}
+
 	private static List<StagedRule> merge(List<Rule> master, Map<UUID, StagedRuleOverlay> overlays) {
 		return master.stream()
 				.map(rule -> {
@@ -66,10 +72,8 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	}
 
 	private static StagedRule applyOverlay(Rule master, StagedRuleOverlay overlay) {
-		Rule effective = ImmutableRule.builder().from(master).rationale(overlay.rationale()).build();
-		RuleChangeState changeState = Objects.equals(master.getRationale(), overlay.rationale())
-				? RuleChangeState.UNCHANGED
-				: RuleChangeState.CHANGED;
-		return new StagedRule(effective, changeState, overlay.version());
+		Rule effective = ImmutableRule.builder().from(master).rationale(overlay.rationale()).isActive(overlay.active()).build();
+		boolean unchanged = Objects.equals(master.getRationale(), overlay.rationale()) && master.isActive() == overlay.active();
+		return new StagedRule(effective, unchanged ? RuleChangeState.UNCHANGED : RuleChangeState.CHANGED, overlay.version());
 	}
 }

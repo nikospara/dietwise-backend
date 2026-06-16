@@ -3,6 +3,7 @@ package eu.dietwise.services.v1.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -70,35 +71,48 @@ class BackofficeRulesServiceImplTest {
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
 		assertThat(rules).hasSize(1);
-		assertThat(rules.get(0).rule()).isEqualTo(RULE);
-		assertThat(rules.get(0).changeState()).isEqualTo(RuleChangeState.UNCHANGED);
-		assertThat(rules.get(0).version()).isZero();
+		assertThat(rules.getFirst().rule()).isEqualTo(RULE);
+		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+		assertThat(rules.getFirst().version()).isZero();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
 	@Test
 	void listRulesOverlaysStagedRationaleAndMarksItChanged() {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
-		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(STAGED_RATIONALE, 4L))));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(STAGED_RATIONALE, true, 4L))));
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
 		assertThat(rules).hasSize(1);
-		assertThat(rules.get(0).rule().getRationale()).isEqualTo(STAGED_RATIONALE);
-		assertThat(rules.get(0).rule().getTriggerIngredient()).isEqualTo(new TriggerIngredientImpl("Beef"));
-		assertThat(rules.get(0).changeState()).isEqualTo(RuleChangeState.CHANGED);
-		assertThat(rules.get(0).version()).isEqualTo(4L);
+		assertThat(rules.getFirst().rule().getRationale()).isEqualTo(STAGED_RATIONALE);
+		assertThat(rules.getFirst().rule().getTriggerIngredient()).isEqualTo(new TriggerIngredientImpl("Beef"));
+		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.CHANGED);
+		assertThat(rules.getFirst().version()).isEqualTo(4L);
 	}
 
 	@Test
 	void listRulesMarksRuleUnchangedWhenStagedRationaleEqualsMaster() {
 		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
-		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(MASTER_RATIONALE, 2L))));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(MASTER_RATIONALE, true, 2L))));
 
 		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
 
-		assertThat(rules.get(0).changeState()).isEqualTo(RuleChangeState.UNCHANGED);
-		assertThat(rules.get(0).version()).isEqualTo(2L);
+		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+		assertThat(rules.getFirst().version()).isEqualTo(2L);
+	}
+
+	@Test
+	void listRulesMarksRuleChangedAndInactiveWhenDeactivationStaged() {
+		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new StagedRuleOverlay(MASTER_RATIONALE, false, 5L))));
+
+		List<StagedRule> rules = newService().listRules(adminUser()).await().atMost(AWAIT);
+
+		assertThat(rules.getFirst().rule().getRationale()).isEqualTo(MASTER_RATIONALE);
+		assertThat(rules.getFirst().rule().isActive()).isFalse();
+		assertThat(rules.getFirst().changeState()).isEqualTo(RuleChangeState.CHANGED);
+		assertThat(rules.getFirst().version()).isEqualTo(5L);
 	}
 
 	@Test
@@ -172,6 +186,35 @@ class BackofficeRulesServiceImplTest {
 				.await().atMost(AWAIT))
 				.isInstanceOf(NotAuthorizedException.class);
 		verify(ruleDao, never()).revertRationale(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void setActiveStagesDeactivationForAnAdmin() {
+		when(ruleDao.setActive(any(), eq(RULE_ID), eq(false), eq(1L))).thenReturn(Uni.createFrom().voidItem());
+
+		newService().setActive(adminUser(), new GenericRuleId(RULE_ID.toString()), false, 1L).await().atMost(AWAIT);
+
+		verify(ruleDao).setActive(any(), eq(RULE_ID), eq(false), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void setActiveRejectsAStaleBaseVersion() {
+		when(ruleDao.setActive(any(), eq(RULE_ID), eq(true), eq(1L)))
+				.thenReturn(Uni.createFrom().failure(new StaleVersionException(null, RULE_ID)));
+
+		assertThatThrownBy(() -> newService().setActive(adminUser(), new GenericRuleId(RULE_ID.toString()), true, 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	void setActiveRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().setActive(nonAdminUser(), new GenericRuleId(RULE_ID.toString()), false, 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(ruleDao, never()).setActive(any(), any(), anyBoolean(), anyLong());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 

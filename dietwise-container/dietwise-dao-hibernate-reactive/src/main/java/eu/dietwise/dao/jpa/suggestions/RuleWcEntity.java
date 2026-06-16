@@ -33,6 +33,9 @@ public class RuleWcEntity {
 	@Column(name = "rationale")
 	private String rationale;
 
+	@Column(name = "active")
+	private boolean active;
+
 	@Column(name = "version")
 	private long version;
 
@@ -82,6 +85,14 @@ public class RuleWcEntity {
 
 	public void setRationale(String rationale) {
 		this.rationale = rationale;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public long getVersion() {

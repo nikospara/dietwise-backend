@@ -5,5 +5,5 @@ package eu.dietwise.services.model.suggestions;
  * Working Copy version used for the optimistic concurrency check. Returned sparsely: only Rules that carry a
  * Staged Change have an overlay.
  */
-public record StagedRuleOverlay(String rationale, long version) {
+public record StagedRuleOverlay(String rationale, boolean active, long version) {
 }

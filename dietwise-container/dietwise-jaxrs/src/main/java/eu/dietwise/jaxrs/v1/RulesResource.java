@@ -47,4 +47,12 @@ public class RulesResource {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.revertRationale(user, new GenericRuleId(id), baseVersion);
 	}
+
+	@PUT
+	@Path("{id}/active")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> setActive(@PathParam("id") String id, SetActiveRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.setActive(user, new GenericRuleId(id), request.active(), request.baseVersion());
+	}
 }
