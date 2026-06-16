@@ -50,6 +50,12 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		return persistenceContextFactory.withTransaction(tx -> ruleDao.stageRationale(tx, ruleId.asUuid(), rationale, baseVersion));
 	}
 
+	@Override
+	public Uni<Void> revertRationale(User user, RuleId ruleId, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> ruleDao.revertRationale(tx, ruleId.asUuid(), baseVersion));
+	}
+
 	private static List<StagedRule> merge(List<Rule> master, Map<UUID, StagedRuleOverlay> overlays) {
 		return master.stream()
 				.map(rule -> {

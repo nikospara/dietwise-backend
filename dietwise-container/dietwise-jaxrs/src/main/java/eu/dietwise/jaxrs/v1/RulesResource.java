@@ -3,11 +3,13 @@ package eu.dietwise.jaxrs.v1;
 import java.util.List;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -37,5 +39,12 @@ public class RulesResource {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.stageRationale(user, new GenericRuleId(id), request.rationale(), request.baseVersion())
 				.map(StagedVersionResponse::new);
+	}
+
+	@DELETE
+	@Path("{id}/rationale")
+	public Uni<Void> revertRationale(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertRationale(user, new GenericRuleId(id), baseVersion);
 	}
 }

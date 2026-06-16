@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.JoinType;
@@ -91,6 +92,26 @@ public class RuleDaoImpl implements RuleDao {
 		));
 		return tx.createUpdate(cu).execute().flatMap(rowsAffected -> rowsAffected == 1
 				? Uni.createFrom().item(baseVersion + 1)
+				: Uni.createFrom().failure(new StaleVersionException(RuleEntity.class, ruleId)));
+	}
+
+	@Override
+	public Uni<Void> revertRationale(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion) {
+		return tx.find(RuleWcEntity.class, ruleId).flatMap(existing -> existing == null
+				? Uni.createFrom().voidItem()
+				: deleteStagedRow(tx, ruleId, baseVersion));
+	}
+
+	private Uni<Void> deleteStagedRow(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<RuleWcEntity> cd = cb.createCriteriaDelete(RuleWcEntity.class);
+		Root<RuleWcEntity> wc = cd.getRoot();
+		cd.where(cb.and(
+				cb.equal(wc.get(RuleWcEntity_.id), ruleId),
+				cb.equal(wc.get(RuleWcEntity_.version), baseVersion)
+		));
+		return tx.createDelete(cd).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().voidItem()
 				: Uni.createFrom().failure(new StaleVersionException(RuleEntity.class, ruleId)));
 	}
 

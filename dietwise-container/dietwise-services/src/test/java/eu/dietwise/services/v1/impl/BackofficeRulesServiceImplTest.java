@@ -146,6 +146,35 @@ class BackofficeRulesServiceImplTest {
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
+	@Test
+	void revertRationaleRemovesTheStagedChangeForAnAdmin() {
+		when(ruleDao.revertRationale(any(), eq(RULE_ID), eq(1L))).thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertRationale(adminUser(), new GenericRuleId(RULE_ID.toString()), 1L).await().atMost(AWAIT);
+
+		verify(ruleDao).revertRationale(any(), eq(RULE_ID), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertRationaleRejectsAStaleBaseVersion() {
+		when(ruleDao.revertRationale(any(), eq(RULE_ID), eq(1L)))
+				.thenReturn(Uni.createFrom().failure(new StaleVersionException(null, RULE_ID)));
+
+		assertThatThrownBy(() -> newService().revertRationale(adminUser(), new GenericRuleId(RULE_ID.toString()), 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	void revertRationaleRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertRationale(nonAdminUser(), new GenericRuleId(RULE_ID.toString()), 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(ruleDao, never()).revertRationale(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
 	private BackofficeRulesServiceImpl newService() {
 		return new BackofficeRulesServiceImpl(ruleDao, persistenceContextFactory, new AuthorizationImpl());
 	}

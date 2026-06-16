@@ -16,7 +16,6 @@ import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.types.RepresentableAsString;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
-import eu.dietwise.dao.jpa.suggestions.RuleTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -45,6 +44,8 @@ class RuleDaoImplTest {
 	private static final UUID PORK_MINCED_RULE_ID = UUID.fromString("79c845bb-ff9c-4a0e-9188-d2f9050f42c1");
 	private static final UUID STAGING_RULE_ID = UUID.fromString("a2c4e6f8-1b3d-4e5f-8a9b-0c1d2e3f4a5b");
 	private static final UUID STAGING_CONFLICT_RULE_ID = UUID.fromString("c7d8e9f0-2a3b-4c5d-9e8f-1a2b3c4d5e6f");
+	private static final UUID REVERT_RULE_ID = UUID.fromString("d3e5f7a9-3c4d-4e6f-8b0c-1d2e3f4a5b6c");
+	private static final UUID REVERT_CONFLICT_RULE_ID = UUID.fromString("e4f6a8b0-4d5e-4f7a-9c1d-2e3f4a5b6c7d");
 	private static final String STAGING_RULE_MASTER_RATIONALE = "Published master rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final String RESTAGED_RATIONALE = "Re-staged rationale after reload.";
@@ -69,7 +70,7 @@ class RuleDaoImplTest {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 
 		factory.withTransaction(tx -> tx.find(RuleEntity.class, MINCED_IN_SAUCE_RULE_ID)
-				.invoke(rule -> rule.setRationale("Use this when the ingredient is minced and cooked into a sauce.")))
+						.invoke(rule -> rule.setRationale("Use this when the ingredient is minced and cooked into a sauce.")))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		var rules = factory.withoutTransaction(em ->
@@ -201,6 +202,58 @@ class RuleDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(overlay.get(STAGING_CONFLICT_RULE_ID).rationale()).isEqualTo(RESTAGED_RATIONALE);
 		assertThat(overlay.get(STAGING_CONFLICT_RULE_ID).version()).isEqualTo(2L);
+	}
+
+	@Test
+	@Order(7)
+	void testRevertRationaleRemovesWorkingCopyRowLeavingMasterUnchanged(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, REVERT_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var stagedVersion = factory.withTransaction(tx -> sut.stageRationale(tx, REVERT_RULE_ID, STAGED_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stagedVersion).isEqualTo(1L);
+
+		factory.withTransaction(tx -> sut.revertRationale(tx, REVERT_RULE_ID, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var overlay = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).doesNotContainKey(REVERT_RULE_ID);
+
+		var master = factory.withTransaction(tx -> tx.find(RuleEntity.class, REVERT_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master.getRationale()).isEqualTo(STAGING_RULE_MASTER_RATIONALE);
+	}
+
+	@Test
+	@Order(8)
+	void testRevertRationaleRejectsStaleBaseVersionLeavingTheStagedRowIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RuleDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> createRule(tx, REVERT_CONFLICT_RULE_ID, STAGING_RULE_MASTER_RATIONALE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageRationale(tx, REVERT_CONFLICT_RULE_ID, STAGED_RATIONALE, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertRationale(tx, REVERT_CONFLICT_RULE_ID, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var stillStaged = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stillStaged.get(REVERT_CONFLICT_RULE_ID).rationale()).isEqualTo(STAGED_RATIONALE);
+		assertThat(stillStaged.get(REVERT_CONFLICT_RULE_ID).version()).isEqualTo(1L);
+
+		factory.withTransaction(tx -> sut.revertRationale(tx, REVERT_CONFLICT_RULE_ID, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var afterRevert = factory.withoutTransaction(sut::findStagedOverlay)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(afterRevert).doesNotContainKey(REVERT_CONFLICT_RULE_ID);
 	}
 
 	private static Uni<Void> createRule(ReactivePersistenceTxContext tx, UUID id, String rationale) {

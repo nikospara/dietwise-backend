@@ -29,4 +29,14 @@ public interface BackofficeRulesService {
 	 * @return The Rule's new Working Copy version
 	 */
 	Uni<Long> stageRationale(User user, RuleId ruleId, String rationale, long baseVersion);
+
+	/**
+	 * Revert a Rule's staged rationale in the Working Copy, restoring the published master value. When the Rule has no
+	 * other Staged Change left, its Working Copy row is removed entirely.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param ruleId      The Rule whose staged rationale is being reverted
+	 * @param baseVersion The Working Copy version the revert is based on
+	 */
+	Uni<Void> revertRationale(User user, RuleId ruleId, long baseVersion);
 }

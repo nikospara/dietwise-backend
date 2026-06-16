@@ -33,4 +33,15 @@ public interface RuleDao {
 	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such Rule exists in master to stage against
 	 */
 	Uni<Long> stageRationale(ReactivePersistenceTxContext tx, UUID ruleId, String rationale, long baseVersion);
+
+	/**
+	 * Revert a Rule's staged rationale, restoring the published master value. As rationale is currently the only
+	 * staged field, reverting it leaves the Working Copy row with no remaining override and the row is removed.
+	 * Reverting a Rule that has no Staged Change is a no-op.
+	 *
+	 * @param ruleId      The Rule whose staged rationale is being reverted
+	 * @param baseVersion The Working Copy version the caller based the revert on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 */
+	Uni<Void> revertRationale(ReactivePersistenceTxContext tx, UUID ruleId, long baseVersion);
 }
