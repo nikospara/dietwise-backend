@@ -1307,6 +1307,35 @@ class BackofficeRulesServiceImplTest {
 		verify(alternativeIngredientDao, never()).listOptions(any());
 	}
 
+	@Test
+	void createAlternativeIngredientStagesANewEntryForAnAdmin() {
+		when(alternativeIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of()));
+		when(alternativeIngredientDao.createAlternativeIngredient(any(), eq("Aquafaba"))).thenReturn(Uni.createFrom().item(ALTERNATIVE_INGREDIENT_ID));
+
+		ReferenceOption created = newService().createAlternativeIngredient(adminUser(), "Aquafaba").await().atMost(AWAIT);
+
+		assertThat(created).isEqualTo(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Aquafaba"));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void createAlternativeIngredientRejectsADuplicateNameCaseInsensitivelyWithoutCreating() {
+		when(alternativeIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes"))));
+
+		assertThatThrownBy(() -> newService().createAlternativeIngredient(adminUser(), "smoked tofu cubes").await().atMost(AWAIT))
+				.isInstanceOf(DuplicateBusinessKeyException.class);
+		verify(alternativeIngredientDao, never()).createAlternativeIngredient(any(), any());
+	}
+
+	@Test
+	void createAlternativeIngredientRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().createAlternativeIngredient(nonAdminUser(), "Aquafaba").await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).listOptions(any());
+		verify(alternativeIngredientDao, never()).createAlternativeIngredient(any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
 	private void stubSharedDataForBaseRule() {
 		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));

@@ -131,6 +131,15 @@ public class RulesResource {
 	}
 
 	@POST
+	@Path("alternative-ingredients")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<ReferenceOption> createAlternativeIngredient(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.createAlternativeIngredient(user, request.name());
+	}
+
+	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<CreatedRuleResponse> createRule(CreateRuleRequest request, @Context ContainerRequestContext crc) {

@@ -128,6 +128,14 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	}
 
 	@Override
+	public Uni<ReferenceOption> createAlternativeIngredient(User user, String name) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> alternativeIngredientDao.listOptions(tx).flatMap(options -> nameExists(options, name)
+				? Uni.createFrom().failure(new DuplicateBusinessKeyException("An Alternative Ingredient named '" + name + "' already exists"))
+				: alternativeIngredientDao.createAlternativeIngredient(tx, name).map(id -> new ReferenceOption(id, name))));
+	}
+
+	@Override
 	public Uni<AddedTemplate> addSuggestionTemplate(User user, RuleId ruleId, UUID alternativeIngredientId) {
 		authorization.requireAdmin(user);
 		UUID id = ruleId.asUuid();

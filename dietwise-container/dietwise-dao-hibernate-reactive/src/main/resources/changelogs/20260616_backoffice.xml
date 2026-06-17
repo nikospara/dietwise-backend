@@ -201,4 +201,19 @@
 			<sql>ALTER TABLE dw_suggestion_template DROP CONSTRAINT uq_dw_suggestion_template__business_key</sql>
 		</rollback>
 	</changeSet>
+
+	<changeSet id="alternative_ingredient_working_copy" author="nikospara">
+		<createTable tableName="DW_ALTERNATIVE_INGREDIENT_WC" remarks="Working Copy mirror of DW_ALTERNATIVE_INGREDIENT: whole proposed Alternative Ingredient rows staged for publish; sparse, a row exists only for a changed or new Alternative Ingredient">
+			<column name="id" type="UUID" remarks="Primary key; equals the master id for an edited entry, or a generated id for a Working-Copy-only entry">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_WC" />
+			</column>
+			<column name="name" type="VARCHAR(200)" remarks="Proposed name, English">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_WC__NAME" unique="true" uniqueConstraintName="UQ_DW_ALTERNATIVE_INGREDIENT_WC__NAME" />
+			</column>
+			<column name="explanation_for_llm" type="VARCHAR(100)" remarks="Proposed explanation for the LLM, English" />
+			<column name="version" type="BIGINT" remarks="Working Copy optimistic-concurrency version; incremented on each staged change to this row">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_WC__VERSION" />
+			</column>
+		</createTable>
+	</changeSet>
 </databaseChangeLog>

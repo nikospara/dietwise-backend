@@ -16,6 +16,7 @@ import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Seasonality;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -34,6 +35,8 @@ class AlternativeIngredientDaoImplTest {
 	private static final long ASYNC_WAIT_SECONDS = 300;
 
 	private static final UUID ALTERNATIVE_INGREDIENT_ID = UUID.fromString("70000000-0000-0000-0000-00000000001f");
+	private static final String NEW_ALTERNATIVE_INGREDIENT_NAME = "Aquafaba";
+	private static final String OVERLAID_NAME = "Brown lentils (revised)";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -112,6 +115,46 @@ class AlternativeIngredientDaoImplTest {
 		var options = factory.withoutTransaction(sut::listOptions).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(options).contains(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Brown lentils (cooked)"));
+		assertThat(options).isSortedAccordingTo(Comparator.comparing(ReferenceOption::name));
+	}
+
+	@Test
+	@Order(2)
+	void createAlternativeIngredientStagesAMirrorRowVisibleInListOptions(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createAlternativeIngredient(tx, NEW_ALTERNATIVE_INGREDIENT_NAME))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var options = factory.withoutTransaction(sut::listOptions).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(options).contains(new ReferenceOption(newId, NEW_ALTERNATIVE_INGREDIENT_NAME));
+
+		var stored = factory.withoutTransaction(em -> em.find(AlternativeIngredientWcEntity.class, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stored.getVersion()).isEqualTo(1L);
+		assertThat(stored.getExplanationForLlm()).isNull();
+	}
+
+	@Test
+	@Order(3)
+	void listOptionsOverlaysWorkingCopyOnMasterMirrorWinningById(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> {
+			var mirror = new AlternativeIngredientWcEntity();
+			mirror.setId(ALTERNATIVE_INGREDIENT_ID);
+			mirror.setName(OVERLAID_NAME);
+			mirror.setVersion(1L);
+			return tx.persist(mirror);
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var options = factory.withoutTransaction(sut::listOptions).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(options).contains(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, OVERLAID_NAME));
+		assertThat(options).doesNotContain(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Brown lentils (cooked)"));
+		assertThat(options.stream().filter(option -> option.id().equals(ALTERNATIVE_INGREDIENT_ID))).hasSize(1);
 		assertThat(options).isSortedAccordingTo(Comparator.comparing(ReferenceOption::name));
 	}
 

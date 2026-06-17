@@ -133,6 +133,18 @@ public interface BackofficeRulesService {
 	Uni<List<ReferenceOption>> alternativeIngredientOptions(User user);
 
 	/**
+	 * Stage a brand-new AlternativeIngredient in the Working Copy with name alone (no explanation or translations yet), so
+	 * it can be chosen for the Suggestion Template being added. The name must be unique across published master and the
+	 * Working Copy; an existing entry should be selected rather than duplicated.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param name The proposed AlternativeIngredient name
+	 * @return The id and name of the newly staged AlternativeIngredient, selectable for a Suggestion Template
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If an AlternativeIngredient with the same name already exists
+	 */
+	Uni<ReferenceOption> createAlternativeIngredient(User user, String name);
+
+	/**
 	 * Add a Suggestion Template to a Rule for an existing AlternativeIngredient, staged in the Working Copy and leaving
 	 * published master and recipe assessment untouched. The new template starts active with no English fields, positioned
 	 * after the Rule's existing templates. The business key (rule, alternative ingredient) is unique regardless of active
