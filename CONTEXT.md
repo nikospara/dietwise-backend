@@ -61,11 +61,11 @@ Applying the entire Working Copy to the live master data as a single batch, afte
 _Avoid_: apply, commit, save, deploy
 
 **Deactivate / Activate**:
-Marking a *published* Rule so recipe assessment stops (resp. resumes) using it. Reversible, staged like any other change, and the Rule stays visible while deactivated.
+Marking a *published* Rule or SuggestionTemplate so recipe assessment stops (resp. resumes) using it. Reversible, staged like any other change, and the entity stays visible while deactivated. Deactivating a SuggestionTemplate is how an editor "removes" it from a Rule without losing it or its history.
 _Avoid_: delete, remove, disable, archive
 
 **Discard**:
-Dropping a new Rule that exists only in the Working Copy and was never published. Distinct from Deactivate, which applies to already-published Rules.
+Dropping a new Rule or SuggestionTemplate that exists only in the Working Copy and was never published. Distinct from Deactivate, which applies to already-published entities.
 _Avoid_: delete, cancel, undo
 
 **Revert**:

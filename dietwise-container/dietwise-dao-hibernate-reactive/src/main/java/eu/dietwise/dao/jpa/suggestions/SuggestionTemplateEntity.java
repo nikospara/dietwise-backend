@@ -36,6 +36,13 @@ public class SuggestionTemplateEntity {
 	@Column(name = "technique_notes")
 	private String techniqueNotes;
 
+	/**
+	 * The position of this template among its Rule's alternatives. Written by the {@link RuleEntity#alternatives}
+	 * collection's {@code @OrderColumn}; mapped read-only here so a query can order templates by it directly.
+	 */
+	@Column(name = "alternative_order", insertable = false, updatable = false)
+	private int alternativeOrder;
+
 	@OneToMany(mappedBy = "suggestionTemplate", fetch = LAZY)
 	private Set<SuggestionTemplateTranslationEntity> translations;
 
@@ -85,6 +92,14 @@ public class SuggestionTemplateEntity {
 
 	public void setTechniqueNotes(String techniqueNotes) {
 		this.techniqueNotes = techniqueNotes;
+	}
+
+	public int getAlternativeOrder() {
+		return alternativeOrder;
+	}
+
+	public void setAlternativeOrder(int alternativeOrder) {
+		this.alternativeOrder = alternativeOrder;
 	}
 
 	public Set<SuggestionTemplateTranslationEntity> getTranslations() {

@@ -23,6 +23,7 @@ import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
+import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
@@ -38,6 +39,7 @@ import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.model.ImmutableRule;
 import eu.dietwise.v1.model.Rule;
+import eu.dietwise.v1.model.SuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -54,6 +56,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	private final RecommendationDao recommendationDao;
 	private final TriggerIngredientDao triggerIngredientDao;
 	private final RoleOrTechniqueDao roleOrTechniqueDao;
+	private final SuggestionTemplateDao suggestionTemplateDao;
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final Authorization authorization;
 
@@ -62,6 +65,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			RecommendationDao recommendationDao,
 			TriggerIngredientDao triggerIngredientDao,
 			RoleOrTechniqueDao roleOrTechniqueDao,
+			SuggestionTemplateDao suggestionTemplateDao,
 			ReactivePersistenceContextFactory persistenceContextFactory,
 			Authorization authorization
 	) {
@@ -69,6 +73,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		this.recommendationDao = recommendationDao;
 		this.triggerIngredientDao = triggerIngredientDao;
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
+		this.suggestionTemplateDao = suggestionTemplateDao;
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.authorization = authorization;
 	}
@@ -86,6 +91,12 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				(_, _, _, _, _, _) -> translationCompleteness(em),
 				BackofficeRulesServiceImpl::merge
 		));
+	}
+
+	@Override
+	public Uni<List<SuggestionTemplate>> listSuggestionTemplates(User user, RuleId ruleId) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> suggestionTemplateDao.findByRule(em, ruleId.asUuid()));
 	}
 
 	private Uni<TranslationCompleteness> translationCompleteness(ReactivePersistenceContext em) {

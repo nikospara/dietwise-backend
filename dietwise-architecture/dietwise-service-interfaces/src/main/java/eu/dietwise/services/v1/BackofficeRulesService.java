@@ -10,6 +10,7 @@ import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.StagedRule;
+import eu.dietwise.v1.model.SuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
 import io.smallrye.mutiny.Uni;
@@ -26,6 +27,16 @@ public interface BackofficeRulesService {
 	 * @return All Rules, master overlaid by any Staged Change
 	 */
 	Uni<List<StagedRule>> listRules(User user);
+
+	/**
+	 * The published Suggestion Templates of one Rule for the backoffice panel, each with the AlternativeIngredient it
+	 * suggests and its English swap notes, ordered by their position within the Rule.
+	 *
+	 * @param user   The editor; must have the ADMIN role
+	 * @param ruleId The Rule whose Suggestion Templates are listed
+	 * @return The Rule's Suggestion Templates, empty when it has none
+	 */
+	Uni<List<SuggestionTemplate>> listSuggestionTemplates(User user, RuleId ruleId);
 
 	/**
 	 * Stage a new rationale for a Rule in the Working Copy, leaving published master and recipe assessment untouched.

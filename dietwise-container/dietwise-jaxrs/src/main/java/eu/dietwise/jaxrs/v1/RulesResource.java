@@ -40,6 +40,14 @@ public class RulesResource {
 	}
 
 	@GET
+	@Path("{id}/suggestion-templates")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<List<SuggestionTemplateResponse>> listSuggestionTemplates(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.listSuggestionTemplates(user, new GenericRuleId(id)).map(SuggestionTemplateResponse::fromAll);
+	}
+
+	@GET
 	@Path("new-rule-options")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<NewRuleOptions> newRuleOptions(@Context ContainerRequestContext crc) {

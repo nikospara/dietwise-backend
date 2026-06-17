@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,6 +33,7 @@ import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
+import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.AuthorizationImpl;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
@@ -45,10 +47,14 @@ import eu.dietwise.services.v1.types.RuleField;
 import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.model.ImmutableRule;
+import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
 import eu.dietwise.v1.model.Rule;
+import eu.dietwise.v1.model.SuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
+import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericRuleId;
+import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import eu.dietwise.v1.types.impl.RoleOrTechniqueImpl;
 import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
@@ -69,6 +75,8 @@ class BackofficeRulesServiceImplTest {
 	private static final UUID ROLE_OR_TECHNIQUE_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
 	private static final UUID OTHER_TRIGGER_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
 	private static final UUID OTHER_ROLE_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
+	private static final UUID TEMPLATE_ID = UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+	private static final UUID OTHER_TEMPLATE_ID = UUID.fromString("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
 	private static final String MASTER_RATIONALE = "Published rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final Rule RULE = ImmutableRule.builder()
@@ -97,6 +105,9 @@ class BackofficeRulesServiceImplTest {
 
 	@Mock
 	private RoleOrTechniqueDao roleOrTechniqueDao;
+
+	@Mock
+	private SuggestionTemplateDao suggestionTemplateDao;
 
 	@RegisterExtension
 	private final MockReactivePersistenceContextFactory persistenceContextFactory = new MockReactivePersistenceContextFactory();
@@ -180,6 +191,45 @@ class BackofficeRulesServiceImplTest {
 		assertThatThrownBy(() -> newService().listRules(unauthenticatedUser()).await().atMost(AWAIT))
 				.isInstanceOf(NotAuthenticatedException.class);
 		verify(ruleDao, never()).findAll(any(), any());
+	}
+
+	@Test
+	void listSuggestionTemplatesReturnsTheRulesTemplatesInOrderForAnAdmin() {
+		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"),
+				suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null))));
+
+		List<SuggestionTemplate> templates = newService()
+				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT);
+
+		assertThat(templates).containsExactly(
+				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"),
+				suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void listSuggestionTemplatesRejectsANonAdminWithoutQueryingTheDao() {
+		assertThatThrownBy(() -> newService().listSuggestionTemplates(nonAdminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).findByRule(any(), any());
+	}
+
+	@Test
+	void listSuggestionTemplatesRejectsAnUnauthenticatedUser() {
+		assertThatThrownBy(() -> newService().listSuggestionTemplates(unauthenticatedUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthenticatedException.class);
+		verify(suggestionTemplateDao, never()).findByRule(any(), any());
+	}
+
+	private static SuggestionTemplate suggestionTemplate(UUID id, String alternativeName, String restriction, String equivalence, String techniqueNotes) {
+		return ImmutableSuggestionTemplate.builder()
+				.id(new GenericSuggestionTemplateId(id.toString()))
+				.alternative(new AlternativeIngredientImpl(alternativeName))
+				.restriction(Optional.ofNullable(restriction))
+				.equivalence(Optional.ofNullable(equivalence))
+				.techniqueNotes(Optional.ofNullable(techniqueNotes))
+				.build();
 	}
 
 	@Test
@@ -922,7 +972,7 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	private BackofficeRulesServiceImpl newService() {
-		return new BackofficeRulesServiceImpl(ruleDao, recommendationDao, triggerIngredientDao, roleOrTechniqueDao, persistenceContextFactory, new AuthorizationImpl());
+		return new BackofficeRulesServiceImpl(ruleDao, recommendationDao, triggerIngredientDao, roleOrTechniqueDao, suggestionTemplateDao, persistenceContextFactory, new AuthorizationImpl());
 	}
 
 	private static User adminUser() {
