@@ -17,6 +17,7 @@
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueTranslationEntity</class>

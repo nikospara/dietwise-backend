@@ -39,6 +39,7 @@ import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.AddedTemplate;
+import eu.dietwise.services.v1.types.AlternativeIngredientForEdit;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
@@ -52,6 +53,7 @@ import eu.dietwise.v1.model.SuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
 import eu.dietwise.v1.types.SuggestionTemplateId;
+import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.RoleOrTechniqueImpl;
 import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
@@ -117,8 +119,18 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				(_, _) -> suggestionTemplateDao.findFieldTranslationLangsByRule(em, id),
 				(_, _, _) -> suggestionTemplateDao.findActiveByRule(em, id),
 				(_, _, _, _) -> suggestionTemplateDao.findNewByRule(em, id),
+				(_, _, _, _, _) -> alternativeOverlay(em, id),
 				BackofficeRulesServiceImpl::mergeTemplates
 		));
+	}
+
+	private Uni<AlternativeOverlay> alternativeOverlay(ReactivePersistenceContext em, UUID ruleId) {
+		return forcm(
+				suggestionTemplateDao.findAlternativeIdsByRule(em, ruleId),
+				_ -> alternativeIngredientDao.findStagedNames(em),
+				(_, _) -> alternativeIngredientDao.findTranslationLangs(em),
+				AlternativeOverlay::new
+		);
 	}
 
 	@Override
@@ -358,6 +370,50 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		return persistenceContextFactory.withTransaction(tx -> roleOrTechniqueDao.revertTranslation(tx, id, lang, baseVersion));
 	}
 
+	@Override
+	public Uni<AlternativeIngredientForEdit> alternativeIngredientForEdit(User user, UUID id) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> forcm(
+				alternativeIngredientDao.findEditableById(em, id),
+				_ -> suggestionTemplateDao.countTemplatesByAlternative(em, id),
+				(details, count) -> new AlternativeIngredientForEdit(details.name(), details.explanationForLlm(), details.version(), details.published(), count)
+		));
+	}
+
+	@Override
+	public Uni<Void> editAlternativeIngredient(User user, UUID id, String name, String explanationForLlm, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> alternativeIngredientDao.listOptions(tx).flatMap(options -> nameTaken(options, id, name)
+				? Uni.createFrom().failure(new DuplicateBusinessKeyException("An Alternative Ingredient named '" + name + "' already exists"))
+				: alternativeIngredientDao.editAlternativeIngredient(tx, id, name, explanationForLlm, baseVersion)));
+	}
+
+	@Override
+	public Uni<Void> revertAlternativeIngredient(User user, UUID id, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> alternativeIngredientDao.revertAlternativeIngredient(tx, id, baseVersion));
+	}
+
+	@Override
+	public Uni<Map<RecipeLanguage, ReferenceDetails>> alternativeIngredientTranslationsForEdit(User user, UUID id) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> alternativeIngredientDao.findTranslationsForEdit(em, id));
+	}
+
+	@Override
+	public Uni<Void> stageAlternativeIngredientTranslation(User user, UUID id, RecipeLanguage lang, String name, String explanationForLlm, long baseVersion) {
+		authorization.requireAdmin(user);
+		requireTranslatableLanguage(lang);
+		return persistenceContextFactory.withTransaction(tx -> alternativeIngredientDao.stageTranslation(tx, id, lang, name, explanationForLlm, baseVersion));
+	}
+
+	@Override
+	public Uni<Void> revertAlternativeIngredientTranslation(User user, UUID id, RecipeLanguage lang, long baseVersion) {
+		authorization.requireAdmin(user);
+		requireTranslatableLanguage(lang);
+		return persistenceContextFactory.withTransaction(tx -> alternativeIngredientDao.revertTranslation(tx, id, lang, baseVersion));
+	}
+
 	private static void requireTranslatableLanguage(RecipeLanguage lang) {
 		if (lang == RecipeLanguage.EN) {
 			throw new IllegalArgumentException("English is the master value, not a translation");
@@ -459,24 +515,34 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			Map<UUID, StagedSuggestionTemplateOverlay> overlays,
 			Map<UUID, FieldTranslationLangs> translationLangs,
 			Map<UUID, Boolean> masterActive,
-			List<NewSuggestionTemplate> newTemplates
+			List<NewSuggestionTemplate> newTemplates,
+			AlternativeOverlay alternativeOverlay
 	) {
 		Stream<StagedSuggestionTemplate> published = master.stream()
 				.map(template -> toStagedSuggestionTemplate(
 						template,
 						overlays.get(template.getId().asUuid()),
 						translationLangs.get(template.getId().asUuid()),
-						masterActive.getOrDefault(template.getId().asUuid(), true)));
-		Stream<StagedSuggestionTemplate> added = newTemplates.stream().map(BackofficeRulesServiceImpl::toNewStagedSuggestionTemplate);
+						masterActive.getOrDefault(template.getId().asUuid(), true),
+						alternativeOverlay));
+		Stream<StagedSuggestionTemplate> added = newTemplates.stream()
+				.map(newTemplate -> toNewStagedSuggestionTemplate(newTemplate, alternativeOverlay));
 		return Stream.concat(published, added).toList();
 	}
 
-	private static StagedSuggestionTemplate toStagedSuggestionTemplate(SuggestionTemplate master, StagedSuggestionTemplateOverlay overlay, FieldTranslationLangs translationLangs, boolean masterActive) {
+	private static StagedSuggestionTemplate toStagedSuggestionTemplate(SuggestionTemplate master, StagedSuggestionTemplateOverlay overlay, FieldTranslationLangs translationLangs, boolean masterActive, AlternativeOverlay alternativeOverlay) {
+		UUID alternativeId = alternativeOverlay.alternativeIdsByTemplate().get(master.getId().asUuid());
 		Map<SuggestionTemplateField, Map<RecipeLanguage, TranslationState>> translations = templateTranslationStates(translationLangs);
+		Map<RecipeLanguage, TranslationState> alternativeTranslations = alternativeTranslationStates(alternativeId, alternativeOverlay.translationLangs());
+		String effectiveName = effectiveAlternativeName(master, alternativeId, alternativeOverlay.stagedNames());
 		if (overlay == null) {
-			return new StagedSuggestionTemplate(master, EnumSet.noneOf(SuggestionTemplateField.class), translations, masterActive, false, true, 0L);
+			SuggestionTemplate effective = ImmutableSuggestionTemplate.builder().from(master)
+					.alternative(new AlternativeIngredientImpl(effectiveName))
+					.build();
+			return new StagedSuggestionTemplate(effective, alternativeId, EnumSet.noneOf(SuggestionTemplateField.class), translations, alternativeTranslations, masterActive, false, true, 0L);
 		}
 		SuggestionTemplate effective = ImmutableSuggestionTemplate.builder().from(master)
+				.alternative(new AlternativeIngredientImpl(effectiveName))
 				.restriction(Optional.ofNullable(overlay.restriction()))
 				.equivalence(Optional.ofNullable(overlay.equivalence()))
 				.techniqueNotes(Optional.ofNullable(overlay.techniqueNotes()))
@@ -491,18 +557,49 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		if (!Objects.equals(master.getTechniqueNotes().orElse(null), overlay.techniqueNotes())) {
 			changedFields.add(SuggestionTemplateField.TECHNIQUE_NOTES);
 		}
-		return new StagedSuggestionTemplate(effective, changedFields, translations, overlay.active(), overlay.active() != masterActive, true, overlay.version());
+		return new StagedSuggestionTemplate(effective, alternativeId, changedFields, translations, alternativeTranslations, overlay.active(), overlay.active() != masterActive, true, overlay.version());
 	}
 
-	private static StagedSuggestionTemplate toNewStagedSuggestionTemplate(NewSuggestionTemplate newTemplate) {
+	private static StagedSuggestionTemplate toNewStagedSuggestionTemplate(NewSuggestionTemplate newTemplate, AlternativeOverlay alternativeOverlay) {
+		SuggestionTemplate master = newTemplate.template();
+		UUID alternativeId = alternativeOverlay.alternativeIdsByTemplate().get(master.getId().asUuid());
+		String effectiveName = effectiveAlternativeName(master, alternativeId, alternativeOverlay.stagedNames());
+		SuggestionTemplate effective = ImmutableSuggestionTemplate.builder().from(master)
+				.alternative(new AlternativeIngredientImpl(effectiveName))
+				.build();
 		return new StagedSuggestionTemplate(
-				newTemplate.template(),
+				effective,
+				alternativeId,
 				EnumSet.noneOf(SuggestionTemplateField.class),
 				templateTranslationStates(null),
+				alternativeTranslationStates(alternativeId, alternativeOverlay.translationLangs()),
 				true,
 				false,
 				false,
 				newTemplate.version());
+	}
+
+	private static String effectiveAlternativeName(SuggestionTemplate master, UUID alternativeId, Map<UUID, String> stagedNames) {
+		if (alternativeId == null) {
+			return master.getAlternative().asString();
+		}
+		return stagedNames.getOrDefault(alternativeId, master.getAlternative().asString());
+	}
+
+	private static Map<RecipeLanguage, TranslationState> alternativeTranslationStates(UUID alternativeId, Map<UUID, TranslationLangs> langsById) {
+		return translationStates(alternativeId == null ? null : langsById.get(alternativeId));
+	}
+
+	/**
+	 * Per-template AlternativeIngredient context for one Rule's panel: the id of the AlternativeIngredient each template
+	 * suggests, the shared staged English names (so a renamed entity shows on every referencing template), and the shared
+	 * AlternativeIngredients' translation completeness, each keyed by AlternativeIngredient id.
+	 */
+	private record AlternativeOverlay(
+			Map<UUID, UUID> alternativeIdsByTemplate,
+			Map<UUID, String> stagedNames,
+			Map<UUID, TranslationLangs> translationLangs
+	) {
 	}
 
 	private static Map<SuggestionTemplateField, Map<RecipeLanguage, TranslationState>> templateTranslationStates(FieldTranslationLangs langs) {

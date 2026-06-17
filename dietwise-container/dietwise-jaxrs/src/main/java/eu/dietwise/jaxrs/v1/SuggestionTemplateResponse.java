@@ -18,12 +18,14 @@ import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
  */
 public record SuggestionTemplateResponse(
 		String id,
+		String alternativeIngredientId,
 		String alternativeIngredientName,
 		String restriction,
 		String equivalence,
 		String techniqueNotes,
 		List<String> changedFields,
 		Map<String, Map<String, String>> translations,
+		Map<String, String> alternativeIngredientTranslations,
 		boolean active,
 		boolean activeChanged,
 		boolean published,
@@ -33,12 +35,14 @@ public record SuggestionTemplateResponse(
 		var template = staged.template();
 		return new SuggestionTemplateResponse(
 				template.getId().asString(),
+				staged.alternativeIngredientId() == null ? null : staged.alternativeIngredientId().toString(),
 				template.getAlternative().asString(),
 				template.getRestriction().orElse(null),
 				template.getEquivalence().orElse(null),
 				template.getTechniqueNotes().orElse(null),
 				staged.changedFields().stream().map(Enum::name).toList(),
 				toTranslationNames(staged),
+				toStateNames(staged.alternativeIngredientTranslations()),
 				staged.active(),
 				staged.activeChanged(),
 				staged.published(),
@@ -49,9 +53,13 @@ public record SuggestionTemplateResponse(
 	private static Map<String, Map<String, String>> toTranslationNames(StagedSuggestionTemplate staged) {
 		return staged.translations().entrySet().stream().collect(Collectors.toMap(
 				field -> field.getKey().name(),
-				field -> field.getValue().entrySet().stream().collect(Collectors.toMap(
-						lang -> lang.getKey().name(),
-						lang -> lang.getValue().name()))));
+				field -> toStateNames(field.getValue())));
+	}
+
+	private static Map<String, String> toStateNames(Map<eu.dietwise.v1.types.RecipeLanguage, eu.dietwise.services.v1.types.TranslationState> states) {
+		return states.entrySet().stream().collect(Collectors.toMap(
+				lang -> lang.getKey().name(),
+				lang -> lang.getValue().name()));
 	}
 
 	public static List<SuggestionTemplateResponse> fromAll(List<StagedSuggestionTemplate> templates) {

@@ -17,6 +17,8 @@ import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationWcEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
@@ -122,6 +124,22 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID REFUSE_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000006");
 	private static final UUID REFUSE_TEMPLATE_ID = UUID.fromString("15000000-0000-4000-8000-0000000000c1");
 
+	// Issue 17: dedicated AlternativeIngredients referenced only by Issue-17 fixtures, so the blast-radius count and the
+	// shared-AlternativeIngredient flag stay deterministic regardless of test order.
+	private static final UUID BLAST_ALTERNATIVE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000a1");
+	private static final UUID FLAG_ALTERNATIVE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000a2");
+	private static final UUID FLAG_TR_ALTERNATIVE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000a3");
+	private static final UUID ALT_IDS_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000001");
+	private static final UUID ALT_IDS_TEMPLATE_A_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b1");
+	private static final UUID ALT_IDS_TEMPLATE_B_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b2");
+	private static final UUID BLAST_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000002");
+	private static final UUID BLAST_TEMPLATE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b3");
+	private static final UUID BLAST_WC_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000003");
+	private static final UUID ALT_FLAG_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000004");
+	private static final UUID ALT_FLAG_TEMPLATE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b4");
+	private static final UUID ALT_FLAG_TR_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000005");
+	private static final UUID ALT_FLAG_TR_TEMPLATE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b5");
+
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
 
@@ -167,6 +185,106 @@ class SuggestionTemplateDaoImplTest {
 								session, REFUSE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 refuse role",
 								List.of(new SuggestionTemplateFixtures.Template(REFUSE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Refuse fixture", true)))))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	@BeforeAll
+	static void seedAlternativeIngredientEditFixtures(Mutiny.SessionFactory sessionFactory) {
+		sessionFactory.withTransaction(session ->
+						insertAlternativeIngredient(session, BLAST_ALTERNATIVE_ID, "Issue 17 blast tofu")
+								.chain(() -> insertAlternativeIngredient(session, FLAG_ALTERNATIVE_ID, "Issue 17 flag tofu"))
+								.chain(() -> insertAlternativeIngredient(session, FLAG_TR_ALTERNATIVE_ID, "Issue 17 flag-tr tempeh"))
+								.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+										session, ALT_IDS_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 17 alt-ids role",
+										List.of(
+												new SuggestionTemplateFixtures.Template(ALT_IDS_TEMPLATE_A_ID, FIRST_ALTERNATIVE_ID, 0, "Alt-ids fixture A", true),
+												new SuggestionTemplateFixtures.Template(ALT_IDS_TEMPLATE_B_ID, BLAST_ALTERNATIVE_ID, 1, "Alt-ids fixture B", true))))
+								.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+										session, BLAST_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 17 blast role",
+										List.of(new SuggestionTemplateFixtures.Template(BLAST_TEMPLATE_ID, BLAST_ALTERNATIVE_ID, 0, "Blast fixture", true))))
+								.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+										session, BLAST_WC_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 17 blast-wc role", List.of()))
+								.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+										session, ALT_FLAG_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 17 flag role",
+										List.of(new SuggestionTemplateFixtures.Template(ALT_FLAG_TEMPLATE_ID, FLAG_ALTERNATIVE_ID, 0, "Flag fixture", true))))
+								.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+										session, ALT_FLAG_TR_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 17 flag-tr role",
+										List.of(new SuggestionTemplateFixtures.Template(ALT_FLAG_TR_TEMPLATE_ID, FLAG_TR_ALTERNATIVE_ID, 0, "Flag-tr fixture", true)))))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	@Test
+	void findAlternativeIdsByRuleMapsEachTemplateToItsAlternative(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var ids = factory.withoutTransaction(em -> sut.findAlternativeIdsByRule(em, ALT_IDS_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(ids).hasSize(2);
+		assertThat(ids).containsEntry(ALT_IDS_TEMPLATE_A_ID, FIRST_ALTERNATIVE_ID);
+		assertThat(ids).containsEntry(ALT_IDS_TEMPLATE_B_ID, BLAST_ALTERNATIVE_ID);
+	}
+
+	@Test
+	void countTemplatesByAlternativeCountsMasterAndWorkingCopyOnlyTemplates(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var before = factory.withoutTransaction(em -> sut.countTemplatesByAlternative(em, BLAST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(before).isEqualTo(2L);
+
+		factory.withTransaction(tx -> sut.addTemplate(tx, BLAST_WC_RULE_ID, BLAST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory.withoutTransaction(em -> sut.countTemplatesByAlternative(em, BLAST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after).isEqualTo(3L);
+	}
+
+	@Test
+	void findRuleIdsWithStagedTemplatesFlagsARuleWhoseAlternativeHasAStagedEdit(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var before = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(before).doesNotContain(ALT_FLAG_RULE_ID);
+
+		factory.withTransaction(tx -> {
+			var wc = new AlternativeIngredientWcEntity();
+			wc.setId(FLAG_ALTERNATIVE_ID);
+			wc.setName("Issue 17 flag tofu (edited)");
+			wc.setVersion(1L);
+			return tx.persist(wc);
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after).contains(ALT_FLAG_RULE_ID);
+	}
+
+	@Test
+	void findRuleIdsWithStagedTemplatesFlagsARuleWhoseAlternativeHasAStagedTranslation(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var before = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(before).doesNotContain(ALT_FLAG_TR_RULE_ID);
+
+		factory.withTransaction(tx -> {
+			var wc = new AlternativeIngredientTranslationWcEntity();
+			wc.setAlternativeIngredientId(FLAG_TR_ALTERNATIVE_ID);
+			wc.setLang(RecipeLanguage.EL);
+			wc.setName("Σταγμένη μετάφραση");
+			wc.setVersion(1L);
+			return tx.persist(wc);
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after).contains(ALT_FLAG_TR_RULE_ID);
 	}
 
 	@Test
@@ -688,6 +806,14 @@ class SuggestionTemplateDaoImplTest {
 		var master = factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, REFUSE_TEMPLATE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(master).isNotNull();
+	}
+
+	private static Uni<Void> insertAlternativeIngredient(Mutiny.Session session, UUID id, String name) {
+		return session.createNativeQuery("insert into DW_ALTERNATIVE_INGREDIENT (id, name) values (:id, :name)")
+				.setParameter("id", id)
+				.setParameter("name", name)
+				.executeUpdate()
+				.replaceWithVoid();
 	}
 
 	private static Uni<Void> createRuleWithoutTemplates(ReactivePersistenceTxContext tx, UUID id) {

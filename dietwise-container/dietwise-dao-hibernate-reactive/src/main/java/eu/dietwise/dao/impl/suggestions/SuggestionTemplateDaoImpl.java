@@ -2,6 +2,7 @@ package eu.dietwise.dao.impl.suggestions;
 
 import static java.util.stream.Collectors.toMap;
 import static eu.dietwise.common.utils.UniComprehensions.forc;
+import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -35,6 +36,10 @@ import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationWcEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationWcEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity_;
@@ -213,7 +218,7 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
-		q.multiselect(st.get(SuggestionTemplateEntity_.id), st.get(SuggestionTemplateEntity_.active))
+		q.select(cb.tuple(st.get(SuggestionTemplateEntity_.id), st.get(SuggestionTemplateEntity_.active)))
 				.where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
 		return em.createQuery(q).getResultList()
 				.map(rows -> rows.stream().collect(toMap(row -> row.get(0, UUID.class), row -> row.get(1, Boolean.class))));
@@ -221,11 +226,18 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 
 	@Override
 	public Uni<Set<UUID>> findRuleIdsWithStagedTemplates(ReactivePersistenceContext em) {
-		return ruleIdsWithStagedFields(em).flatMap(fromFields ->
-				ruleIdsWithStagedTranslations(em).map(fromTranslations -> {
+		return forcm(
+				ruleIdsWithStagedFields(em),
+				_ -> ruleIdsWithStagedTranslations(em),
+				_ -> ruleIdsWithStagedAlternatives(em),
+				_ -> ruleIdsWithStagedAlternativeTranslations(em),
+				(fromFields, fromTranslations, fromAlternatives, fromAlternativeTranslations) -> {
 					fromFields.addAll(fromTranslations);
+					fromFields.addAll(fromAlternatives);
+					fromFields.addAll(fromAlternativeTranslations);
 					return fromFields;
-				}));
+				}
+		);
 	}
 
 	private Uni<Set<UUID>> ruleIdsWithStagedFields(ReactivePersistenceContext em) {
@@ -246,6 +258,90 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		q.select(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id)).distinct(true)
 				.where(st.get(SuggestionTemplateEntity_.id).in(staged));
 		return em.createQuery(q).getResultList().map(HashSet::new);
+	}
+
+	private Uni<Set<UUID>> ruleIdsWithStagedAlternatives(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		Subquery<UUID> staged = q.subquery(UUID.class);
+		Root<AlternativeIngredientWcEntity> aiwc = staged.from(AlternativeIngredientWcEntity.class);
+		staged.select(aiwc.get(AlternativeIngredientWcEntity_.id));
+		q.select(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id)).distinct(true)
+				.where(st.get(SuggestionTemplateEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id).in(staged));
+		return em.createQuery(q).getResultList().map(HashSet::new);
+	}
+
+	private Uni<Set<UUID>> ruleIdsWithStagedAlternativeTranslations(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		Subquery<UUID> staged = q.subquery(UUID.class);
+		Root<AlternativeIngredientTranslationWcEntity> aitwc = staged.from(AlternativeIngredientTranslationWcEntity.class);
+		staged.select(aitwc.get(AlternativeIngredientTranslationWcEntity_.alternativeIngredientId));
+		q.select(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id)).distinct(true)
+				.where(st.get(SuggestionTemplateEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id).in(staged));
+		return em.createQuery(q).getResultList().map(HashSet::new);
+	}
+
+	@Override
+	public Uni<Map<UUID, UUID>> findAlternativeIdsByRule(ReactivePersistenceContext em, UUID ruleId) {
+		return masterAlternativeIdsByRule(em, ruleId).flatMap(master ->
+				wcAlternativeIdsByRule(em, ruleId).map(wc -> {
+					Map<UUID, UUID> merged = new HashMap<>(master);
+					merged.putAll(wc);
+					return merged;
+				}));
+	}
+
+	private Uni<Map<UUID, UUID>> masterAlternativeIdsByRule(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		q.select(cb.tuple(st.get(SuggestionTemplateEntity_.id), st.get(SuggestionTemplateEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id)))
+				.where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toIdMap);
+	}
+
+	private Uni<Map<UUID, UUID>> wcAlternativeIdsByRule(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
+		q.select(cb.tuple(wc.get(SuggestionTemplateWcEntity_.id), wc.get(SuggestionTemplateWcEntity_.alternativeIngredientId)))
+				.where(cb.equal(wc.get(SuggestionTemplateWcEntity_.ruleId), ruleId));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toIdMap);
+	}
+
+	private static Map<UUID, UUID> toIdMap(List<Tuple> rows) {
+		return rows.stream().collect(toMap(row -> row.get(0, UUID.class), row -> row.get(1, UUID.class)));
+	}
+
+	@Override
+	public Uni<Long> countTemplatesByAlternative(ReactivePersistenceContext em, UUID alternativeIngredientId) {
+		return masterCountByAlternative(em, alternativeIngredientId).flatMap(masterCount ->
+				wcOnlyCountByAlternative(em, alternativeIngredientId).map(wcOnlyCount -> masterCount + wcOnlyCount));
+	}
+
+	private Uni<Long> masterCountByAlternative(ReactivePersistenceContext em, UUID alternativeIngredientId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Long> q = cb.createQuery(Long.class);
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		q.select(cb.count(st)).where(cb.equal(st.get(SuggestionTemplateEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id), alternativeIngredientId));
+		return em.createQuery(q).getResultList().map(rows -> rows.isEmpty() ? 0L : rows.getFirst());
+	}
+
+	private Uni<Long> wcOnlyCountByAlternative(ReactivePersistenceContext em, UUID alternativeIngredientId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Long> q = cb.createQuery(Long.class);
+		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
+		Subquery<UUID> master = q.subquery(UUID.class);
+		Root<SuggestionTemplateEntity> masterTemplate = master.from(SuggestionTemplateEntity.class);
+		master.select(masterTemplate.get(SuggestionTemplateEntity_.id))
+				.where(cb.equal(masterTemplate.get(SuggestionTemplateEntity_.id), wc.get(SuggestionTemplateWcEntity_.id)));
+		q.select(cb.count(wc)).where(cb.and(
+				cb.equal(wc.get(SuggestionTemplateWcEntity_.alternativeIngredientId), alternativeIngredientId),
+				cb.not(cb.exists(master))));
+		return em.createQuery(q).getResultList().map(rows -> rows.isEmpty() ? 0L : rows.getFirst());
 	}
 
 	@Override
@@ -521,13 +617,13 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<SuggestionTemplateTranslationEntity> tt = q.from(SuggestionTemplateTranslationEntity.class);
-		q.multiselect(
+		q.select(cb.tuple(
 				tt.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.id),
 				tt.get(SuggestionTemplateTranslationEntity_.lang),
 				tt.get(SuggestionTemplateTranslationEntity_.restriction),
 				tt.get(SuggestionTemplateTranslationEntity_.equivalence),
 				tt.get(SuggestionTemplateTranslationEntity_.techniqueNotes)
-		).where(cb.equal(tt.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		)).where(cb.equal(tt.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
 		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toValuesByTemplateThenLang);
 	}
 
@@ -538,13 +634,13 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		Subquery<UUID> ruleTemplates = q.subquery(UUID.class);
 		Root<SuggestionTemplateEntity> st = ruleTemplates.from(SuggestionTemplateEntity.class);
 		ruleTemplates.select(st.get(SuggestionTemplateEntity_.id)).where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
-		q.multiselect(
+		q.select(cb.tuple(
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.lang),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.restriction),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.equivalence),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.techniqueNotes)
-		).where(ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId).in(ruleTemplates));
+		)).where(ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId).in(ruleTemplates));
 		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toValuesByTemplateThenLang);
 	}
 

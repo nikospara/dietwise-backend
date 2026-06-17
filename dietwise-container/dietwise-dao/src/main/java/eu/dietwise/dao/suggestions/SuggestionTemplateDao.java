@@ -75,10 +75,25 @@ public interface SuggestionTemplateDao {
 	Uni<Map<UUID, Boolean>> findActiveByRule(ReactivePersistenceContext em, UUID ruleId);
 
 	/**
-	 * The ids of the Rules that have at least one Suggestion Template with a Staged Change in the Working Copy, whether an
-	 * English field or a translation. Used to light a Rule's Suggestions affordance without loading its templates.
+	 * The ids of the Rules that have at least one Suggestion Template affected by a Staged Change in the Working Copy:
+	 * a template's own English field or translation, or the shared AlternativeIngredient it references having a staged
+	 * English edit or translation. Used to light a Rule's Suggestions affordance without loading its templates.
 	 */
 	Uni<Set<UUID>> findRuleIdsWithStagedTemplates(ReactivePersistenceContext em);
+
+	/**
+	 * For one Rule's Suggestion Templates (published master union the Working Copy), the id of the AlternativeIngredient
+	 * each suggests, keyed by template id. Lets the panel overlay an AlternativeIngredient's staged name and translation
+	 * state onto every template that references it. A Rule with no templates yields an empty map.
+	 */
+	Uni<Map<UUID, UUID>> findAlternativeIdsByRule(ReactivePersistenceContext em, UUID ruleId);
+
+	/**
+	 * The number of Suggestion Templates, across all Rules, that reference a given AlternativeIngredient — published
+	 * master templates plus Working-Copy-only ones. Drives the blast-radius warning shown when an editor edits this shared
+	 * AlternativeIngredient.
+	 */
+	Uni<Long> countTemplatesByAlternative(ReactivePersistenceContext em, UUID alternativeIngredientId);
 
 	/**
 	 * The per-field, per-language translation completeness of one Rule's Suggestion Templates, keyed by template id. For

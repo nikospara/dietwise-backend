@@ -216,4 +216,20 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="alternative_ingredient_translation_working_copy" author="nikospara">
+		<createTable tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC" remarks="Working Copy mirror of DW_ALTERNATIVE_INGREDIENT_TRANSLATION: proposed per-language Alternative Ingredient name and explanation translations staged for publish; sparse, a row exists only for a changed translation">
+			<column name="alternative_ingredient_id" type="UUID" remarks="The Alternative Ingredient this translation belongs to; resolved against master union Working Copy, not a foreign key">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC__ALTERNATIVE_INGREDIENT_ID" primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC__LANG" primaryKey="true" primaryKeyName="PK_DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC" />
+			</column>
+			<column name="name" type="VARCHAR(200)" remarks="Proposed translated name" />
+			<column name="explanation_for_llm" type="VARCHAR(100)" remarks="Proposed translated explanation for the LLM" />
+			<column name="version" type="BIGINT" remarks="Working Copy optimistic-concurrency version; incremented on each staged change to this translation">
+				<constraints nullable="false" notNullConstraintName="NL_DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC__VERSION" />
+			</column>
+		</createTable>
+	</changeSet>
 </databaseChangeLog>

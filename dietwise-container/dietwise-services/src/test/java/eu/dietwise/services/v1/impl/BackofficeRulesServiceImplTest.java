@@ -48,6 +48,7 @@ import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.services.v1.types.AddedTemplate;
+import eu.dietwise.services.v1.types.AlternativeIngredientForEdit;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
@@ -132,6 +133,9 @@ class BackofficeRulesServiceImplTest {
 		lenient().when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
 		lenient().when(suggestionTemplateDao.findActiveByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
 		lenient().when(suggestionTemplateDao.findNewByRule(any(), any())).thenReturn(Uni.createFrom().item(List.of()));
+		lenient().when(suggestionTemplateDao.findAlternativeIdsByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
+		lenient().when(alternativeIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		lenient().when(alternativeIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 	}
 
 	@Test
@@ -1333,6 +1337,175 @@ class BackofficeRulesServiceImplTest {
 				.isInstanceOf(NotAuthorizedException.class);
 		verify(alternativeIngredientDao, never()).listOptions(any());
 		verify(alternativeIngredientDao, never()).createAlternativeIngredient(any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void listSuggestionTemplatesOverlaysAStagedAlternativeNameIdAndTranslations() {
+		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				suggestionTemplate(TEMPLATE_ID, "Smoked tofu cubes", "Not for burgers without binder", "1:1", "Dry sauté"))));
+		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionTemplateDao.findAlternativeIdsByRule(any(), eq(RULE_ID)))
+				.thenReturn(Uni.createFrom().item(Map.of(TEMPLATE_ID, ALTERNATIVE_INGREDIENT_ID)));
+		when(alternativeIngredientDao.findStagedNames(any()))
+				.thenReturn(Uni.createFrom().item(Map.of(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes (revised)")));
+		when(alternativeIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
+				ALTERNATIVE_INGREDIENT_ID, new TranslationLangs(Set.of(RecipeLanguage.EL), Set.of(RecipeLanguage.NL)))));
+
+		StagedSuggestionTemplate template = newService()
+				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT).getFirst();
+
+		assertThat(template.template().getAlternative().asString()).isEqualTo("Smoked tofu cubes (revised)");
+		assertThat(template.alternativeIngredientId()).isEqualTo(ALTERNATIVE_INGREDIENT_ID);
+		assertThat(template.alternativeIngredientTranslations().get(RecipeLanguage.EL)).isEqualTo(TranslationState.PRESENT);
+		assertThat(template.alternativeIngredientTranslations().get(RecipeLanguage.NL)).isEqualTo(TranslationState.STAGED);
+		assertThat(template.alternativeIngredientTranslations().get(RecipeLanguage.LT)).isEqualTo(TranslationState.MISSING);
+	}
+
+	@Test
+	void alternativeIngredientForEditReturnsEffectiveDetailsAndBlastRadiusForAnAdmin() {
+		when(alternativeIngredientDao.findEditableById(any(), eq(ALTERNATIVE_INGREDIENT_ID)))
+				.thenReturn(Uni.createFrom().item(new ReferenceDetails("Smoked tofu cubes", "Pressed and smoked.", 2L, true)));
+		when(suggestionTemplateDao.countTemplatesByAlternative(any(), eq(ALTERNATIVE_INGREDIENT_ID)))
+				.thenReturn(Uni.createFrom().item(4L));
+
+		AlternativeIngredientForEdit forEdit = newService()
+				.alternativeIngredientForEdit(adminUser(), ALTERNATIVE_INGREDIENT_ID).await().atMost(AWAIT);
+
+		assertThat(forEdit).isEqualTo(new AlternativeIngredientForEdit("Smoked tofu cubes", "Pressed and smoked.", 2L, true, 4L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void alternativeIngredientForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().alternativeIngredientForEdit(nonAdminUser(), ALTERNATIVE_INGREDIENT_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).findEditableById(any(), any());
+		verify(suggestionTemplateDao, never()).countTemplatesByAlternative(any(), any());
+	}
+
+	@Test
+	void editAlternativeIngredientStagesTheEditForAnAdmin() {
+		when(alternativeIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes"))));
+		when(alternativeIngredientDao.editAlternativeIngredient(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq("Smoked tofu"), eq("Pressed and smoked."), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().editAlternativeIngredient(adminUser(), ALTERNATIVE_INGREDIENT_ID, "Smoked tofu", "Pressed and smoked.", 1L).await().atMost(AWAIT);
+
+		verify(alternativeIngredientDao).editAlternativeIngredient(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq("Smoked tofu"), eq("Pressed and smoked."), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void editAlternativeIngredientRejectsRenamingToAnotherEntrysNameCaseInsensitively() {
+		when(alternativeIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(
+				new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes"),
+				new ReferenceOption(NEW_TEMPLATE_ID, "Aquafaba"))));
+
+		assertThatThrownBy(() -> newService().editAlternativeIngredient(adminUser(), ALTERNATIVE_INGREDIENT_ID, "aquafaba", "x", 1L).await().atMost(AWAIT))
+				.isInstanceOf(DuplicateBusinessKeyException.class);
+		verify(alternativeIngredientDao, never()).editAlternativeIngredient(any(), any(), any(), any(), anyLong());
+	}
+
+	@Test
+	void editAlternativeIngredientRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().editAlternativeIngredient(nonAdminUser(), ALTERNATIVE_INGREDIENT_ID, "Smoked tofu", "x", 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).listOptions(any());
+		verify(alternativeIngredientDao, never()).editAlternativeIngredient(any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertAlternativeIngredientRemovesTheStagedEditForAnAdmin() {
+		when(alternativeIngredientDao.revertAlternativeIngredient(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertAlternativeIngredient(adminUser(), ALTERNATIVE_INGREDIENT_ID, 1L).await().atMost(AWAIT);
+
+		verify(alternativeIngredientDao).revertAlternativeIngredient(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertAlternativeIngredientRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertAlternativeIngredient(nonAdminUser(), ALTERNATIVE_INGREDIENT_ID, 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).revertAlternativeIngredient(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void alternativeIngredientTranslationsForEditReturnsEffectivePerLanguageForAnAdmin() {
+		when(alternativeIngredientDao.findTranslationsForEdit(any(), eq(ALTERNATIVE_INGREDIENT_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				RecipeLanguage.EL, new ReferenceDetails("Καπνιστό τόφου", "Πρεσαριστό.", 2L, true),
+				RecipeLanguage.LT, new ReferenceDetails(null, null, 0L, false))));
+
+		Map<RecipeLanguage, ReferenceDetails> translations = newService()
+				.alternativeIngredientTranslationsForEdit(adminUser(), ALTERNATIVE_INGREDIENT_ID).await().atMost(AWAIT);
+
+		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("Καπνιστό τόφου", "Πρεσαριστό.", 2L, true));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void alternativeIngredientTranslationsForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().alternativeIngredientTranslationsForEdit(nonAdminUser(), ALTERNATIVE_INGREDIENT_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).findTranslationsForEdit(any(), any());
+	}
+
+	@Test
+	void stageAlternativeIngredientTranslationStagesTheEditForAnAdmin() {
+		when(alternativeIngredientDao.stageTranslation(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq(RecipeLanguage.EL), eq("Καπνιστό τόφου"), eq("Πρεσαριστό."), eq(0L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().stageAlternativeIngredientTranslation(adminUser(), ALTERNATIVE_INGREDIENT_ID, RecipeLanguage.EL, "Καπνιστό τόφου", "Πρεσαριστό.", 0L).await().atMost(AWAIT);
+
+		verify(alternativeIngredientDao).stageTranslation(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq(RecipeLanguage.EL), eq("Καπνιστό τόφου"), eq("Πρεσαριστό."), eq(0L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void stageAlternativeIngredientTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageAlternativeIngredientTranslation(adminUser(), ALTERNATIVE_INGREDIENT_ID, RecipeLanguage.EN, "x", "y", 0L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(alternativeIngredientDao, never()).stageTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void stageAlternativeIngredientTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageAlternativeIngredientTranslation(nonAdminUser(), ALTERNATIVE_INGREDIENT_ID, RecipeLanguage.EL, "x", "y", 0L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).stageTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertAlternativeIngredientTranslationRemovesTheStagedTranslationForAnAdmin() {
+		when(alternativeIngredientDao.revertTranslation(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq(RecipeLanguage.NL), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertAlternativeIngredientTranslation(adminUser(), ALTERNATIVE_INGREDIENT_ID, RecipeLanguage.NL, 1L).await().atMost(AWAIT);
+
+		verify(alternativeIngredientDao).revertTranslation(any(), eq(ALTERNATIVE_INGREDIENT_ID), eq(RecipeLanguage.NL), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertAlternativeIngredientTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertAlternativeIngredientTranslation(adminUser(), ALTERNATIVE_INGREDIENT_ID, RecipeLanguage.EN, 1L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(alternativeIngredientDao, never()).revertTranslation(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertAlternativeIngredientTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertAlternativeIngredientTranslation(nonAdminUser(), ALTERNATIVE_INGREDIENT_ID, RecipeLanguage.NL, 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).revertTranslation(any(), any(), any(), anyLong());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 

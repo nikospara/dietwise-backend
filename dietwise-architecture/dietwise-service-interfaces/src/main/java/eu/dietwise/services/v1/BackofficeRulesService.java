@@ -10,6 +10,7 @@ import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.AddedTemplate;
+import eu.dietwise.services.v1.types.AlternativeIngredientForEdit;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
@@ -440,4 +441,80 @@ public interface BackofficeRulesService {
 	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
 	 */
 	Uni<Void> revertRoleOrTechniqueTranslation(User user, UUID id, RecipeLanguage lang, long baseVersion);
+
+	/**
+	 * The effective editable details of one AlternativeIngredient (published master overlaid by any Staged Change),
+	 * together with its blast radius — the number of Suggestion Templates across all Rules that reference it — to pre-fill
+	 * and warn within the edit dialog.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param id   The AlternativeIngredient to edit
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such AlternativeIngredient exists
+	 */
+	Uni<AlternativeIngredientForEdit> alternativeIngredientForEdit(User user, UUID id);
+
+	/**
+	 * Stage an edit to an AlternativeIngredient's name and explanation in the Working Copy. The entity is shared master
+	 * data, so the edit is seen by every Suggestion Template that references it. The name must stay unique across published
+	 * master and the Working Copy, excluding this entity itself.
+	 *
+	 * @param user             The editor; must have the ADMIN role
+	 * @param id               The AlternativeIngredient being edited
+	 * @param name             The proposed name
+	 * @param explanationForLlm The proposed explanation for the LLM; may be {@code null}
+	 * @param baseVersion      The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws eu.dietwise.common.dao.DuplicateBusinessKeyException If another AlternativeIngredient already has this name
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such AlternativeIngredient exists
+	 */
+	Uni<Void> editAlternativeIngredient(User user, UUID id, String name, String explanationForLlm, long baseVersion);
+
+	/**
+	 * Revert an AlternativeIngredient's staged edit, restoring its published master name and explanation; the change is
+	 * seen by every Suggestion Template that references it. A no-op when no Staged Change exists.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The AlternativeIngredient being reverted
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the entity exists only in the Working Copy (never published)
+	 */
+	Uni<Void> revertAlternativeIngredient(User user, UUID id, long baseVersion);
+
+	/**
+	 * The effective translation of one AlternativeIngredient for each non-English language (published master overlaid by
+	 * any Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations
+	 * dialog.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 * @param id   The AlternativeIngredient whose translations are being edited
+	 */
+	Uni<Map<RecipeLanguage, ReferenceDetails>> alternativeIngredientTranslationsForEdit(User user, UUID id);
+
+	/**
+	 * Stage an AlternativeIngredient's name and explanation translation for one language in the Working Copy. The entity is
+	 * shared master data, so the translation is seen by every Suggestion Template that references it. Staging the value
+	 * already in master removes the override.
+	 *
+	 * @param user             The editor; must have the ADMIN role
+	 * @param id               The AlternativeIngredient being translated
+	 * @param lang             The language being translated; must not be English
+	 * @param name             The proposed translated name; {@code null} clears it (falls back to English)
+	 * @param explanationForLlm The proposed translated explanation; {@code null} clears it (falls back to English)
+	 * @param baseVersion      The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> stageAlternativeIngredientTranslation(User user, UUID id, RecipeLanguage lang, String name, String explanationForLlm, long baseVersion);
+
+	/**
+	 * Revert an AlternativeIngredient's staged translation for one language, restoring the published master translation and
+	 * removing the Working Copy row.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The AlternativeIngredient whose staged translation is being reverted
+	 * @param lang        The language being reverted; must not be English
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> revertAlternativeIngredientTranslation(User user, UUID id, RecipeLanguage lang, long baseVersion);
 }

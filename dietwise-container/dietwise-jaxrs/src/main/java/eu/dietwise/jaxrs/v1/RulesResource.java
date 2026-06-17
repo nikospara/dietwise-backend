@@ -24,6 +24,7 @@ import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.AddedTemplate;
+import eu.dietwise.services.v1.types.AlternativeIngredientForEdit;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -259,6 +260,52 @@ public class RulesResource {
 	public Uni<Void> revertRoleOrTechniqueTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.revertRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
+	}
+
+	@GET
+	@Path("alternative-ingredients/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<AlternativeIngredientForEdit> alternativeIngredientForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.alternativeIngredientForEdit(user, UUID.fromString(id));
+	}
+
+	@PUT
+	@Path("alternative-ingredients/{id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> editAlternativeIngredient(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.editAlternativeIngredient(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
+	}
+
+	@DELETE
+	@Path("alternative-ingredients/{id}")
+	public Uni<Void> revertAlternativeIngredient(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertAlternativeIngredient(user, UUID.fromString(id), baseVersion);
+	}
+
+	@GET
+	@Path("alternative-ingredients/{id}/translations")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<Map<RecipeLanguage, ReferenceDetails>> alternativeIngredientTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.alternativeIngredientTranslationsForEdit(user, UUID.fromString(id));
+	}
+
+	@PUT
+	@Path("alternative-ingredients/{id}/translations/{lang}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> stageAlternativeIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditReferenceRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.stageAlternativeIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
+	}
+
+	@DELETE
+	@Path("alternative-ingredients/{id}/translations/{lang}")
+	public Uni<Void> revertAlternativeIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertAlternativeIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
 	}
 
 	@GET
