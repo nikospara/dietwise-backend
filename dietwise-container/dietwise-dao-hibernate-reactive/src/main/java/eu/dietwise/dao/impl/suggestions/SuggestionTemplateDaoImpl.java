@@ -112,12 +112,32 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 	}
 
 	private Uni<Map<UUID, String>> alternativeNamesById(ReactivePersistenceContext em) {
+		return masterAlternativeNames(em).flatMap(master ->
+				stagedAlternativeNames(em).map(staged -> {
+					Map<UUID, String> merged = new HashMap<>(master);
+					merged.putAll(staged);
+					return merged;
+				}));
+	}
+
+	private Uni<Map<UUID, String>> masterAlternativeNames(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<AlternativeIngredientEntity> root = q.from(AlternativeIngredientEntity.class);
 		q.select(cb.tuple(root.get(AlternativeIngredientEntity_.id), root.get(AlternativeIngredientEntity_.name)));
-		return em.createQuery(q).getResultList().map(tuples -> tuples.stream()
-				.collect(toMap(t -> t.get(0, UUID.class), t -> t.get(1, String.class))));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toNameMap);
+	}
+
+	private Uni<Map<UUID, String>> stagedAlternativeNames(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<AlternativeIngredientWcEntity> root = q.from(AlternativeIngredientWcEntity.class);
+		q.select(cb.tuple(root.get(AlternativeIngredientWcEntity_.id), root.get(AlternativeIngredientWcEntity_.name)));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toNameMap);
+	}
+
+	private static Map<UUID, String> toNameMap(List<Tuple> rows) {
+		return rows.stream().collect(toMap(t -> t.get(0, UUID.class), t -> t.get(1, String.class)));
 	}
 
 	private static NewSuggestionTemplate toNewSuggestionTemplate(SuggestionTemplateWcEntity row, Map<UUID, String> alternativeNames) {

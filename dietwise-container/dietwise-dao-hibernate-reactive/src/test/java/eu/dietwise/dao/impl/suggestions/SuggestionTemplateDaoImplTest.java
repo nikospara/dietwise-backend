@@ -139,6 +139,8 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID ALT_FLAG_TEMPLATE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b4");
 	private static final UUID ALT_FLAG_TR_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000005");
 	private static final UUID ALT_FLAG_TR_TEMPLATE_ID = UUID.fromString("17000000-0000-4000-8000-0000000000b5");
+	private static final UUID NEW_ALT_RULE_ID = UUID.fromString("17000000-0000-4000-8000-000000000006");
+	private static final String NEW_ALT_NAME = "Issue 17 brand-new alternative";
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -718,6 +720,25 @@ class SuggestionTemplateDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(wc.getAlternativeOrder()).isEqualTo(2);
 		assertThat(wc.isActive()).isTrue();
+	}
+
+	@Test
+	void findNewByRuleResolvesTheNameOfABrandNewWorkingCopyOnlyAlternative(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var alternativeDao = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newTemplateId = factory.withTransaction(tx -> alternativeDao.createAlternativeIngredient(tx, NEW_ALT_NAME)
+						.flatMap(altId -> sut.addTemplate(tx, NEW_ALT_RULE_ID, altId)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newTemplates = factory.withoutTransaction(em -> sut.findNewByRule(em, NEW_ALT_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(newTemplates).hasSize(1);
+		var added = newTemplates.getFirst();
+		assertThat(added.template().getId().asString()).isEqualTo(newTemplateId.toString());
+		assertThat(added.template().getAlternative().asString()).isEqualTo(NEW_ALT_NAME);
 	}
 
 	@Test
