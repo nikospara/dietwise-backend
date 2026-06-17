@@ -19,12 +19,14 @@ import jakarta.ws.rs.core.MediaType;
 
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.GenericRuleId;
+import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
 
 @Path("rules")
@@ -45,6 +47,23 @@ public class RulesResource {
 	public Uni<List<SuggestionTemplateResponse>> listSuggestionTemplates(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.listSuggestionTemplates(user, new GenericRuleId(id)).map(SuggestionTemplateResponse::fromAll);
+	}
+
+	@PUT
+	@Path("suggestion-templates/{templateId}/{field}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<StagedVersionResponse> stageSuggestionTemplateField(@PathParam("templateId") String templateId, @PathParam("field") String field, StageTemplateFieldRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.stageSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), request.value(), request.baseVersion())
+				.map(StagedVersionResponse::new);
+	}
+
+	@DELETE
+	@Path("suggestion-templates/{templateId}/{field}")
+	public Uni<Void> revertSuggestionTemplateField(@PathParam("templateId") String templateId, @PathParam("field") String field, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), baseVersion);
 	}
 
 	@GET

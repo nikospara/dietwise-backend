@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,7 @@ import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.test.jpa.MockReactivePersistenceContextFactory;
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.types.authorization.NotAuthenticatedException;
 import eu.dietwise.common.types.authorization.NotAuthorizedException;
@@ -41,10 +43,12 @@ import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
+import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
 import eu.dietwise.services.v1.types.StagedRule;
+import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
 import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.model.ImmutableRule;
 import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
@@ -59,6 +63,7 @@ import eu.dietwise.v1.types.impl.RecommendationImpl;
 import eu.dietwise.v1.types.impl.RoleOrTechniqueImpl;
 import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
 import io.smallrye.mutiny.Uni;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -111,6 +116,11 @@ class BackofficeRulesServiceImplTest {
 
 	@RegisterExtension
 	private final MockReactivePersistenceContextFactory persistenceContextFactory = new MockReactivePersistenceContextFactory();
+
+	@BeforeEach
+	void noStagedTemplatesByDefault() {
+		lenient().when(suggestionTemplateDao.findRuleIdsWithStagedTemplates(any())).thenReturn(Uni.createFrom().item(Set.of()));
+	}
 
 	@Test
 	void listRulesReturnsUnchangedRuleWhenNothingIsStaged() {
@@ -194,17 +204,25 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	@Test
-	void listSuggestionTemplatesReturnsTheRulesTemplatesInOrderForAnAdmin() {
+	void listSuggestionTemplatesOverlaysStagedTemplatesOnMasterForAnAdmin() {
 		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
 				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"),
 				suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null))));
+		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				TEMPLATE_ID, new StagedSuggestionTemplateOverlay("No binder needed", "1:1", "Dry sauté", 2L))));
 
-		List<SuggestionTemplate> templates = newService()
+		List<StagedSuggestionTemplate> templates = newService()
 				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT);
 
-		assertThat(templates).containsExactly(
-				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"),
-				suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null));
+		assertThat(templates).hasSize(2);
+		StagedSuggestionTemplate edited = templates.getFirst();
+		assertThat(edited.template().getRestriction()).contains("No binder needed");
+		assertThat(edited.changedFields()).containsExactly(SuggestionTemplateField.RESTRICTION);
+		assertThat(edited.version()).isEqualTo(2L);
+		StagedSuggestionTemplate unchanged = templates.get(1);
+		assertThat(unchanged.template()).isEqualTo(suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null));
+		assertThat(unchanged.changedFields()).isEmpty();
+		assertThat(unchanged.version()).isZero();
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
@@ -220,6 +238,72 @@ class BackofficeRulesServiceImplTest {
 		assertThatThrownBy(() -> newService().listSuggestionTemplates(unauthenticatedUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT))
 				.isInstanceOf(NotAuthenticatedException.class);
 		verify(suggestionTemplateDao, never()).findByRule(any(), any());
+	}
+
+	@Test
+	void listRulesLightsTheSuggestionsFlagWhenARuleHasAStagedTemplate() {
+		when(ruleDao.findAll(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of(RULE)));
+		when(ruleDao.findNewRules(any(), eq(RecipeLanguage.EN))).thenReturn(Uni.createFrom().item(List.of()));
+		when(ruleDao.findStagedOverlay(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		stubSharedDataForBaseRule();
+		when(suggestionTemplateDao.findRuleIdsWithStagedTemplates(any())).thenReturn(Uni.createFrom().item(Set.of(RULE_ID)));
+
+		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
+
+		assertThat(staged.changedFields()).containsExactly(RuleField.SUGGESTION_TEMPLATES);
+		assertThat(staged.changeState()).isEqualTo(RuleChangeState.UNCHANGED);
+	}
+
+	@Test
+	void stageSuggestionTemplateFieldStagesTheEditForAnAdminAndReturnsTheNewVersion() {
+		when(suggestionTemplateDao.stageField(any(), eq(TEMPLATE_ID), eq(SuggestionTemplateField.RESTRICTION), eq("No binder needed"), eq(0L)))
+				.thenReturn(Uni.createFrom().item(1L));
+
+		Long version = newService().stageSuggestionTemplateField(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, "No binder needed", 0L)
+				.await().atMost(AWAIT);
+
+		assertThat(version).isEqualTo(1L);
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void stageSuggestionTemplateFieldRejectsAStaleBaseVersion() {
+		when(suggestionTemplateDao.stageField(any(), eq(TEMPLATE_ID), eq(SuggestionTemplateField.EQUIVALENCE), eq("1:2"), eq(0L)))
+				.thenReturn(Uni.createFrom().failure(new StaleVersionException(null, TEMPLATE_ID)));
+
+		assertThatThrownBy(() -> newService().stageSuggestionTemplateField(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.EQUIVALENCE, "1:2", 0L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	void stageSuggestionTemplateFieldRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageSuggestionTemplateField(nonAdminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, "x", 0L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).stageField(any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertSuggestionTemplateFieldRemovesTheStagedChangeForAnAdmin() {
+		when(suggestionTemplateDao.revertField(any(), eq(TEMPLATE_ID), eq(SuggestionTemplateField.RESTRICTION), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertSuggestionTemplateField(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, 1L)
+				.await().atMost(AWAIT);
+
+		verify(suggestionTemplateDao).revertField(any(), eq(TEMPLATE_ID), eq(SuggestionTemplateField.RESTRICTION), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertSuggestionTemplateFieldRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertSuggestionTemplateField(nonAdminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).revertField(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
 	private static SuggestionTemplate suggestionTemplate(UUID id, String alternativeName, String restriction, String equivalence, String techniqueNotes) {

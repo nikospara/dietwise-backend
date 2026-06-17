@@ -132,4 +132,27 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="suggestion_template_working_copy" author="nikospara">
+		<createTable tableName="DW_SUGGESTION_TEMPLATE_WC" remarks="Working Copy mirror of DW_SUGGESTION_TEMPLATE: whole proposed Suggestion Template rows staged for publish; sparse, a row exists only for a template with a Staged Change">
+			<column name="id" type="UUID" remarks="Primary key; equals the master Suggestion Template id for an edited template, or a generated id for a Working-Copy-only template">
+				<constraints primaryKey="true" primaryKeyName="PK_DW_SUGGESTION_TEMPLATE_WC" />
+			</column>
+			<column name="rule_id" type="UUID" remarks="The Rule this template belongs to; resolved against master union Working Copy, not a foreign key">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_WC__RULE_ID" />
+			</column>
+			<column name="alternative_ingredient_id" type="UUID" remarks="The suggested AlternativeIngredient; resolved against master union Working Copy, not a foreign key">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_WC__ALTERNATIVE_INGREDIENT_ID" />
+			</column>
+			<column name="alternative_order" type="INT" remarks="Snapshot of the template's position within its Rule">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_WC__ALTERNATIVE_ORDER" />
+			</column>
+			<column name="restriction" type="VARCHAR(300)" remarks="Proposed restriction(s) for the substitution, English" />
+			<column name="equivalence" type="VARCHAR(300)" remarks="Proposed equivalence for the substitution, English" />
+			<column name="technique_notes" type="VARCHAR(1000)" remarks="Proposed technique notes, English" />
+			<column name="version" type="BIGINT" remarks="Working Copy optimistic-concurrency version; incremented on each staged change to this row">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_WC__VERSION" />
+			</column>
+		</createTable>
+	</changeSet>
 </databaseChangeLog>

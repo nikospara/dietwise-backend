@@ -6,13 +6,15 @@ import java.util.UUID;
 
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.StagedRule;
-import eu.dietwise.v1.model.SuggestionTemplate;
+import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
+import eu.dietwise.v1.types.SuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
 
 /**
@@ -29,14 +31,42 @@ public interface BackofficeRulesService {
 	Uni<List<StagedRule>> listRules(User user);
 
 	/**
-	 * The published Suggestion Templates of one Rule for the backoffice panel, each with the AlternativeIngredient it
-	 * suggests and its English swap notes, ordered by their position within the Rule.
+	 * The Suggestion Templates of one Rule for the backoffice panel: published master overlaid by the Working Copy, each
+	 * with the AlternativeIngredient it suggests, its effective English swap notes, which of those fields carry a pending
+	 * change, and the Working Copy version a subsequent edit must be based on. Ordered by their position within the Rule.
 	 *
 	 * @param user   The editor; must have the ADMIN role
 	 * @param ruleId The Rule whose Suggestion Templates are listed
 	 * @return The Rule's Suggestion Templates, empty when it has none
 	 */
-	Uni<List<SuggestionTemplate>> listSuggestionTemplates(User user, RuleId ruleId);
+	Uni<List<StagedSuggestionTemplate>> listSuggestionTemplates(User user, RuleId ruleId);
+
+	/**
+	 * Stage one English field ({@code restriction}, {@code equivalence} or {@code technique_notes}) of a Suggestion
+	 * Template in the Working Copy, leaving published master and recipe assessment untouched.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param templateId  The Suggestion Template whose field is being staged
+	 * @param field       The field being staged
+	 * @param value       The proposed value; may be {@code null}
+	 * @param baseVersion The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @return The template's new Working Copy version
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such published Suggestion Template exists
+	 */
+	Uni<Long> stageSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, String value, long baseVersion);
+
+	/**
+	 * Revert one staged English field of a Suggestion Template, restoring the published master value. When no override
+	 * remains the template's Working Copy row is removed. A no-op when the template has no Staged Change.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param templateId  The Suggestion Template whose field is being reverted
+	 * @param field       The field being reverted
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 */
+	Uni<Void> revertSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, long baseVersion);
 
 	/**
 	 * Stage a new rationale for a Rule in the Working Copy, leaving published master and recipe assessment untouched.

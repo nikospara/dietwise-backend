@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -18,6 +19,7 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
@@ -31,17 +33,21 @@ import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
+import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.services.v1.BackofficeRulesService;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
 import eu.dietwise.services.v1.types.StagedRule;
+import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
 import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.model.ImmutableRule;
+import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
 import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.SuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.RuleId;
+import eu.dietwise.v1.types.SuggestionTemplateId;
 import eu.dietwise.v1.types.impl.GenericRuleId;
 import eu.dietwise.v1.types.impl.RoleOrTechniqueImpl;
 import eu.dietwise.v1.types.impl.TriggerIngredientImpl;
@@ -89,14 +95,32 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				(_, _, _, _) -> triggerIngredientDao.findStagedNames(em),
 				(_, _, _, _, _) -> roleOrTechniqueDao.findStagedNames(em),
 				(_, _, _, _, _, _) -> translationCompleteness(em),
+				(_, _, _, _, _, _, _) -> suggestionTemplateDao.findRuleIdsWithStagedTemplates(em),
 				BackofficeRulesServiceImpl::merge
 		));
 	}
 
 	@Override
-	public Uni<List<SuggestionTemplate>> listSuggestionTemplates(User user, RuleId ruleId) {
+	public Uni<List<StagedSuggestionTemplate>> listSuggestionTemplates(User user, RuleId ruleId) {
 		authorization.requireAdmin(user);
-		return persistenceContextFactory.withoutTransaction(em -> suggestionTemplateDao.findByRule(em, ruleId.asUuid()));
+		UUID id = ruleId.asUuid();
+		return persistenceContextFactory.withoutTransaction(em -> forcm(
+				suggestionTemplateDao.findByRule(em, id),
+				_ -> suggestionTemplateDao.findStagedOverlayByRule(em, id),
+				BackofficeRulesServiceImpl::mergeTemplates
+		));
+	}
+
+	@Override
+	public Uni<Long> stageSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, String value, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> suggestionTemplateDao.stageField(tx, templateId.asUuid(), field, value, baseVersion));
+	}
+
+	@Override
+	public Uni<Void> revertSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> suggestionTemplateDao.revertField(tx, templateId.asUuid(), field, baseVersion));
 	}
 
 	private Uni<TranslationCompleteness> translationCompleteness(ReactivePersistenceContext em) {
@@ -289,12 +313,13 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			Map<UUID, RuleReferences> referenceIds,
 			Map<UUID, String> triggerStagedNames,
 			Map<UUID, String> roleStagedNames,
-			TranslationCompleteness completeness
+			TranslationCompleteness completeness,
+			Set<UUID> rulesWithStagedTemplates
 	) {
 		Stream<StagedRule> published = master.stream().map(rule ->
-				toPublishedStagedRule(rule, overlays.get(rule.getId().asUuid()), referenceIds.get(rule.getId().asUuid()), triggerStagedNames, roleStagedNames, completeness));
+				toPublishedStagedRule(rule, overlays.get(rule.getId().asUuid()), referenceIds.get(rule.getId().asUuid()), triggerStagedNames, roleStagedNames, completeness, rulesWithStagedTemplates.contains(rule.getId().asUuid())));
 		Stream<StagedRule> created = newRules.stream().map(newRule ->
-				toNewStagedRule(newRule, referenceIds.get(newRule.rule().getId().asUuid()), triggerStagedNames, roleStagedNames, completeness));
+				toNewStagedRule(newRule, referenceIds.get(newRule.rule().getId().asUuid()), triggerStagedNames, roleStagedNames, completeness, rulesWithStagedTemplates.contains(newRule.rule().getId().asUuid())));
 		return Stream.concat(published, created).toList();
 	}
 
@@ -304,7 +329,8 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			RuleReferences references,
 			Map<UUID, String> triggerStagedNames,
 			Map<UUID, String> roleStagedNames,
-			TranslationCompleteness completeness
+			TranslationCompleteness completeness,
+			boolean hasStagedTemplates
 	) {
 		UUID triggerId = references.triggerIngredientId();
 		UUID roleId = references.roleOrTechniqueId();
@@ -325,6 +351,9 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			changedFields.add(RuleField.ACTIVE);
 		}
 		addSharedChanges(changedFields, triggerId, roleId, triggerStagedNames, roleStagedNames);
+		if (hasStagedTemplates) {
+			changedFields.add(RuleField.SUGGESTION_TEMPLATES);
+		}
 		RuleChangeState changeState = changedFields.contains(RuleField.RATIONALE) || changedFields.contains(RuleField.ACTIVE)
 				? RuleChangeState.CHANGED
 				: RuleChangeState.UNCHANGED;
@@ -341,18 +370,50 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			RuleReferences references,
 			Map<UUID, String> triggerStagedNames,
 			Map<UUID, String> roleStagedNames,
-			TranslationCompleteness completeness
+			TranslationCompleteness completeness,
+			boolean hasStagedTemplates
 	) {
 		UUID triggerId = references.triggerIngredientId();
 		UUID roleId = references.roleOrTechniqueId();
 		Set<RuleField> changedFields = EnumSet.noneOf(RuleField.class);
 		addSharedChanges(changedFields, triggerId, roleId, triggerStagedNames, roleStagedNames);
+		if (hasStagedTemplates) {
+			changedFields.add(RuleField.SUGGESTION_TEMPLATES);
+		}
 		return new StagedRule(
 				newRule.rule(), triggerId, roleId, RuleChangeState.NEW, changedFields,
 				translationStates(newRule.rule().getId().asUuid(), completeness.rationale()),
 				translationStates(triggerId, completeness.triggerIngredient()),
 				roleId == null ? Map.of() : translationStates(roleId, completeness.roleOrTechnique()),
 				newRule.version());
+	}
+
+	private static List<StagedSuggestionTemplate> mergeTemplates(List<SuggestionTemplate> master, Map<UUID, StagedSuggestionTemplateOverlay> overlays) {
+		return master.stream()
+				.map(template -> toStagedSuggestionTemplate(template, overlays.get(template.getId().asUuid())))
+				.toList();
+	}
+
+	private static StagedSuggestionTemplate toStagedSuggestionTemplate(SuggestionTemplate master, StagedSuggestionTemplateOverlay overlay) {
+		if (overlay == null) {
+			return new StagedSuggestionTemplate(master, EnumSet.noneOf(SuggestionTemplateField.class), 0L);
+		}
+		SuggestionTemplate effective = ImmutableSuggestionTemplate.builder().from(master)
+				.restriction(Optional.ofNullable(overlay.restriction()))
+				.equivalence(Optional.ofNullable(overlay.equivalence()))
+				.techniqueNotes(Optional.ofNullable(overlay.techniqueNotes()))
+				.build();
+		Set<SuggestionTemplateField> changedFields = EnumSet.noneOf(SuggestionTemplateField.class);
+		if (!Objects.equals(master.getRestriction().orElse(null), overlay.restriction())) {
+			changedFields.add(SuggestionTemplateField.RESTRICTION);
+		}
+		if (!Objects.equals(master.getEquivalence().orElse(null), overlay.equivalence())) {
+			changedFields.add(SuggestionTemplateField.EQUIVALENCE);
+		}
+		if (!Objects.equals(master.getTechniqueNotes().orElse(null), overlay.techniqueNotes())) {
+			changedFields.add(SuggestionTemplateField.TECHNIQUE_NOTES);
+		}
+		return new StagedSuggestionTemplate(effective, changedFields, overlay.version());
 	}
 
 	private static Map<RecipeLanguage, TranslationState> translationStates(UUID id, Map<UUID, TranslationLangs> byId) {
