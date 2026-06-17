@@ -167,6 +167,30 @@ public interface BackofficeRulesService {
 	Uni<Void> editRoleOrTechnique(User user, UUID id, String name, String explanationForLlm, long baseVersion);
 
 	/**
+	 * Revert a Trigger Ingredient's staged edit, restoring its published master name and explanation; the change is seen
+	 * by every Rule that references it. A no-op when no Staged Change exists.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The Trigger Ingredient being reverted
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the entity exists only in the Working Copy (never published)
+	 */
+	Uni<Void> revertTriggerIngredient(User user, UUID id, long baseVersion);
+
+	/**
+	 * Revert a Role or Technique's staged edit, restoring its published master name and explanation; the change is seen
+	 * by every Rule that references it. A no-op when no Staged Change exists.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The Role or Technique being reverted
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the entity exists only in the Working Copy (never published)
+	 */
+	Uni<Void> revertRoleOrTechnique(User user, UUID id, long baseVersion);
+
+	/**
 	 * The effective rationale translation of one Rule for each non-English language (published master overlaid by any
 	 * Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations
 	 * dialog. The returned map has an entry for every translatable language; a language with no translation has a {@code

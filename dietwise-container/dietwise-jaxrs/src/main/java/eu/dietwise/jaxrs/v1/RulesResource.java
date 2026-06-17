@@ -109,6 +109,20 @@ public class RulesResource {
 		return backofficeRulesService.editRoleOrTechnique(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
+	@DELETE
+	@Path("trigger-ingredients/{id}")
+	public Uni<Void> revertTriggerIngredient(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertTriggerIngredient(user, UUID.fromString(id), baseVersion);
+	}
+
+	@DELETE
+	@Path("roles-or-techniques/{id}")
+	public Uni<Void> revertRoleOrTechnique(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertRoleOrTechnique(user, UUID.fromString(id), baseVersion);
+	}
+
 	@GET
 	@Path("trigger-ingredients/{id}/translations")
 	@Produces(MediaType.APPLICATION_JSON)

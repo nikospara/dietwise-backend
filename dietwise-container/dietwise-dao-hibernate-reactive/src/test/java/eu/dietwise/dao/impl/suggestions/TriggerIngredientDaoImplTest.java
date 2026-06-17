@@ -48,6 +48,9 @@ class TriggerIngredientDaoImplTest {
 	private static final UUID TRANSLATION_REVERT_TI_ID = UUID.fromString("b1c2d3e4-0004-4f5a-8b9c-0d1e2f3a0004");
 	private static final UUID TRANSLATION_REVERT_STALE_TI_ID = UUID.fromString("b1c2d3e4-0005-4f5a-8b9c-0d1e2f3a0005");
 	private static final UUID TRANSLATION_NULL_TI_ID = UUID.fromString("b1c2d3e4-0006-4f5a-8b9c-0d1e2f3a0006");
+	private static final UUID REVERT_TI_ID = UUID.fromString("b1c2d3e4-0007-4f5a-8b9c-0d1e2f3a0007");
+	private static final UUID REVERT_STALE_TI_ID = UUID.fromString("b1c2d3e4-0008-4f5a-8b9c-0d1e2f3a0008");
+	private static final UUID REVERT_NOOP_TI_ID = UUID.fromString("b1c2d3e4-0009-4f5a-8b9c-0d1e2f3a0009");
 	private static final String MASTER_EL_NAME = "Φακές";
 	private static final String MASTER_EL_EXPLANATION = "Όσπριο πλούσιο σε πρωτεΐνη.";
 	private static final String EDITED_EL_NAME = "Φακές (αναθ.)";
@@ -165,6 +168,7 @@ class TriggerIngredientDaoImplTest {
 		assertThat(details.name()).isEqualTo(MASTER_NAME);
 		assertThat(details.explanationForLlm()).isNull();
 		assertThat(details.version()).isZero();
+		assertThat(details.published()).isTrue();
 	}
 
 	@Test
@@ -181,6 +185,7 @@ class TriggerIngredientDaoImplTest {
 		assertThat(details.name()).isEqualTo(EDITED_NAME);
 		assertThat(details.explanationForLlm()).isEqualTo(EDITED_EXPLANATION);
 		assertThat(details.version()).isEqualTo(1L);
+		assertThat(details.published()).isTrue();
 
 		var stagedNames = factory.withoutTransaction(sut::findStagedNames)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -242,6 +247,7 @@ class TriggerIngredientDaoImplTest {
 		assertThat(details.name()).isEqualTo("Tempeh strips");
 		assertThat(details.explanationForLlm()).isEqualTo("Fermented soy cake.");
 		assertThat(details.version()).isEqualTo(2L);
+		assertThat(details.published()).isFalse();
 	}
 
 	@Test
@@ -269,9 +275,9 @@ class TriggerIngredientDaoImplTest {
 
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
-		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
-		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new ReferenceDetails(null, null, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L, false));
+		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new ReferenceDetails(null, null, 0L, false));
 
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -304,7 +310,7 @@ class TriggerIngredientDaoImplTest {
 		assertThat(langs.get(TRANSLATION_COLLAPSE_TI_ID).present()).containsExactly(RecipeLanguage.EL);
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_COLLAPSE_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
 	}
 
 	@Test
@@ -323,7 +329,7 @@ class TriggerIngredientDaoImplTest {
 
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_BUMP_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 2L));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 2L, false));
 
 		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_TI_ID, RecipeLanguage.NL, "Stale.", "x", 0L))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
@@ -347,7 +353,7 @@ class TriggerIngredientDaoImplTest {
 
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(langs.get(TRANSLATION_REVERT_TI_ID).staged()).isEmpty();
@@ -371,13 +377,13 @@ class TriggerIngredientDaoImplTest {
 
 		var stillStaged = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
+		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L, false));
 
 		factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_STALE_TI_ID, RecipeLanguage.NL, 1L))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var afterRevert = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(null, null, 0L, false));
 	}
 
 	@Test
@@ -397,7 +403,92 @@ class TriggerIngredientDaoImplTest {
 		assertThat(langs).doesNotContainKey(TRANSLATION_NULL_TI_ID);
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_NULL_TI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(null, null, 0L, false));
+	}
+
+	@Test
+	@Order(17)
+	void testRevertTriggerIngredientRemovesStagedEditRestoringMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, REVERT_TI_ID, "Black beans"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editTriggerIngredient(tx, REVERT_TI_ID, "Black beans (edited)", "Legume protein.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertTriggerIngredient(tx, REVERT_TI_ID, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, REVERT_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("Black beans");
+		assertThat(details.explanationForLlm()).isNull();
+		assertThat(details.version()).isZero();
+		assertThat(details.published()).isTrue();
+		var stagedNames = factory.withoutTransaction(sut::findStagedNames)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stagedNames).doesNotContainKey(REVERT_TI_ID);
+	}
+
+	@Test
+	@Order(18)
+	void testRevertTriggerIngredientRejectsStaleBaseVersionLeavingTheStagedEditIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, REVERT_STALE_TI_ID, "Pinto beans"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editTriggerIngredient(tx, REVERT_STALE_TI_ID, "Pinto beans (edited)", "Legume protein.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertTriggerIngredient(tx, REVERT_STALE_TI_ID, 99L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, REVERT_STALE_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("Pinto beans (edited)");
+		assertThat(details.version()).isEqualTo(1L);
+	}
+
+	@Test
+	@Order(19)
+	void testRevertTriggerIngredientIsANoOpWhenThereIsNoStagedEdit(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistTriggerIngredient(tx, REVERT_NOOP_TI_ID, "Kidney beans"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertTriggerIngredient(tx, REVERT_NOOP_TI_ID, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, REVERT_NOOP_TI_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("Kidney beans");
+		assertThat(details.version()).isZero();
+		assertThat(details.published()).isTrue();
+	}
+
+	@Test
+	@Order(20)
+	void testRevertWorkingCopyOnlyTriggerIngredientIsRefused(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createTriggerIngredient(tx, "Mung beans"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertTriggerIngredient(tx, newId, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(EntityNotFoundException.class);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("Mung beans");
+		assertThat(details.version()).isEqualTo(1L);
+		assertThat(details.published()).isFalse();
 	}
 
 	private static Uni<Void> persistTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, String name) {

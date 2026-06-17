@@ -412,11 +412,11 @@ class BackofficeRulesServiceImplTest {
 	@Test
 	void triggerIngredientForEditReturnsEffectiveDetailsForAnAdmin() {
 		when(triggerIngredientDao.findEditableById(any(), eq(TRIGGER_INGREDIENT_ID)))
-				.thenReturn(Uni.createFrom().item(new ReferenceDetails("Beef", "Red meat.", 3L)));
+				.thenReturn(Uni.createFrom().item(new ReferenceDetails("Beef", "Red meat.", 3L, true)));
 
 		ReferenceDetails details = newService().triggerIngredientForEdit(adminUser(), TRIGGER_INGREDIENT_ID).await().atMost(AWAIT);
 
-		assertThat(details).isEqualTo(new ReferenceDetails("Beef", "Red meat.", 3L));
+		assertThat(details).isEqualTo(new ReferenceDetails("Beef", "Red meat.", 3L, true));
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
@@ -430,11 +430,11 @@ class BackofficeRulesServiceImplTest {
 	@Test
 	void roleOrTechniqueForEditReturnsEffectiveDetailsForAnAdmin() {
 		when(roleOrTechniqueDao.findEditableById(any(), eq(ROLE_OR_TECHNIQUE_ID)))
-				.thenReturn(Uni.createFrom().item(new ReferenceDetails("minced in sauce", null, 0L)));
+				.thenReturn(Uni.createFrom().item(new ReferenceDetails("minced in sauce", null, 0L, true)));
 
 		ReferenceDetails details = newService().roleOrTechniqueForEdit(adminUser(), ROLE_OR_TECHNIQUE_ID).await().atMost(AWAIT);
 
-		assertThat(details).isEqualTo(new ReferenceDetails("minced in sauce", null, 0L));
+		assertThat(details).isEqualTo(new ReferenceDetails("minced in sauce", null, 0L, true));
 	}
 
 	@Test
@@ -530,6 +530,53 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	@Test
+	void revertTriggerIngredientRemovesTheStagedEditForAnAdmin() {
+		when(triggerIngredientDao.revertTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertTriggerIngredient(adminUser(), TRIGGER_INGREDIENT_ID, 1L).await().atMost(AWAIT);
+
+		verify(triggerIngredientDao).revertTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertTriggerIngredientPropagatesAStaleBaseVersion() {
+		when(triggerIngredientDao.revertTriggerIngredient(any(), eq(TRIGGER_INGREDIENT_ID), eq(9L)))
+				.thenReturn(Uni.createFrom().failure(new StaleVersionException(null, TRIGGER_INGREDIENT_ID)));
+
+		assertThatThrownBy(() -> newService().revertTriggerIngredient(adminUser(), TRIGGER_INGREDIENT_ID, 9L).await().atMost(AWAIT))
+				.isInstanceOf(StaleVersionException.class);
+	}
+
+	@Test
+	void revertTriggerIngredientRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTriggerIngredient(nonAdminUser(), TRIGGER_INGREDIENT_ID, 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(triggerIngredientDao, never()).revertTriggerIngredient(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertRoleOrTechniqueRemovesTheStagedEditForAnAdmin() {
+		when(roleOrTechniqueDao.revertRoleOrTechnique(any(), eq(ROLE_OR_TECHNIQUE_ID), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertRoleOrTechnique(adminUser(), ROLE_OR_TECHNIQUE_ID, 1L).await().atMost(AWAIT);
+
+		verify(roleOrTechniqueDao).revertRoleOrTechnique(any(), eq(ROLE_OR_TECHNIQUE_ID), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertRoleOrTechniqueRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertRoleOrTechnique(nonAdminUser(), ROLE_OR_TECHNIQUE_ID, 1L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(roleOrTechniqueDao, never()).revertRoleOrTechnique(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
 	void rationaleTranslationsForEditReturnsEffectivePerLanguageForAnAdmin() {
 		when(ruleDao.findRationaleTranslationsForEdit(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
 				RecipeLanguage.EL, new VersionedText("Greek rationale.", 2L),
@@ -608,13 +655,13 @@ class BackofficeRulesServiceImplTest {
 	@Test
 	void triggerIngredientTranslationsForEditReturnsEffectivePerLanguageForAnAdmin() {
 		when(triggerIngredientDao.findTranslationsForEdit(any(), eq(TRIGGER_INGREDIENT_ID))).thenReturn(Uni.createFrom().item(Map.of(
-				RecipeLanguage.EL, new ReferenceDetails("Βόειο", "Κόκκινο κρέας.", 2L),
-				RecipeLanguage.LT, new ReferenceDetails(null, null, 0L))));
+				RecipeLanguage.EL, new ReferenceDetails("Βόειο", "Κόκκινο κρέας.", 2L, true),
+				RecipeLanguage.LT, new ReferenceDetails(null, null, 0L, false))));
 
 		Map<RecipeLanguage, ReferenceDetails> translations = newService()
 				.triggerIngredientTranslationsForEdit(adminUser(), TRIGGER_INGREDIENT_ID).await().atMost(AWAIT);
 
-		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("Βόειο", "Κόκκινο κρέας.", 2L));
+		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("Βόειο", "Κόκκινο κρέας.", 2L, true));
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
@@ -682,13 +729,13 @@ class BackofficeRulesServiceImplTest {
 	@Test
 	void roleOrTechniqueTranslationsForEditReturnsEffectivePerLanguageForAnAdmin() {
 		when(roleOrTechniqueDao.findTranslationsForEdit(any(), eq(ROLE_OR_TECHNIQUE_ID))).thenReturn(Uni.createFrom().item(Map.of(
-				RecipeLanguage.EL, new ReferenceDetails("ανάμεικτο", "Το κύριο συστατικό.", 3L),
-				RecipeLanguage.NL, new ReferenceDetails(null, null, 0L))));
+				RecipeLanguage.EL, new ReferenceDetails("ανάμεικτο", "Το κύριο συστατικό.", 3L, true),
+				RecipeLanguage.NL, new ReferenceDetails(null, null, 0L, false))));
 
 		Map<RecipeLanguage, ReferenceDetails> translations = newService()
 				.roleOrTechniqueTranslationsForEdit(adminUser(), ROLE_OR_TECHNIQUE_ID).await().atMost(AWAIT);
 
-		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("ανάμεικτο", "Το κύριο συστατικό.", 3L));
+		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails("ανάμεικτο", "Το κύριο συστατικό.", 3L, true));
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 

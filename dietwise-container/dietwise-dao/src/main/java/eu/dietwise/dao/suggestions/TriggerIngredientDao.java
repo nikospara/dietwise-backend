@@ -59,6 +59,17 @@ public interface TriggerIngredientDao {
 	Uni<Void> editTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm, long baseVersion);
 
 	/**
+	 * Revert a Trigger Ingredient's staged edit, restoring its published master name and explanation and removing the
+	 * Working Copy row. A no-op when no Staged Change exists. Refuses an entity that exists only in the Working Copy and
+	 * has never been published (there is no master to restore, and removing the row would orphan referencing Rules).
+	 *
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the entity exists only in the Working Copy (no master)
+	 */
+	Uni<Void> revertTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, long baseVersion);
+
+	/**
 	 * For each Trigger Ingredient with at least one translation (published or staged), which languages are translated in
 	 * published master and which carry a pending change in the Working Copy. Keyed by Trigger Ingredient id; sparse — an
 	 * entity with no translation at all does not appear. English is the master/fallback and is never a translation language.

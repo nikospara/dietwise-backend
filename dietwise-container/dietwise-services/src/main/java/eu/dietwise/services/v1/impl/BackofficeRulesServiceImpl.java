@@ -186,6 +186,18 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	}
 
 	@Override
+	public Uni<Void> revertTriggerIngredient(User user, UUID id, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> triggerIngredientDao.revertTriggerIngredient(tx, id, baseVersion));
+	}
+
+	@Override
+	public Uni<Void> revertRoleOrTechnique(User user, UUID id, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> roleOrTechniqueDao.revertRoleOrTechnique(tx, id, baseVersion));
+	}
+
+	@Override
 	public Uni<Map<RecipeLanguage, VersionedText>> rationaleTranslationsForEdit(User user, RuleId ruleId) {
 		authorization.requireAdmin(user);
 		return persistenceContextFactory.withoutTransaction(em -> ruleDao.findRationaleTranslationsForEdit(em, ruleId.asUuid()));

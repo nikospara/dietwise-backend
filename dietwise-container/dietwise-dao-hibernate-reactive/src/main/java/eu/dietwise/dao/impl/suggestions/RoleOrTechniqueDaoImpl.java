@@ -88,13 +88,15 @@ public class RoleOrTechniqueDaoImpl implements RoleOrTechniqueDao {
 
 	@Override
 	public Uni<ReferenceDetails> findEditableById(ReactivePersistenceContext em, UUID id) {
-		return em.find(RoleOrTechniqueWcEntity.class, id).flatMap(mirror -> mirror != null
-				? Uni.createFrom().item(new ReferenceDetails(mirror.getName(), mirror.getExplanationForLlm(), mirror.getVersion()))
-				: em.find(RoleOrTechniqueEntity.class, id).map(master -> {
+		return em.find(RoleOrTechniqueWcEntity.class, id).flatMap(mirror ->
+				em.find(RoleOrTechniqueEntity.class, id).map(master -> {
+					if (mirror != null) {
+						return new ReferenceDetails(mirror.getName(), mirror.getExplanationForLlm(), mirror.getVersion(), master != null);
+					}
 					if (master == null) {
 						throw new EntityNotFoundException(RoleOrTechniqueEntity.class, id);
 					}
-					return new ReferenceDetails(master.getName(), master.getExplanationForLlm(), 0L);
+					return new ReferenceDetails(master.getName(), master.getExplanationForLlm(), 0L, true);
 				}));
 	}
 
@@ -102,6 +104,15 @@ public class RoleOrTechniqueDaoImpl implements RoleOrTechniqueDao {
 	public Uni<Void> editRoleOrTechnique(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm, long baseVersion) {
 		return tx.find(RoleOrTechniqueWcEntity.class, id).flatMap(existing ->
 				tx.find(RoleOrTechniqueEntity.class, id).flatMap(master -> applyEdit(tx, id, name, explanationForLlm, baseVersion, existing, master)));
+	}
+
+	@Override
+	public Uni<Void> revertRoleOrTechnique(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
+		return tx.find(RoleOrTechniqueWcEntity.class, id).flatMap(existing -> existing == null
+				? Uni.createFrom().voidItem()
+				: tx.find(RoleOrTechniqueEntity.class, id).flatMap(master -> master == null
+						? Uni.createFrom().failure(new EntityNotFoundException(RoleOrTechniqueEntity.class, id, "No published Role or Technique to revert"))
+						: deleteStaged(tx, id, baseVersion)));
 	}
 
 	@Override
@@ -177,14 +188,14 @@ public class RoleOrTechniqueDaoImpl implements RoleOrTechniqueDao {
 	) {
 		Map<RecipeLanguage, ReferenceDetails> result = new EnumMap<>(RecipeLanguage.class);
 		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
+			RoleOrTechniqueTranslationEntity m = master.get(lang);
 			RoleOrTechniqueTranslationWcEntity wc = staged.get(lang);
 			if (wc != null) {
-				result.put(lang, new ReferenceDetails(wc.getName(), wc.getExplanationForLlm(), wc.getVersion()));
+				result.put(lang, new ReferenceDetails(wc.getName(), wc.getExplanationForLlm(), wc.getVersion(), m != null));
 			} else {
-				RoleOrTechniqueTranslationEntity m = master.get(lang);
 				result.put(lang, m != null
-						? new ReferenceDetails(m.getName(), m.getExplanationForLlm(), 0L)
-						: new ReferenceDetails(null, null, 0L));
+						? new ReferenceDetails(m.getName(), m.getExplanationForLlm(), 0L, true)
+						: new ReferenceDetails(null, null, 0L, false));
 			}
 		}
 		return result;

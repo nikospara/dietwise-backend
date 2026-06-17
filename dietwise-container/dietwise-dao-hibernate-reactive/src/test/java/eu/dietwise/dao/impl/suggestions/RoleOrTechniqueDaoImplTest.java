@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.Duration;
 import java.util.UUID;
 
+import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
@@ -45,6 +46,9 @@ class RoleOrTechniqueDaoImplTest {
 	private static final UUID TRANSLATION_REVERT_ROLE_ID = UUID.fromString("c1d2e3f4-0004-4a5b-8c9d-0e1f2a3b0004");
 	private static final UUID TRANSLATION_REVERT_STALE_ROLE_ID = UUID.fromString("c1d2e3f4-0005-4a5b-8c9d-0e1f2a3b0005");
 	private static final UUID TRANSLATION_NULL_ROLE_ID = UUID.fromString("c1d2e3f4-0006-4a5b-8c9d-0e1f2a3b0006");
+	private static final UUID REVERT_ROLE_ID = UUID.fromString("c1d2e3f4-0007-4a5b-8c9d-0e1f2a3b0007");
+	private static final UUID REVERT_STALE_ROLE_ID = UUID.fromString("c1d2e3f4-0008-4a5b-8c9d-0e1f2a3b0008");
+	private static final UUID REVERT_NOOP_ROLE_ID = UUID.fromString("c1d2e3f4-0009-4a5b-8c9d-0e1f2a3b0009");
 	private static final String MASTER_EL_NAME = "κεντρικό κομμάτι";
 	private static final String MASTER_EL_EXPLANATION = "Το κύριο, καθοριστικό συστατικό.";
 	private static final String EDITED_EL_NAME = "κεντρικό κομμάτι (αναθ.)";
@@ -123,6 +127,7 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(details.name()).isEqualTo(MASTER_NAME);
 		assertThat(details.explanationForLlm()).isNull();
 		assertThat(details.version()).isZero();
+		assertThat(details.published()).isTrue();
 	}
 
 	@Test
@@ -139,6 +144,7 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(details.name()).isEqualTo(EDITED_NAME);
 		assertThat(details.explanationForLlm()).isEqualTo(EDITED_EXPLANATION);
 		assertThat(details.version()).isEqualTo(1L);
+		assertThat(details.published()).isTrue();
 
 		var stagedNames = factory.withoutTransaction(sut::findStagedNames)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -200,6 +206,7 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(details.name()).isEqualTo("Emulsifier base");
 		assertThat(details.explanationForLlm()).isEqualTo("Binds fat and water.");
 		assertThat(details.version()).isEqualTo(2L);
+		assertThat(details.published()).isFalse();
 	}
 
 	@Test
@@ -216,9 +223,9 @@ class RoleOrTechniqueDaoImplTest {
 
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
-		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
-		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new ReferenceDetails(null, null, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L, false));
+		assertThat(forEdit.get(RecipeLanguage.LT)).isEqualTo(new ReferenceDetails(null, null, 0L, false));
 
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -251,7 +258,7 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(langs.get(TRANSLATION_COLLAPSE_ROLE_ID).present()).containsExactly(RecipeLanguage.EL);
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_COLLAPSE_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
 	}
 
 	@Test
@@ -270,7 +277,7 @@ class RoleOrTechniqueDaoImplTest {
 
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_BUMP_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 2L));
+		assertThat(forEdit.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(RESTAGED_NL_NAME, RESTAGED_NL_EXPLANATION, 2L, false));
 
 		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.stageTranslation(tx, TRANSLATION_BUMP_ROLE_ID, RecipeLanguage.NL, "Stale.", "x", 0L))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
@@ -294,7 +301,7 @@ class RoleOrTechniqueDaoImplTest {
 
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(langs.get(TRANSLATION_REVERT_ROLE_ID).staged()).isEmpty();
@@ -318,13 +325,13 @@ class RoleOrTechniqueDaoImplTest {
 
 		var stillStaged = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L));
+		assertThat(stillStaged.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(STAGED_NL_NAME, STAGED_NL_EXPLANATION, 1L, false));
 
 		factory.withTransaction(tx -> sut.revertTranslation(tx, TRANSLATION_REVERT_STALE_ROLE_ID, RecipeLanguage.NL, 1L))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var afterRevert = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_REVERT_STALE_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+		assertThat(afterRevert.get(RecipeLanguage.NL)).isEqualTo(new ReferenceDetails(null, null, 0L, false));
 	}
 
 	@Test
@@ -344,7 +351,92 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(langs).doesNotContainKey(TRANSLATION_NULL_ROLE_ID);
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_NULL_ROLE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(null, null, 0L));
+		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(null, null, 0L, false));
+	}
+
+	@Test
+	@Order(15)
+	void testRevertRoleOrTechniqueRemovesStagedEditRestoringMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, REVERT_ROLE_ID, "thickener"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, REVERT_ROLE_ID, "thickener (edited)", "Thickens sauces.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertRoleOrTechnique(tx, REVERT_ROLE_ID, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, REVERT_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("thickener");
+		assertThat(details.explanationForLlm()).isNull();
+		assertThat(details.version()).isZero();
+		assertThat(details.published()).isTrue();
+		var stagedNames = factory.withoutTransaction(sut::findStagedNames)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stagedNames).doesNotContainKey(REVERT_ROLE_ID);
+	}
+
+	@Test
+	@Order(16)
+	void testRevertRoleOrTechniqueRejectsStaleBaseVersionLeavingTheStagedEditIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, REVERT_STALE_ROLE_ID, "glaze"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, REVERT_STALE_ROLE_ID, "glaze (edited)", "Glazes the dish.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertRoleOrTechnique(tx, REVERT_STALE_ROLE_ID, 99L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, REVERT_STALE_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("glaze (edited)");
+		assertThat(details.version()).isEqualTo(1L);
+	}
+
+	@Test
+	@Order(17)
+	void testRevertRoleOrTechniqueIsANoOpWhenThereIsNoStagedEdit(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRoleOrTechnique(tx, REVERT_NOOP_ROLE_ID, "garnish base"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertRoleOrTechnique(tx, REVERT_NOOP_ROLE_ID, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, REVERT_NOOP_ROLE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("garnish base");
+		assertThat(details.version()).isZero();
+		assertThat(details.published()).isTrue();
+	}
+
+	@Test
+	@Order(18)
+	void testRevertWorkingCopyOnlyRoleOrTechniqueIsRefused(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createRoleOrTechnique(tx, "Stabiliser"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory.withTransaction(tx -> sut.revertRoleOrTechnique(tx, newId, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(EntityNotFoundException.class);
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.name()).isEqualTo("Stabiliser");
+		assertThat(details.version()).isEqualTo(1L);
+		assertThat(details.published()).isFalse();
 	}
 
 	private static Uni<Void> persistRoleOrTechnique(ReactivePersistenceTxContext tx, UUID id, String name) {

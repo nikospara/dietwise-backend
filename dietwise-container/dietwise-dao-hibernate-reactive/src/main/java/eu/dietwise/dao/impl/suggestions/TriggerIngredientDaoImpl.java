@@ -90,20 +90,31 @@ public class TriggerIngredientDaoImpl implements TriggerIngredientDao {
 
 	@Override
 	public Uni<ReferenceDetails> findEditableById(ReactivePersistenceContext em, UUID id) {
-		return em.find(TriggerIngredientWcEntity.class, id).flatMap(mirror -> mirror != null
-				? Uni.createFrom().item(new ReferenceDetails(mirror.getName(), mirror.getExplanationForLlm(), mirror.getVersion()))
-				: em.find(TriggerIngredientEntity.class, id).map(master -> {
-			if (master == null) {
-				throw new EntityNotFoundException(TriggerIngredientEntity.class, id);
-			}
-			return new ReferenceDetails(master.getName(), master.getExplanationForLlm(), 0L);
-		}));
+		return em.find(TriggerIngredientWcEntity.class, id).flatMap(mirror ->
+				em.find(TriggerIngredientEntity.class, id).map(master -> {
+					if (mirror != null) {
+						return new ReferenceDetails(mirror.getName(), mirror.getExplanationForLlm(), mirror.getVersion(), master != null);
+					}
+					if (master == null) {
+						throw new EntityNotFoundException(TriggerIngredientEntity.class, id);
+					}
+					return new ReferenceDetails(master.getName(), master.getExplanationForLlm(), 0L, true);
+				}));
 	}
 
 	@Override
 	public Uni<Void> editTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, String name, String explanationForLlm, long baseVersion) {
 		return tx.find(TriggerIngredientWcEntity.class, id).flatMap(existing ->
 				tx.find(TriggerIngredientEntity.class, id).flatMap(master -> applyEdit(tx, id, name, explanationForLlm, baseVersion, existing, master)));
+	}
+
+	@Override
+	public Uni<Void> revertTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
+		return tx.find(TriggerIngredientWcEntity.class, id).flatMap(existing -> existing == null
+				? Uni.createFrom().voidItem()
+				: tx.find(TriggerIngredientEntity.class, id).flatMap(master -> master == null
+						? Uni.createFrom().failure(new EntityNotFoundException(TriggerIngredientEntity.class, id, "No published Trigger Ingredient to revert"))
+						: deleteStaged(tx, id, baseVersion)));
 	}
 
 	@Override
@@ -179,14 +190,14 @@ public class TriggerIngredientDaoImpl implements TriggerIngredientDao {
 	) {
 		Map<RecipeLanguage, ReferenceDetails> result = new EnumMap<>(RecipeLanguage.class);
 		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
+			TriggerIngredientTranslationEntity m = master.get(lang);
 			TriggerIngredientTranslationWcEntity wc = staged.get(lang);
 			if (wc != null) {
-				result.put(lang, new ReferenceDetails(wc.getName(), wc.getExplanationForLlm(), wc.getVersion()));
+				result.put(lang, new ReferenceDetails(wc.getName(), wc.getExplanationForLlm(), wc.getVersion(), m != null));
 			} else {
-				TriggerIngredientTranslationEntity m = master.get(lang);
 				result.put(lang, m != null
-						? new ReferenceDetails(m.getName(), m.getExplanationForLlm(), 0L)
-						: new ReferenceDetails(null, null, 0L));
+						? new ReferenceDetails(m.getName(), m.getExplanationForLlm(), 0L, true)
+						: new ReferenceDetails(null, null, 0L, false));
 			}
 		}
 		return result;
