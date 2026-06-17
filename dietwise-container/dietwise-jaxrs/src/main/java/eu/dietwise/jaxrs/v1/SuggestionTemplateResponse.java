@@ -11,8 +11,9 @@ import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
  * AlternativeIngredient it suggests, its effective English {@code restriction}, {@code equivalence} and {@code
  * techniqueNotes} (published master overlaid by any Staged Change, any of which may be {@code null}), the names of the
  * fields that carry a pending change, the per-field per-language translation completeness (field name -&gt; language
- * name -&gt; state name), and the Working Copy version a subsequent edit must be based on. Templates are returned in
- * their {@code alternative_order}.
+ * name -&gt; state name), its effective {@code active} state (a deactivated template is skipped by recipe assessment),
+ * whether that active state is a pending change ({@code activeChanged}), and the Working Copy version a subsequent edit
+ * must be based on. Templates are returned in their {@code alternative_order}.
  */
 public record SuggestionTemplateResponse(
 		String id,
@@ -22,6 +23,8 @@ public record SuggestionTemplateResponse(
 		String techniqueNotes,
 		List<String> changedFields,
 		Map<String, Map<String, String>> translations,
+		boolean active,
+		boolean activeChanged,
 		long version
 ) {
 	public static SuggestionTemplateResponse from(StagedSuggestionTemplate staged) {
@@ -34,6 +37,8 @@ public record SuggestionTemplateResponse(
 				template.getTechniqueNotes().orElse(null),
 				staged.changedFields().stream().map(Enum::name).toList(),
 				toTranslationNames(staged),
+				staged.active(),
+				staged.activeChanged(),
 				staged.version()
 		);
 	}

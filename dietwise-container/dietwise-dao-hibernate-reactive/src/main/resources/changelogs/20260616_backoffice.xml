@@ -172,4 +172,17 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="suggestion_template_active" author="nikospara">
+		<addColumn tableName="DW_SUGGESTION_TEMPLATE">
+			<column name="active" type="BOOLEAN" defaultValueBoolean="true" remarks="Whether this Suggestion Template is offered by recipe assessment; a deactivated template is retained but skipped at assessment time">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE__ACTIVE" />
+			</column>
+		</addColumn>
+		<addColumn tableName="DW_SUGGESTION_TEMPLATE_WC">
+			<column name="active" type="BOOLEAN" defaultValueBoolean="true" remarks="Proposed active state, snapshotted from master and toggled by a staged Deactivate or Activate">
+				<constraints nullable="false" notNullConstraintName="NL_DW_SUGGESTION_TEMPLATE_WC__ACTIVE" />
+			</column>
+		</addColumn>
+	</changeSet>
 </databaseChangeLog>

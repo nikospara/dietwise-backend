@@ -69,6 +69,21 @@ public interface BackofficeRulesService {
 	Uni<Void> revertSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, long baseVersion);
 
 	/**
+	 * Stage a Suggestion Template's active state in the Working Copy, leaving published master and recipe assessment
+	 * untouched. Deactivating a published template, so recipe assessment stops offering that alternative, or reactivating
+	 * a deactivated one, is a Staged Change like any field; staging the value the template already has in master removes
+	 * the override.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param templateId  The Suggestion Template whose active state is being staged
+	 * @param active      The proposed active state
+	 * @param baseVersion The Working Copy version the change is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such published Suggestion Template exists
+	 */
+	Uni<Void> setSuggestionTemplateActive(User user, SuggestionTemplateId templateId, boolean active, long baseVersion);
+
+	/**
 	 * The effective translation of one field of a Suggestion Template for each non-English language (published master
 	 * overlaid by any Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the
 	 * per-field translations dialog. The returned map has an entry for every translatable language; a language with no

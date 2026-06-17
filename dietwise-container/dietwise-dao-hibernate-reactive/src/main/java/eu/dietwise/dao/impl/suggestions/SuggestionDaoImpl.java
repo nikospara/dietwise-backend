@@ -92,7 +92,10 @@ public class SuggestionDaoImpl implements SuggestionDao {
 		Fetch<SuggestionTemplateEntity, RuleEntity> rule = suggestionTemplate.fetch(SuggestionTemplateEntity_.rule);
 		rule.fetch(RuleEntity_.recommendation);
 		suggestionTemplate.fetch(SuggestionTemplateEntity_.alternativeIngredient);
-		q.where(cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId.getId().asUuid()));
+		q.where(cb.and(
+				cb.equal(suggestionTemplate.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId.getId().asUuid()),
+				cb.isTrue(suggestionTemplate.get(SuggestionTemplateEntity_.active))
+		));
 		q.select(suggestionTemplate);
 		return em.createQuery(q).getResultList();
 	}

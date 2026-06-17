@@ -82,6 +82,17 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 	}
 
 	@Override
+	public Uni<Map<UUID, Boolean>> findActiveByRule(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		q.multiselect(st.get(SuggestionTemplateEntity_.id), st.get(SuggestionTemplateEntity_.active))
+				.where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		return em.createQuery(q).getResultList()
+				.map(rows -> rows.stream().collect(toMap(row -> row.get(0, UUID.class), row -> row.get(1, Boolean.class))));
+	}
+
+	@Override
 	public Uni<Set<UUID>> findRuleIdsWithStagedTemplates(ReactivePersistenceContext em) {
 		return ruleIdsWithStagedFields(em).flatMap(fromFields ->
 				ruleIdsWithStagedTranslations(em).map(fromTranslations -> {
@@ -171,6 +182,33 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		});
 	}
 
+	@Override
+	public Uni<Void> setActive(ReactivePersistenceTxContext tx, UUID templateId, boolean active, long baseVersion) {
+		return tx.find(SuggestionTemplateWcEntity.class, templateId).flatMap(existing ->
+				tx.find(SuggestionTemplateEntity.class, templateId).flatMap(master -> applySetActive(tx, templateId, active, baseVersion, existing, master)));
+	}
+
+	private Uni<Void> applySetActive(ReactivePersistenceTxContext tx, UUID templateId, boolean active, long baseVersion, SuggestionTemplateWcEntity existing, SuggestionTemplateEntity master) {
+		if (master == null) {
+			return Uni.createFrom().failure(new EntityNotFoundException(SuggestionTemplateEntity.class, templateId));
+		}
+		if (existing == null) {
+			if (baseVersion != 0L) {
+				return Uni.createFrom().failure(new StaleVersionException(SuggestionTemplateEntity.class, templateId));
+			}
+			return active == master.isActive()
+					? Uni.createFrom().voidItem()
+					: seedSnapshot(tx, master, wc -> wc.setActive(active)).replaceWithVoid();
+		}
+		boolean collapses = active == master.isActive()
+				&& Objects.equals(existing.getRestriction(), master.getRestriction())
+				&& Objects.equals(existing.getEquivalence(), master.getEquivalence())
+				&& Objects.equals(existing.getTechniqueNotes(), master.getTechniqueNotes());
+		return collapses
+				? deleteStagedRow(tx, templateId, baseVersion)
+				: bumpStagedField(tx, templateId, SuggestionTemplateWcEntity_.active, active, baseVersion).replaceWithVoid();
+	}
+
 	private Uni<Long> seedStagedField(ReactivePersistenceTxContext tx, UUID templateId, SuggestionTemplateField field, String value) {
 		return tx.find(SuggestionTemplateEntity.class, templateId).flatMap(master -> master == null
 				? Uni.createFrom().failure(new EntityNotFoundException(SuggestionTemplateEntity.class, templateId))
@@ -186,12 +224,13 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		wc.setRestriction(master.getRestriction());
 		wc.setEquivalence(master.getEquivalence());
 		wc.setTechniqueNotes(master.getTechniqueNotes());
+		wc.setActive(master.isActive());
 		wc.setVersion(1L);
 		override.accept(wc);
 		return tx.persist(wc).replaceWith(wc);
 	}
 
-	private Uni<Long> bumpStagedField(ReactivePersistenceTxContext tx, UUID templateId, SingularAttribute<SuggestionTemplateWcEntity, String> field, String value, long baseVersion) {
+	private <T> Uni<Long> bumpStagedField(ReactivePersistenceTxContext tx, UUID templateId, SingularAttribute<SuggestionTemplateWcEntity, T> field, T value, long baseVersion) {
 		var cb = tx.getCriteriaBuilder();
 		CriteriaUpdate<SuggestionTemplateWcEntity> cu = cb.createCriteriaUpdate(SuggestionTemplateWcEntity.class);
 		Root<SuggestionTemplateWcEntity> wc = cu.getRoot();
@@ -225,7 +264,8 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		String techniqueNotes = reverted == SuggestionTemplateField.TECHNIQUE_NOTES ? master.getTechniqueNotes() : existing.getTechniqueNotes();
 		return Objects.equals(restriction, master.getRestriction())
 				&& Objects.equals(equivalence, master.getEquivalence())
-				&& Objects.equals(techniqueNotes, master.getTechniqueNotes());
+				&& Objects.equals(techniqueNotes, master.getTechniqueNotes())
+				&& existing.isActive() == master.isActive();
 	}
 
 	private static SingularAttribute<SuggestionTemplateWcEntity, String> column(SuggestionTemplateField field) {
@@ -255,7 +295,7 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 	private static Map<UUID, StagedSuggestionTemplateOverlay> toOverlayById(List<SuggestionTemplateWcEntity> rows) {
 		return rows.stream().collect(toMap(
 				SuggestionTemplateWcEntity::getId,
-				row -> new StagedSuggestionTemplateOverlay(row.getRestriction(), row.getEquivalence(), row.getTechniqueNotes(), row.getVersion()),
+				row -> new StagedSuggestionTemplateOverlay(row.getRestriction(), row.getEquivalence(), row.getTechniqueNotes(), row.isActive(), row.getVersion()),
 				(existing, ignored) -> existing,
 				LinkedHashMap::new
 		));

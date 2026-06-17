@@ -36,6 +36,9 @@ public class SuggestionTemplateEntity {
 	@Column(name = "technique_notes")
 	private String techniqueNotes;
 
+	@Column(name = "active")
+	private boolean active = true;
+
 	/**
 	 * The position of this template among its Rule's alternatives. Written by the {@link RuleEntity#alternatives}
 	 * collection's {@code @OrderColumn}; mapped read-only here so a query can order templates by it directly.
@@ -92,6 +95,14 @@ public class SuggestionTemplateEntity {
 
 	public void setTechniqueNotes(String techniqueNotes) {
 		this.techniqueNotes = techniqueNotes;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public int getAlternativeOrder() {

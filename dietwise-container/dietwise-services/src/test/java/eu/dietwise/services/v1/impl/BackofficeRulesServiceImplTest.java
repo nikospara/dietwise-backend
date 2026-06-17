@@ -122,6 +122,7 @@ class BackofficeRulesServiceImplTest {
 	void noStagedTemplatesByDefault() {
 		lenient().when(suggestionTemplateDao.findRuleIdsWithStagedTemplates(any())).thenReturn(Uni.createFrom().item(Set.of()));
 		lenient().when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
+		lenient().when(suggestionTemplateDao.findActiveByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
 	}
 
 	@Test
@@ -211,7 +212,7 @@ class BackofficeRulesServiceImplTest {
 				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"),
 				suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null))));
 		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
-				TEMPLATE_ID, new StagedSuggestionTemplateOverlay("No binder needed", "1:1", "Dry sauté", 2L))));
+				TEMPLATE_ID, new StagedSuggestionTemplateOverlay("No binder needed", "1:1", "Dry sauté", true, 2L))));
 
 		List<StagedSuggestionTemplate> templates = newService()
 				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT);
@@ -220,6 +221,8 @@ class BackofficeRulesServiceImplTest {
 		StagedSuggestionTemplate edited = templates.getFirst();
 		assertThat(edited.template().getRestriction()).contains("No binder needed");
 		assertThat(edited.changedFields()).containsExactly(SuggestionTemplateField.RESTRICTION);
+		assertThat(edited.active()).isTrue();
+		assertThat(edited.activeChanged()).isFalse();
 		assertThat(edited.version()).isEqualTo(2L);
 		StagedSuggestionTemplate unchanged = templates.get(1);
 		assertThat(unchanged.template()).isEqualTo(suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null));
@@ -305,6 +308,50 @@ class BackofficeRulesServiceImplTest {
 				.await().atMost(AWAIT))
 				.isInstanceOf(NotAuthorizedException.class);
 		verify(suggestionTemplateDao, never()).revertField(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void listSuggestionTemplatesReportsEffectiveActiveAndWhetherDeactivationIsStaged() {
+		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"),
+				suggestionTemplate(OTHER_TEMPLATE_ID, "Soy mince", null, null, null))));
+		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				TEMPLATE_ID, new StagedSuggestionTemplateOverlay("Not for burgers without binder", "1:1", "Dry sauté", false, 3L))));
+		when(suggestionTemplateDao.findActiveByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				TEMPLATE_ID, true, OTHER_TEMPLATE_ID, false)));
+
+		List<StagedSuggestionTemplate> templates = newService()
+				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT);
+
+		StagedSuggestionTemplate stagedDeactivation = templates.getFirst();
+		assertThat(stagedDeactivation.active()).isFalse();
+		assertThat(stagedDeactivation.activeChanged()).isTrue();
+		assertThat(stagedDeactivation.changedFields()).isEmpty();
+		assertThat(stagedDeactivation.version()).isEqualTo(3L);
+		StagedSuggestionTemplate publishedDeactivated = templates.get(1);
+		assertThat(publishedDeactivated.active()).isFalse();
+		assertThat(publishedDeactivated.activeChanged()).isFalse();
+		assertThat(publishedDeactivated.version()).isZero();
+	}
+
+	@Test
+	void setSuggestionTemplateActiveStagesTheToggleForAnAdmin() {
+		when(suggestionTemplateDao.setActive(any(), eq(TEMPLATE_ID), eq(false), eq(1L))).thenReturn(Uni.createFrom().voidItem());
+
+		newService().setSuggestionTemplateActive(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), false, 1L)
+				.await().atMost(AWAIT);
+
+		verify(suggestionTemplateDao).setActive(any(), eq(TEMPLATE_ID), eq(false), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void setSuggestionTemplateActiveRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().setSuggestionTemplateActive(nonAdminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), false, 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).setActive(any(), any(), anyBoolean(), anyLong());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 

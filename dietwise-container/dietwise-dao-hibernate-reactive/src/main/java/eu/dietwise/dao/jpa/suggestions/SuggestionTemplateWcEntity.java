@@ -36,6 +36,9 @@ public class SuggestionTemplateWcEntity {
 	@Column(name = "technique_notes")
 	private String techniqueNotes;
 
+	@Column(name = "active")
+	private boolean active = true;
+
 	@Column(name = "version")
 	private long version;
 
@@ -93,6 +96,14 @@ public class SuggestionTemplateWcEntity {
 
 	public void setTechniqueNotes(String techniqueNotes) {
 		this.techniqueNotes = techniqueNotes;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public long getVersion() {

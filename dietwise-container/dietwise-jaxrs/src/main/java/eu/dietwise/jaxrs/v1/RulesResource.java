@@ -66,6 +66,14 @@ public class RulesResource {
 		return backofficeRulesService.revertSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), baseVersion);
 	}
 
+	@PUT
+	@Path("suggestion-templates/{templateId}/active")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> setSuggestionTemplateActive(@PathParam("templateId") String templateId, SetActiveRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.setSuggestionTemplateActive(user, new GenericSuggestionTemplateId(templateId), request.active(), request.baseVersion());
+	}
+
 	@GET
 	@Path("suggestion-templates/{templateId}/{field}/translations")
 	@Produces(MediaType.APPLICATION_JSON)

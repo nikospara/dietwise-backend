@@ -31,6 +31,13 @@ public interface SuggestionTemplateDao {
 	Uni<Map<UUID, StagedSuggestionTemplateOverlay>> findStagedOverlayByRule(ReactivePersistenceContext em, UUID ruleId);
 
 	/**
+	 * The published active state of one Rule's Suggestion Templates, keyed by template id. Lets the backoffice panel show
+	 * the effective active state (master overlaid by the Working Copy) and tell whether a deactivation or activation is a
+	 * Staged Change. A Rule with no templates yields an empty map.
+	 */
+	Uni<Map<UUID, Boolean>> findActiveByRule(ReactivePersistenceContext em, UUID ruleId);
+
+	/**
 	 * The ids of the Rules that have at least one Suggestion Template with a Staged Change in the Working Copy, whether an
 	 * English field or a translation. Used to light a Rule's Suggestions affordance without loading its templates.
 	 */
@@ -82,6 +89,17 @@ public interface SuggestionTemplateDao {
 	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such published Suggestion Template exists
 	 */
 	Uni<Long> stageField(ReactivePersistenceTxContext tx, UUID templateId, SuggestionTemplateField field, String value, long baseVersion);
+
+	/**
+	 * Stage a Suggestion Template's active state in the Working Copy, leaving published master and recipe assessment
+	 * untouched. On the first touch a whole-row snapshot of master is seeded; deactivating a published template, or
+	 * activating a deactivated one, is a Staged Change like any English field. Staging the value the template already has
+	 * in master removes the override, and when no override remains the template's Working Copy row is removed.
+	 *
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If no such published Suggestion Template exists
+	 */
+	Uni<Void> setActive(ReactivePersistenceTxContext tx, UUID templateId, boolean active, long baseVersion);
 
 	/**
 	 * Revert one staged English field of a Suggestion Template to its published master value. When no override remains

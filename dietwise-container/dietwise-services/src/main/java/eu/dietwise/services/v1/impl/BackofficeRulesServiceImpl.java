@@ -109,6 +109,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				suggestionTemplateDao.findByRule(em, id),
 				_ -> suggestionTemplateDao.findStagedOverlayByRule(em, id),
 				(_, _) -> suggestionTemplateDao.findFieldTranslationLangsByRule(em, id),
+				(_, _, _) -> suggestionTemplateDao.findActiveByRule(em, id),
 				BackofficeRulesServiceImpl::mergeTemplates
 		));
 	}
@@ -123,6 +124,12 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	public Uni<Void> revertSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, long baseVersion) {
 		authorization.requireAdmin(user);
 		return persistenceContextFactory.withTransaction(tx -> suggestionTemplateDao.revertField(tx, templateId.asUuid(), field, baseVersion));
+	}
+
+	@Override
+	public Uni<Void> setSuggestionTemplateActive(User user, SuggestionTemplateId templateId, boolean active, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> suggestionTemplateDao.setActive(tx, templateId.asUuid(), active, baseVersion));
 	}
 
 	@Override
@@ -413,17 +420,22 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	private static List<StagedSuggestionTemplate> mergeTemplates(
 			List<SuggestionTemplate> master,
 			Map<UUID, StagedSuggestionTemplateOverlay> overlays,
-			Map<UUID, FieldTranslationLangs> translationLangs
+			Map<UUID, FieldTranslationLangs> translationLangs,
+			Map<UUID, Boolean> masterActive
 	) {
 		return master.stream()
-				.map(template -> toStagedSuggestionTemplate(template, overlays.get(template.getId().asUuid()), translationLangs.get(template.getId().asUuid())))
+				.map(template -> toStagedSuggestionTemplate(
+						template,
+						overlays.get(template.getId().asUuid()),
+						translationLangs.get(template.getId().asUuid()),
+						masterActive.getOrDefault(template.getId().asUuid(), true)))
 				.toList();
 	}
 
-	private static StagedSuggestionTemplate toStagedSuggestionTemplate(SuggestionTemplate master, StagedSuggestionTemplateOverlay overlay, FieldTranslationLangs translationLangs) {
+	private static StagedSuggestionTemplate toStagedSuggestionTemplate(SuggestionTemplate master, StagedSuggestionTemplateOverlay overlay, FieldTranslationLangs translationLangs, boolean masterActive) {
 		Map<SuggestionTemplateField, Map<RecipeLanguage, TranslationState>> translations = templateTranslationStates(translationLangs);
 		if (overlay == null) {
-			return new StagedSuggestionTemplate(master, EnumSet.noneOf(SuggestionTemplateField.class), translations, 0L);
+			return new StagedSuggestionTemplate(master, EnumSet.noneOf(SuggestionTemplateField.class), translations, masterActive, false, 0L);
 		}
 		SuggestionTemplate effective = ImmutableSuggestionTemplate.builder().from(master)
 				.restriction(Optional.ofNullable(overlay.restriction()))
@@ -440,7 +452,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		if (!Objects.equals(master.getTechniqueNotes().orElse(null), overlay.techniqueNotes())) {
 			changedFields.add(SuggestionTemplateField.TECHNIQUE_NOTES);
 		}
-		return new StagedSuggestionTemplate(effective, changedFields, translations, overlay.version());
+		return new StagedSuggestionTemplate(effective, changedFields, translations, overlay.active(), overlay.active() != masterActive, overlay.version());
 	}
 
 	private static Map<SuggestionTemplateField, Map<RecipeLanguage, TranslationState>> templateTranslationStates(FieldTranslationLangs langs) {

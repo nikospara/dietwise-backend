@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +30,7 @@ import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.junit.jupiter.Container;
@@ -92,6 +94,18 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID TRANSLATION_FLAG_RULE_ID = UUID.fromString("a256697c-5499-4092-a396-9f92846c5a96");
 	private static final UUID TRANSLATION_FLAG_TEMPLATE_ID = UUID.fromString("12e06b1e-ef4e-4faf-ac3f-6b7a475e9798");
 
+	// Seeded active templates used for Deactivate/Activate staging; each test uses a distinct template so the shared
+	// Working Copy stays isolated. All belong to TOGGLE_RULE_ID and are published active.
+	private static final UUID TOGGLE_RULE_ID = UUID.fromString("14000000-0000-4000-8000-000000000001");
+	private static final UUID DEACTIVATE_TEMPLATE_ID = UUID.fromString("14000000-0000-4000-8000-0000000000d1");
+	private static final UUID REACTIVATE_TEMPLATE_ID = UUID.fromString("14000000-0000-4000-8000-0000000000d2");
+	private static final UUID KEEP_ACTIVE_TEMPLATE_ID = UUID.fromString("14000000-0000-4000-8000-0000000000d3");
+	private static final String KEEP_ACTIVE_MASTER_RESTRICTION = "Keep-override fixture";
+	// Seeded AlternativeIngredients reused as the alternatives of the toggle fixtures' templates.
+	private static final UUID FIRST_ALTERNATIVE_ID = UUID.fromString("70000000-0000-0000-0000-000000000001");
+	private static final UUID SECOND_ALTERNATIVE_ID = UUID.fromString("70000000-0000-0000-0000-000000000002");
+	private static final UUID THIRD_ALTERNATIVE_ID = UUID.fromString("70000000-0000-0000-0000-000000000003");
+
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
 
@@ -104,6 +118,18 @@ class SuggestionTemplateDaoImplTest {
 	@SuppressWarnings("unused")
 	private static final HibernateReactiveExtension hibernateReactiveExtension =
 			new HibernateReactiveExtension(postgres::getJdbcUrl, postgres.getUsername(), postgres.getPassword());
+
+	@BeforeAll
+	static void seedDeactivateActivateFixtures(Mutiny.SessionFactory sessionFactory) {
+		sessionFactory.withTransaction(session -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+						session, TOGGLE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 14 toggle role",
+						List.of(
+								new SuggestionTemplateFixtures.Template(DEACTIVATE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Deactivate fixture", true),
+								new SuggestionTemplateFixtures.Template(REACTIVATE_TEMPLATE_ID, SECOND_ALTERNATIVE_ID, 1, "Reactivate fixture", true),
+								new SuggestionTemplateFixtures.Template(KEEP_ACTIVE_TEMPLATE_ID, THIRD_ALTERNATIVE_ID, 2, KEEP_ACTIVE_MASTER_RESTRICTION, true)
+						)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
 
 	@Test
 	void findByRuleReturnsTemplatesOrderedByAlternativeOrderWithIngredientNamesAndFields(Mutiny.SessionFactory sessionFactory) {
@@ -442,6 +468,73 @@ class SuggestionTemplateDaoImplTest {
 		var after = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(after).contains(TRANSLATION_FLAG_RULE_ID);
+	}
+
+	@Test
+	void setActiveStagesDeactivationInTheWorkingCopyLeavingMasterActive(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.setActive(tx, DEACTIVATE_TEMPLATE_ID, false, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var overlay = factory.withoutTransaction(em -> sut.findStagedOverlayByRule(em, TOGGLE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).containsKey(DEACTIVATE_TEMPLATE_ID);
+		var staged = overlay.get(DEACTIVATE_TEMPLATE_ID);
+		assertThat(staged.active()).isFalse();
+		assertThat(staged.version()).isEqualTo(1L);
+
+		var master = factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, DEACTIVATE_TEMPLATE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master.isActive()).isTrue();
+	}
+
+	@Test
+	void setActiveReactivatingToMasterCollapsesTheWorkingCopyRowAndRejectsAStaleBaseVersion(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.setActive(tx, REACTIVATE_TEMPLATE_ID, false, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory
+				.withTransaction(tx -> sut.setActive(tx, REACTIVATE_TEMPLATE_ID, true, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		factory.withTransaction(tx -> sut.setActive(tx, REACTIVATE_TEMPLATE_ID, true, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var overlay = factory.withoutTransaction(em -> sut.findStagedOverlayByRule(em, TOGGLE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).doesNotContainKey(REACTIVATE_TEMPLATE_ID);
+
+		var master = factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, REACTIVATE_TEMPLATE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master.isActive()).isTrue();
+	}
+
+	@Test
+	void revertFieldKeepsTheWorkingCopyRowWhenTheTemplateIsStillDeactivated(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.stageField(tx, KEEP_ACTIVE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION, "Temporary override", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.setActive(tx, KEEP_ACTIVE_TEMPLATE_ID, false, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertField(tx, KEEP_ACTIVE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION, 2L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var overlay = factory.withoutTransaction(em -> sut.findStagedOverlayByRule(em, TOGGLE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).containsKey(KEEP_ACTIVE_TEMPLATE_ID);
+		var staged = overlay.get(KEEP_ACTIVE_TEMPLATE_ID);
+		assertThat(staged.restriction()).isEqualTo(KEEP_ACTIVE_MASTER_RESTRICTION);
+		assertThat(staged.active()).isFalse();
+		assertThat(staged.version()).isEqualTo(3L);
 	}
 
 	private static Uni<Void> createRuleWithoutTemplates(ReactivePersistenceTxContext tx, UUID id) {
