@@ -1,15 +1,19 @@
 package eu.dietwise.dao.impl.suggestions;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
@@ -37,6 +41,18 @@ public class AlternativeIngredientDaoImpl implements AlternativeIngredientDao {
 		return em.createQuery(q).getResultList()
 				.flatMap(list -> loadTranslationsByAlternativeIngredientId(em, lang)
 						.map(translationsById -> toAlternativeIngredientList(list, translationsById)));
+	}
+
+	@Override
+	public Uni<List<ReferenceOption>> listOptions(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<AlternativeIngredientEntity> root = q.from(AlternativeIngredientEntity.class);
+		q.select(cb.tuple(root.get(AlternativeIngredientEntity_.id), root.get(AlternativeIngredientEntity_.name)));
+		return em.createQuery(q).getResultList().map(rows -> rows.stream()
+				.map(row -> new ReferenceOption(row.get(0, UUID.class), row.get(1, String.class)))
+				.sorted(Comparator.comparing(ReferenceOption::name))
+				.toList());
 	}
 
 	private Uni<Map<UUID, AlternativeIngredientTranslationEntity>> loadTranslationsByAlternativeIngredientId(

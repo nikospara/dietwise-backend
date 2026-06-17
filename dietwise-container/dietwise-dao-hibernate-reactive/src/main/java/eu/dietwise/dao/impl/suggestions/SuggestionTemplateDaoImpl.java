@@ -33,6 +33,8 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity_;
@@ -46,6 +48,7 @@ import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateWcEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateWcEntity_;
 import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
 import eu.dietwise.services.model.suggestions.FieldTranslationLangs;
+import eu.dietwise.services.model.suggestions.NewSuggestionTemplate;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
@@ -79,6 +82,130 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
 		q.select(wc).where(cb.equal(wc.get(SuggestionTemplateWcEntity_.ruleId), ruleId));
 		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toOverlayById);
+	}
+
+	@Override
+	public Uni<List<NewSuggestionTemplate>> findNewByRule(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<SuggestionTemplateWcEntity> q = cb.createQuery(SuggestionTemplateWcEntity.class);
+		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
+		Subquery<UUID> master = q.subquery(UUID.class);
+		Root<SuggestionTemplateEntity> masterTemplate = master.from(SuggestionTemplateEntity.class);
+		master.select(masterTemplate.get(SuggestionTemplateEntity_.id))
+				.where(cb.equal(masterTemplate.get(SuggestionTemplateEntity_.id), wc.get(SuggestionTemplateWcEntity_.id)));
+		q.select(wc)
+				.where(cb.and(cb.equal(wc.get(SuggestionTemplateWcEntity_.ruleId), ruleId), cb.not(cb.exists(master))))
+				.orderBy(cb.asc(wc.get(SuggestionTemplateWcEntity_.alternativeOrder)));
+		return em.createQuery(q).getResultList().flatMap(rows -> resolveNewTemplates(em, rows));
+	}
+
+	private Uni<List<NewSuggestionTemplate>> resolveNewTemplates(ReactivePersistenceContext em, List<SuggestionTemplateWcEntity> rows) {
+		if (rows.isEmpty()) {
+			return Uni.createFrom().item(List.of());
+		}
+		return alternativeNamesById(em).map(names -> rows.stream().map(row -> toNewSuggestionTemplate(row, names)).toList());
+	}
+
+	private Uni<Map<UUID, String>> alternativeNamesById(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<AlternativeIngredientEntity> root = q.from(AlternativeIngredientEntity.class);
+		q.select(cb.tuple(root.get(AlternativeIngredientEntity_.id), root.get(AlternativeIngredientEntity_.name)));
+		return em.createQuery(q).getResultList().map(tuples -> tuples.stream()
+				.collect(toMap(t -> t.get(0, UUID.class), t -> t.get(1, String.class))));
+	}
+
+	private static NewSuggestionTemplate toNewSuggestionTemplate(SuggestionTemplateWcEntity row, Map<UUID, String> alternativeNames) {
+		SuggestionTemplate template = ImmutableSuggestionTemplate.builder()
+				.id(new GenericSuggestionTemplateId(row.getId().toString()))
+				.alternative(new AlternativeIngredientImpl(alternativeNames.get(row.getAlternativeIngredientId())))
+				.restriction(Optional.ofNullable(row.getRestriction()))
+				.equivalence(Optional.ofNullable(row.getEquivalence()))
+				.techniqueNotes(Optional.ofNullable(row.getTechniqueNotes()))
+				.build();
+		return new NewSuggestionTemplate(template, row.getVersion());
+	}
+
+	@Override
+	public Uni<Optional<UUID>> findTemplateIdByRuleAndAlternative(ReactivePersistenceContext em, UUID ruleId, UUID alternativeIngredientId) {
+		return masterTemplateId(em, ruleId, alternativeIngredientId).flatMap(masterId -> masterId.isPresent()
+				? Uni.createFrom().item(masterId)
+				: wcTemplateId(em, ruleId, alternativeIngredientId));
+	}
+
+	private Uni<Optional<UUID>> masterTemplateId(ReactivePersistenceContext em, UUID ruleId, UUID alternativeIngredientId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		q.select(st.get(SuggestionTemplateEntity_.id)).where(cb.and(
+				cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId),
+				cb.equal(st.get(SuggestionTemplateEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id), alternativeIngredientId)));
+		return em.createQuery(q).getResultList().map(ids -> ids.stream().findFirst());
+	}
+
+	private Uni<Optional<UUID>> wcTemplateId(ReactivePersistenceContext em, UUID ruleId, UUID alternativeIngredientId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
+		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
+		q.select(wc.get(SuggestionTemplateWcEntity_.id)).where(cb.and(
+				cb.equal(wc.get(SuggestionTemplateWcEntity_.ruleId), ruleId),
+				cb.equal(wc.get(SuggestionTemplateWcEntity_.alternativeIngredientId), alternativeIngredientId)));
+		return em.createQuery(q).getResultList().map(ids -> ids.stream().findFirst());
+	}
+
+	@Override
+	public Uni<UUID> addTemplate(ReactivePersistenceTxContext tx, UUID ruleId, UUID alternativeIngredientId) {
+		return nextAlternativeOrder(tx, ruleId).flatMap(order -> {
+			var wc = new SuggestionTemplateWcEntity();
+			UUID id = UUID.randomUUID();
+			wc.setId(id);
+			wc.setRuleId(ruleId);
+			wc.setAlternativeIngredientId(alternativeIngredientId);
+			wc.setAlternativeOrder(order);
+			wc.setActive(true);
+			wc.setVersion(1L);
+			return tx.persist(wc).replaceWith(id);
+		});
+	}
+
+	private Uni<Integer> nextAlternativeOrder(ReactivePersistenceTxContext tx, UUID ruleId) {
+		return maxMasterOrder(tx, ruleId)
+				.flatMap(masterMax -> maxWcOrder(tx, ruleId).map(wcMax -> Math.max(masterMax, wcMax) + 1));
+	}
+
+	private Uni<Integer> maxMasterOrder(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Integer> q = cb.createQuery(Integer.class);
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		q.select(cb.max(st.get(SuggestionTemplateEntity_.alternativeOrder)))
+				.where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::orderOrMinusOne);
+	}
+
+	private Uni<Integer> maxWcOrder(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Integer> q = cb.createQuery(Integer.class);
+		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
+		q.select(cb.max(wc.get(SuggestionTemplateWcEntity_.alternativeOrder)))
+				.where(cb.equal(wc.get(SuggestionTemplateWcEntity_.ruleId), ruleId));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::orderOrMinusOne);
+	}
+
+	private static int orderOrMinusOne(List<Integer> rows) {
+		Integer max = rows.isEmpty() ? null : rows.getFirst();
+		return max == null ? -1 : max;
+	}
+
+	@Override
+	public Uni<Void> discardTemplate(ReactivePersistenceTxContext tx, UUID templateId, long baseVersion) {
+		return tx.find(SuggestionTemplateWcEntity.class, templateId).flatMap(existing -> {
+			if (existing == null) {
+				return Uni.createFrom().voidItem();
+			}
+			return tx.find(SuggestionTemplateEntity.class, templateId).flatMap(master -> master == null
+					? deleteStagedRow(tx, templateId, baseVersion)
+					: Uni.createFrom().failure(new EntityNotFoundException(SuggestionTemplateEntity.class, templateId, "No unpublished new Suggestion Template to discard")));
+		});
 	}
 
 	@Override

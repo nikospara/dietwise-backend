@@ -6,10 +6,12 @@ import static eu.dietwise.v1.types.Country.GREECE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.UUID;
 
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
+import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
@@ -99,6 +101,18 @@ class AlternativeIngredientDaoImplTest {
 
 		assertThat(alternative.getName()).isEqualTo("Bruine linzen (gekookt)");
 		assertThat(alternative.getExplanationForLlm()).isEmpty();
+	}
+
+	@Test
+	@Order(1)
+	void listOptionsReturnsPublishedAlternativeIngredientsSortedByName(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var options = factory.withoutTransaction(sut::listOptions).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(options).contains(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Brown lentils (cooked)"));
+		assertThat(options).isSortedAccordingTo(Comparator.comparing(ReferenceOption::name));
 	}
 
 	private static Seasonality seasonality(int monthFrom, int monthTo) {

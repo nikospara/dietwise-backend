@@ -9,6 +9,7 @@ import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.services.v1.types.AddedTemplate;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.StagedRule;
 import eu.dietwise.services.v1.types.StagedSuggestionTemplate;
@@ -122,6 +123,40 @@ public interface BackofficeRulesService {
 	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
 	 */
 	Uni<Void> revertTemplateFieldTranslation(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, RecipeLanguage lang, long baseVersion);
+
+	/**
+	 * The published AlternativeIngredients an editor can choose from when adding a Suggestion Template to a Rule, as id
+	 * and English name, sorted by name.
+	 *
+	 * @param user The editor; must have the ADMIN role
+	 */
+	Uni<List<ReferenceOption>> alternativeIngredientOptions(User user);
+
+	/**
+	 * Add a Suggestion Template to a Rule for an existing AlternativeIngredient, staged in the Working Copy and leaving
+	 * published master and recipe assessment untouched. The new template starts active with no English fields, positioned
+	 * after the Rule's existing templates. The business key (rule, alternative ingredient) is unique regardless of active
+	 * state: if the Rule already has a template for the alternative, no duplicate is created and the existing one is
+	 * returned instead (so the caller can offer to reactivate it when it is deactivated).
+	 *
+	 * @param user                  The editor; must have the ADMIN role
+	 * @param ruleId                The Rule the template is added to
+	 * @param alternativeIngredientId The chosen existing AlternativeIngredient
+	 * @return The id of the template covering the alternative, and whether it was newly created
+	 */
+	Uni<AddedTemplate> addSuggestionTemplate(User user, RuleId ruleId, UUID alternativeIngredientId);
+
+	/**
+	 * Discard an unpublished new Suggestion Template from the Working Copy, removing it from the panel. Only a template
+	 * that exists solely in the Working Copy can be discarded; a published template is deactivated instead.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param templateId  The Working-Copy-only template to discard
+	 * @param baseVersion The Working Copy version the discard is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the template is published rather than Working-Copy-only
+	 */
+	Uni<Void> discardSuggestionTemplate(User user, SuggestionTemplateId templateId, long baseVersion);
 
 	/**
 	 * Stage a new rationale for a Rule in the Working Copy, leaving published master and recipe assessment untouched.

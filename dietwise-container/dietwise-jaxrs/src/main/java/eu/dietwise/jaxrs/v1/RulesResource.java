@@ -23,6 +23,7 @@ import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.BackofficeRulesService;
+import eu.dietwise.services.v1.types.AddedTemplate;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.GenericRuleId;
@@ -47,6 +48,22 @@ public class RulesResource {
 	public Uni<List<SuggestionTemplateResponse>> listSuggestionTemplates(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.listSuggestionTemplates(user, new GenericRuleId(id)).map(SuggestionTemplateResponse::fromAll);
+	}
+
+	@POST
+	@Path("{id}/suggestion-templates")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<AddedTemplate> addSuggestionTemplate(@PathParam("id") String id, AddTemplateRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.addSuggestionTemplate(user, new GenericRuleId(id), UUID.fromString(request.alternativeIngredientId()));
+	}
+
+	@DELETE
+	@Path("suggestion-templates/{templateId}")
+	public Uni<Void> discardSuggestionTemplate(@PathParam("templateId") String templateId, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.discardSuggestionTemplate(user, new GenericSuggestionTemplateId(templateId), baseVersion);
 	}
 
 	@PUT
@@ -103,6 +120,14 @@ public class RulesResource {
 	public Uni<NewRuleOptions> newRuleOptions(@Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return backofficeRulesService.newRuleOptions(user);
+	}
+
+	@GET
+	@Path("alternative-ingredients")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<List<ReferenceOption>> alternativeIngredientOptions(@Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.alternativeIngredientOptions(user);
 	}
 
 	@POST

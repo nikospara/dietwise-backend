@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
@@ -23,6 +24,7 @@ import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntityId;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntityId;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateWcEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -105,6 +107,20 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID FIRST_ALTERNATIVE_ID = UUID.fromString("70000000-0000-0000-0000-000000000001");
 	private static final UUID SECOND_ALTERNATIVE_ID = UUID.fromString("70000000-0000-0000-0000-000000000002");
 	private static final UUID THIRD_ALTERNATIVE_ID = UUID.fromString("70000000-0000-0000-0000-000000000003");
+	private static final String SMOKED_TOFU = "Smoked tofu cubes";
+
+	// Seeded rules used for adding and discarding Working-Copy-only templates; each test uses its own rule so the shared
+	// Working Copy stays isolated. ADD_RULE and DEDUP_RULE start with published master templates; the others start empty.
+	private static final UUID ADD_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000001");
+	private static final UUID ADD_TEMPLATE_A_ID = UUID.fromString("15000000-0000-4000-8000-0000000000a1");
+	private static final UUID ADD_TEMPLATE_B_ID = UUID.fromString("15000000-0000-4000-8000-0000000000a2");
+	private static final UUID DEDUP_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000002");
+	private static final UUID DEDUP_TEMPLATE_ID = UUID.fromString("15000000-0000-4000-8000-0000000000b1");
+	private static final UUID WC_ONLY_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000003");
+	private static final UUID DISCARD_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000004");
+	private static final UUID DISCARD_STALE_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000005");
+	private static final UUID REFUSE_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000006");
+	private static final UUID REFUSE_TEMPLATE_ID = UUID.fromString("15000000-0000-4000-8000-0000000000c1");
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -128,6 +144,28 @@ class SuggestionTemplateDaoImplTest {
 								new SuggestionTemplateFixtures.Template(REACTIVATE_TEMPLATE_ID, SECOND_ALTERNATIVE_ID, 1, "Reactivate fixture", true),
 								new SuggestionTemplateFixtures.Template(KEEP_ACTIVE_TEMPLATE_ID, THIRD_ALTERNATIVE_ID, 2, KEEP_ACTIVE_MASTER_RESTRICTION, true)
 						)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	@BeforeAll
+	static void seedAddDiscardFixtures(Mutiny.SessionFactory sessionFactory) {
+		sessionFactory.withTransaction(session -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, ADD_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 add role",
+								List.of(
+										new SuggestionTemplateFixtures.Template(ADD_TEMPLATE_A_ID, FIRST_ALTERNATIVE_ID, 0, "Add fixture A", true),
+										new SuggestionTemplateFixtures.Template(ADD_TEMPLATE_B_ID, SECOND_ALTERNATIVE_ID, 1, "Add fixture B", true)))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, DEDUP_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 dedup role",
+								List.of(new SuggestionTemplateFixtures.Template(DEDUP_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Dedup fixture", true))))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, WC_ONLY_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 wc-only role", List.of()))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, DISCARD_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 discard role", List.of()))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, DISCARD_STALE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 discard-stale role", List.of()))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, REFUSE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 refuse role",
+								List.of(new SuggestionTemplateFixtures.Template(REFUSE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Refuse fixture", true)))))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
@@ -535,6 +573,121 @@ class SuggestionTemplateDaoImplTest {
 		assertThat(staged.restriction()).isEqualTo(KEEP_ACTIVE_MASTER_RESTRICTION);
 		assertThat(staged.active()).isFalse();
 		assertThat(staged.version()).isEqualTo(3L);
+	}
+
+	@Test
+	void addTemplateCreatesAWorkingCopyOnlyTemplatePositionedAfterExistingTemplates(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.addTemplate(tx, ADD_RULE_ID, THIRD_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newTemplates = factory.withoutTransaction(em -> sut.findNewByRule(em, ADD_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newTemplates).hasSize(1);
+		var added = newTemplates.getFirst();
+		assertThat(added.template().getId().asString()).isEqualTo(newId.toString());
+		assertThat(added.template().getAlternative().asString()).isEqualTo(SMOKED_TOFU);
+		assertThat(added.template().getRestriction()).isEmpty();
+		assertThat(added.version()).isEqualTo(1L);
+
+		var master = factory.withoutTransaction(em -> sut.findByRule(em, ADD_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master).hasSize(2);
+
+		var wc = factory.withTransaction(tx -> tx.find(SuggestionTemplateWcEntity.class, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wc.getAlternativeOrder()).isEqualTo(2);
+		assertThat(wc.isActive()).isTrue();
+	}
+
+	@Test
+	void findTemplateIdByRuleAndAlternativeReturnsAnExistingMasterTemplateOrEmpty(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var existing = factory.withoutTransaction(em -> sut.findTemplateIdByRuleAndAlternative(em, DEDUP_RULE_ID, FIRST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(existing).contains(DEDUP_TEMPLATE_ID);
+
+		var none = factory.withoutTransaction(em -> sut.findTemplateIdByRuleAndAlternative(em, DEDUP_RULE_ID, SECOND_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(none).isEmpty();
+	}
+
+	@Test
+	void findTemplateIdByRuleAndAlternativeFindsAWorkingCopyOnlyTemplateOrderedFromZero(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.addTemplate(tx, WC_ONLY_RULE_ID, FIRST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var found = factory.withoutTransaction(em -> sut.findTemplateIdByRuleAndAlternative(em, WC_ONLY_RULE_ID, FIRST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(found).contains(newId);
+
+		var wc = factory.withTransaction(tx -> tx.find(SuggestionTemplateWcEntity.class, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wc.getAlternativeOrder()).isZero();
+	}
+
+	@Test
+	void discardTemplateRemovesAWorkingCopyOnlyTemplate(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.addTemplate(tx, DISCARD_RULE_ID, FIRST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.discardTemplate(tx, newId, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var newTemplates = factory.withoutTransaction(em -> sut.findNewByRule(em, DISCARD_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newTemplates).isEmpty();
+	}
+
+	@Test
+	void discardTemplateRejectsAStaleBaseVersionLeavingTheTemplate(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.addTemplate(tx, DISCARD_STALE_RULE_ID, FIRST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory
+				.withTransaction(tx -> sut.findTemplateIdByRuleAndAlternative(tx, DISCARD_STALE_RULE_ID, FIRST_ALTERNATIVE_ID)
+						.flatMap(id -> sut.discardTemplate(tx, id.orElseThrow(), 0L)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var newTemplates = factory.withoutTransaction(em -> sut.findNewByRule(em, DISCARD_STALE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(newTemplates).hasSize(1);
+	}
+
+	@Test
+	void discardTemplateRefusesAPublishedTemplateKeepingItsStagedEdit(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.stageField(tx, REFUSE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION, "Staged edit", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory
+				.withTransaction(tx -> sut.discardTemplate(tx, REFUSE_TEMPLATE_ID, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(EntityNotFoundException.class);
+
+		var overlay = factory.withoutTransaction(em -> sut.findStagedOverlayByRule(em, REFUSE_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(overlay).containsKey(REFUSE_TEMPLATE_ID);
+
+		var master = factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, REFUSE_TEMPLATE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master).isNotNull();
 	}
 
 	private static Uni<Void> createRuleWithoutTemplates(ReactivePersistenceTxContext tx, UUID id) {

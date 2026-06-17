@@ -185,4 +185,20 @@
 			</column>
 		</addColumn>
 	</changeSet>
+
+	<changeSet id="suggestion_template_business_key_unique" author="nikospara">
+		<preConditions onFail="HALT" onFailMessage="DW_SUGGESTION_TEMPLATE has duplicate (rule_id, alternative_ingredient_id) pairs; cannot add the business-key unique constraint">
+			<sqlCheck expectedResult="0">SELECT count(*) FROM (SELECT rule_id, alternative_ingredient_id FROM dw_suggestion_template GROUP BY rule_id, alternative_ingredient_id HAVING count(*) > 1) duplicates</sqlCheck>
+		</preConditions>
+		<comment>A Suggestion Template's business key within a Rule is the pair (rule, alternative ingredient), unique
+			regardless of its active state: a Rule never holds two templates for the same alternative. Enforced on both
+			published master and the Working Copy mirror. The master constraint is added only after confirming the
+			published rows hold no duplicate pair.</comment>
+		<sql>ALTER TABLE dw_suggestion_template ADD CONSTRAINT uq_dw_suggestion_template__business_key UNIQUE (rule_id, alternative_ingredient_id)</sql>
+		<sql>ALTER TABLE dw_suggestion_template_wc ADD CONSTRAINT uq_dw_suggestion_template_wc__business_key UNIQUE (rule_id, alternative_ingredient_id)</sql>
+		<rollback>
+			<sql>ALTER TABLE dw_suggestion_template_wc DROP CONSTRAINT uq_dw_suggestion_template_wc__business_key</sql>
+			<sql>ALTER TABLE dw_suggestion_template DROP CONSTRAINT uq_dw_suggestion_template__business_key</sql>
+		</rollback>
+	</changeSet>
 </databaseChangeLog>

@@ -33,18 +33,21 @@ import eu.dietwise.common.v1.model.User;
 import eu.dietwise.common.v1.types.Role;
 import eu.dietwise.common.v1.types.impl.UserIdImpl;
 import eu.dietwise.dao.recommendations.RecommendationDao;
+import eu.dietwise.dao.suggestions.AlternativeIngredientDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.AuthorizationImpl;
 import eu.dietwise.services.model.suggestions.FieldTranslationLangs;
+import eu.dietwise.services.model.suggestions.NewSuggestionTemplate;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
 import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
+import eu.dietwise.services.v1.types.AddedTemplate;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
@@ -83,6 +86,8 @@ class BackofficeRulesServiceImplTest {
 	private static final UUID OTHER_ROLE_ID = UUID.fromString("77777777-7777-7777-7777-777777777777");
 	private static final UUID TEMPLATE_ID = UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
 	private static final UUID OTHER_TEMPLATE_ID = UUID.fromString("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+	private static final UUID ALTERNATIVE_INGREDIENT_ID = UUID.fromString("cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+	private static final UUID NEW_TEMPLATE_ID = UUID.fromString("dddddddd-dddd-4ddd-8ddd-dddddddddddd");
 	private static final String MASTER_RATIONALE = "Published rationale.";
 	private static final String STAGED_RATIONALE = "Staged rationale, not yet published.";
 	private static final Rule RULE = ImmutableRule.builder()
@@ -115,6 +120,9 @@ class BackofficeRulesServiceImplTest {
 	@Mock
 	private SuggestionTemplateDao suggestionTemplateDao;
 
+	@Mock
+	private AlternativeIngredientDao alternativeIngredientDao;
+
 	@RegisterExtension
 	private final MockReactivePersistenceContextFactory persistenceContextFactory = new MockReactivePersistenceContextFactory();
 
@@ -123,6 +131,7 @@ class BackofficeRulesServiceImplTest {
 		lenient().when(suggestionTemplateDao.findRuleIdsWithStagedTemplates(any())).thenReturn(Uni.createFrom().item(Set.of()));
 		lenient().when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
 		lenient().when(suggestionTemplateDao.findActiveByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
+		lenient().when(suggestionTemplateDao.findNewByRule(any(), any())).thenReturn(Uni.createFrom().item(List.of()));
 	}
 
 	@Test
@@ -1201,6 +1210,103 @@ class BackofficeRulesServiceImplTest {
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 
+	@Test
+	void listSuggestionTemplatesAppendsWorkingCopyOnlyTemplatesMarkedUnpublished() {
+		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", "Dry sauté"))));
+		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionTemplateDao.findNewByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				new NewSuggestionTemplate(suggestionTemplate(NEW_TEMPLATE_ID, "Smoked tofu cubes", null, null, null), 1L))));
+
+		List<StagedSuggestionTemplate> templates = newService()
+				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT);
+
+		assertThat(templates).hasSize(2);
+		StagedSuggestionTemplate published = templates.getFirst();
+		assertThat(published.template().getId().asString()).isEqualTo(TEMPLATE_ID.toString());
+		assertThat(published.published()).isTrue();
+		StagedSuggestionTemplate added = templates.get(1);
+		assertThat(added.template().getId().asString()).isEqualTo(NEW_TEMPLATE_ID.toString());
+		assertThat(added.template().getAlternative().asString()).isEqualTo("Smoked tofu cubes");
+		assertThat(added.published()).isFalse();
+		assertThat(added.active()).isTrue();
+		assertThat(added.activeChanged()).isFalse();
+		assertThat(added.changedFields()).isEmpty();
+		assertThat(added.version()).isEqualTo(1L);
+	}
+
+	@Test
+	void addSuggestionTemplateCreatesANewTemplateWhenTheRuleHasNoneForTheAlternative() {
+		when(suggestionTemplateDao.findTemplateIdByRuleAndAlternative(any(), eq(RULE_ID), eq(ALTERNATIVE_INGREDIENT_ID)))
+				.thenReturn(Uni.createFrom().item(Optional.empty()));
+		when(suggestionTemplateDao.addTemplate(any(), eq(RULE_ID), eq(ALTERNATIVE_INGREDIENT_ID)))
+				.thenReturn(Uni.createFrom().item(NEW_TEMPLATE_ID));
+
+		AddedTemplate added = newService().addSuggestionTemplate(adminUser(), new GenericRuleId(RULE_ID.toString()), ALTERNATIVE_INGREDIENT_ID)
+				.await().atMost(AWAIT);
+
+		assertThat(added).isEqualTo(new AddedTemplate(NEW_TEMPLATE_ID, true));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void addSuggestionTemplateReturnsTheExistingTemplateWithoutCreatingWhenTheAlternativeIsAlreadyUsed() {
+		when(suggestionTemplateDao.findTemplateIdByRuleAndAlternative(any(), eq(RULE_ID), eq(ALTERNATIVE_INGREDIENT_ID)))
+				.thenReturn(Uni.createFrom().item(Optional.of(TEMPLATE_ID)));
+
+		AddedTemplate added = newService().addSuggestionTemplate(adminUser(), new GenericRuleId(RULE_ID.toString()), ALTERNATIVE_INGREDIENT_ID)
+				.await().atMost(AWAIT);
+
+		assertThat(added).isEqualTo(new AddedTemplate(TEMPLATE_ID, false));
+		verify(suggestionTemplateDao, never()).addTemplate(any(), any(), any());
+	}
+
+	@Test
+	void addSuggestionTemplateRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().addSuggestionTemplate(nonAdminUser(), new GenericRuleId(RULE_ID.toString()), ALTERNATIVE_INGREDIENT_ID)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).findTemplateIdByRuleAndAlternative(any(), any(), any());
+		verify(suggestionTemplateDao, never()).addTemplate(any(), any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void discardSuggestionTemplateDelegatesToTheDaoForAnAdmin() {
+		when(suggestionTemplateDao.discardTemplate(any(), eq(NEW_TEMPLATE_ID), eq(1L))).thenReturn(Uni.createFrom().voidItem());
+
+		newService().discardSuggestionTemplate(adminUser(), new GenericSuggestionTemplateId(NEW_TEMPLATE_ID.toString()), 1L)
+				.await().atMost(AWAIT);
+
+		verify(suggestionTemplateDao).discardTemplate(any(), eq(NEW_TEMPLATE_ID), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void discardSuggestionTemplateRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().discardSuggestionTemplate(nonAdminUser(), new GenericSuggestionTemplateId(NEW_TEMPLATE_ID.toString()), 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).discardTemplate(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void alternativeIngredientOptionsReturnsOptionsForAnAdmin() {
+		when(alternativeIngredientDao.listOptions(any())).thenReturn(Uni.createFrom().item(List.of(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes"))));
+
+		List<ReferenceOption> options = newService().alternativeIngredientOptions(adminUser()).await().atMost(AWAIT);
+
+		assertThat(options).containsExactly(new ReferenceOption(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes"));
+	}
+
+	@Test
+	void alternativeIngredientOptionsRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().alternativeIngredientOptions(nonAdminUser()).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(alternativeIngredientDao, never()).listOptions(any());
+	}
+
 	private void stubSharedDataForBaseRule() {
 		when(ruleDao.findReferenceIds(any())).thenReturn(Uni.createFrom().item(Map.of(RULE_ID, new RuleReferences(TRIGGER_INGREDIENT_ID, ROLE_OR_TECHNIQUE_ID))));
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
@@ -1211,7 +1317,7 @@ class BackofficeRulesServiceImplTest {
 	}
 
 	private BackofficeRulesServiceImpl newService() {
-		return new BackofficeRulesServiceImpl(ruleDao, recommendationDao, triggerIngredientDao, roleOrTechniqueDao, suggestionTemplateDao, persistenceContextFactory, new AuthorizationImpl());
+		return new BackofficeRulesServiceImpl(ruleDao, recommendationDao, triggerIngredientDao, roleOrTechniqueDao, suggestionTemplateDao, alternativeIngredientDao, persistenceContextFactory, new AuthorizationImpl());
 	}
 
 	private static User adminUser() {

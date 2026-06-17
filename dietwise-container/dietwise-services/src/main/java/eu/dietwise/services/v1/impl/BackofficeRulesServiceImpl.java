@@ -23,12 +23,14 @@ import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
+import eu.dietwise.dao.suggestions.AlternativeIngredientDao;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.model.suggestions.FieldTranslationLangs;
+import eu.dietwise.services.model.suggestions.NewSuggestionTemplate;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
@@ -36,6 +38,7 @@ import eu.dietwise.services.model.suggestions.StagedNewRule;
 import eu.dietwise.services.model.suggestions.StagedRuleOverlay;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.services.v1.BackofficeRulesService;
+import eu.dietwise.services.v1.types.AddedTemplate;
 import eu.dietwise.services.v1.types.NewRuleOptions;
 import eu.dietwise.services.v1.types.RuleChangeState;
 import eu.dietwise.services.v1.types.RuleField;
@@ -64,6 +67,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 	private final TriggerIngredientDao triggerIngredientDao;
 	private final RoleOrTechniqueDao roleOrTechniqueDao;
 	private final SuggestionTemplateDao suggestionTemplateDao;
+	private final AlternativeIngredientDao alternativeIngredientDao;
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final Authorization authorization;
 
@@ -73,6 +77,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			TriggerIngredientDao triggerIngredientDao,
 			RoleOrTechniqueDao roleOrTechniqueDao,
 			SuggestionTemplateDao suggestionTemplateDao,
+			AlternativeIngredientDao alternativeIngredientDao,
 			ReactivePersistenceContextFactory persistenceContextFactory,
 			Authorization authorization
 	) {
@@ -81,6 +86,7 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		this.triggerIngredientDao = triggerIngredientDao;
 		this.roleOrTechniqueDao = roleOrTechniqueDao;
 		this.suggestionTemplateDao = suggestionTemplateDao;
+		this.alternativeIngredientDao = alternativeIngredientDao;
 		this.persistenceContextFactory = persistenceContextFactory;
 		this.authorization = authorization;
 	}
@@ -110,8 +116,31 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 				_ -> suggestionTemplateDao.findStagedOverlayByRule(em, id),
 				(_, _) -> suggestionTemplateDao.findFieldTranslationLangsByRule(em, id),
 				(_, _, _) -> suggestionTemplateDao.findActiveByRule(em, id),
+				(_, _, _, _) -> suggestionTemplateDao.findNewByRule(em, id),
 				BackofficeRulesServiceImpl::mergeTemplates
 		));
+	}
+
+	@Override
+	public Uni<List<ReferenceOption>> alternativeIngredientOptions(User user) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(alternativeIngredientDao::listOptions);
+	}
+
+	@Override
+	public Uni<AddedTemplate> addSuggestionTemplate(User user, RuleId ruleId, UUID alternativeIngredientId) {
+		authorization.requireAdmin(user);
+		UUID id = ruleId.asUuid();
+		return persistenceContextFactory.withTransaction(tx -> suggestionTemplateDao.findTemplateIdByRuleAndAlternative(tx, id, alternativeIngredientId)
+				.flatMap(existing -> existing
+						.map(templateId -> Uni.createFrom().item(new AddedTemplate(templateId, false)))
+						.orElseGet(() -> suggestionTemplateDao.addTemplate(tx, id, alternativeIngredientId).map(newId -> new AddedTemplate(newId, true)))));
+	}
+
+	@Override
+	public Uni<Void> discardSuggestionTemplate(User user, SuggestionTemplateId templateId, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> suggestionTemplateDao.discardTemplate(tx, templateId.asUuid(), baseVersion));
 	}
 
 	@Override
@@ -421,21 +450,23 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 			List<SuggestionTemplate> master,
 			Map<UUID, StagedSuggestionTemplateOverlay> overlays,
 			Map<UUID, FieldTranslationLangs> translationLangs,
-			Map<UUID, Boolean> masterActive
+			Map<UUID, Boolean> masterActive,
+			List<NewSuggestionTemplate> newTemplates
 	) {
-		return master.stream()
+		Stream<StagedSuggestionTemplate> published = master.stream()
 				.map(template -> toStagedSuggestionTemplate(
 						template,
 						overlays.get(template.getId().asUuid()),
 						translationLangs.get(template.getId().asUuid()),
-						masterActive.getOrDefault(template.getId().asUuid(), true)))
-				.toList();
+						masterActive.getOrDefault(template.getId().asUuid(), true)));
+		Stream<StagedSuggestionTemplate> added = newTemplates.stream().map(BackofficeRulesServiceImpl::toNewStagedSuggestionTemplate);
+		return Stream.concat(published, added).toList();
 	}
 
 	private static StagedSuggestionTemplate toStagedSuggestionTemplate(SuggestionTemplate master, StagedSuggestionTemplateOverlay overlay, FieldTranslationLangs translationLangs, boolean masterActive) {
 		Map<SuggestionTemplateField, Map<RecipeLanguage, TranslationState>> translations = templateTranslationStates(translationLangs);
 		if (overlay == null) {
-			return new StagedSuggestionTemplate(master, EnumSet.noneOf(SuggestionTemplateField.class), translations, masterActive, false, 0L);
+			return new StagedSuggestionTemplate(master, EnumSet.noneOf(SuggestionTemplateField.class), translations, masterActive, false, true, 0L);
 		}
 		SuggestionTemplate effective = ImmutableSuggestionTemplate.builder().from(master)
 				.restriction(Optional.ofNullable(overlay.restriction()))
@@ -452,7 +483,18 @@ public class BackofficeRulesServiceImpl implements BackofficeRulesService {
 		if (!Objects.equals(master.getTechniqueNotes().orElse(null), overlay.techniqueNotes())) {
 			changedFields.add(SuggestionTemplateField.TECHNIQUE_NOTES);
 		}
-		return new StagedSuggestionTemplate(effective, changedFields, translations, overlay.active(), overlay.active() != masterActive, overlay.version());
+		return new StagedSuggestionTemplate(effective, changedFields, translations, overlay.active(), overlay.active() != masterActive, true, overlay.version());
+	}
+
+	private static StagedSuggestionTemplate toNewStagedSuggestionTemplate(NewSuggestionTemplate newTemplate) {
+		return new StagedSuggestionTemplate(
+				newTemplate.template(),
+				EnumSet.noneOf(SuggestionTemplateField.class),
+				templateTranslationStates(null),
+				true,
+				false,
+				false,
+				newTemplate.version());
 	}
 
 	private static Map<SuggestionTemplateField, Map<RecipeLanguage, TranslationState>> templateTranslationStates(FieldTranslationLangs langs) {

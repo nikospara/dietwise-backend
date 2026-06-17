@@ -2,6 +2,7 @@ package eu.dietwise.dao.suggestions;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.services.model.suggestions.FieldTranslationLangs;
+import eu.dietwise.services.model.suggestions.NewSuggestionTemplate;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
 import eu.dietwise.v1.model.SuggestionTemplate;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -29,6 +31,41 @@ public interface SuggestionTemplateDao {
 	 * fields plus its version.
 	 */
 	Uni<Map<UUID, StagedSuggestionTemplateOverlay>> findStagedOverlayByRule(ReactivePersistenceContext em, UUID ruleId);
+
+	/**
+	 * The Working-Copy-only Suggestion Templates of one Rule — those an editor added but has not published, with no
+	 * published master row — each with the AlternativeIngredient it suggests and its proposed English fields, ordered by
+	 * {@code alternative_order}. A Rule with no added templates yields an empty list.
+	 */
+	Uni<List<NewSuggestionTemplate>> findNewByRule(ReactivePersistenceContext em, UUID ruleId);
+
+	/**
+	 * The id of the Suggestion Template a Rule already has for a given AlternativeIngredient, looked up across published
+	 * master union the Working Copy and ignoring the template's active state, or empty when the Rule has none. Lets the
+	 * add flow surface the existing template (offering Reactivate when it is deactivated) instead of creating a duplicate.
+	 */
+	Uni<Optional<UUID>> findTemplateIdByRuleAndAlternative(ReactivePersistenceContext em, UUID ruleId, UUID alternativeIngredientId);
+
+	/**
+	 * Stage a brand-new Suggestion Template for a Rule in the Working Copy, suggesting an existing AlternativeIngredient.
+	 * The new template gets a generated id, starts active, has no English fields, and is positioned after the Rule's
+	 * existing templates ({@code alternative_order} = max over master union Working Copy + 1). Leaves published master and
+	 * recipe assessment untouched. The caller must have already checked that the Rule has no template for this
+	 * AlternativeIngredient.
+	 *
+	 * @return The id of the newly staged template
+	 */
+	Uni<UUID> addTemplate(ReactivePersistenceTxContext tx, UUID ruleId, UUID alternativeIngredientId);
+
+	/**
+	 * Discard an unpublished new Suggestion Template from the Working Copy, removing it from the panel. Only a template
+	 * that exists solely in the Working Copy can be discarded; a published template is deactivated instead. A no-op when
+	 * the template's Working Copy row is already gone.
+	 *
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 * @throws eu.dietwise.common.dao.EntityNotFoundException If the template is published rather than Working-Copy-only
+	 */
+	Uni<Void> discardTemplate(ReactivePersistenceTxContext tx, UUID templateId, long baseVersion);
 
 	/**
 	 * The published active state of one Rule's Suggestion Templates, keyed by template id. Lets the backoffice panel show
