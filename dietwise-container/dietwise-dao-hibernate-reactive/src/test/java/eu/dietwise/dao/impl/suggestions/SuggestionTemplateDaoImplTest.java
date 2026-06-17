@@ -18,8 +18,13 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueEntity;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntityId;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntityId;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity;
 import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
@@ -71,6 +76,21 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID STALE_REVERT_RULE_ID = UUID.fromString("79c845bb-ff9c-4a0e-9188-d2f9050f42c1");
 	private static final UUID STALE_REVERT_TEMPLATE_ID = UUID.fromString("64f02c55-1763-4940-bfb8-31acadfc40e3");
 	private static final String STALE_REVERT_STAGED_RESTRICTION = "Avoid if soy or nut allergy";
+
+	// Seeded templates used for staging translations; each test uses a distinct template so the shared Working Copy stays
+	// isolated. Every one has EL/LT/NL master translations of restriction and equivalence, but no technique_notes.
+	private static final UUID TRANSLATE_TEMPLATE_ID = UUID.fromString("943d545b-5880-4da7-820f-8d64b97a3ad9");
+	private static final UUID STALE_TRANSLATE_TEMPLATE_ID = UUID.fromString("c535d78d-3cce-4c7c-9eda-7f19b30ca461");
+	private static final UUID REVERT_TRANSLATE_TEMPLATE_ID = UUID.fromString("e781bf4e-dbfb-4f42-a7e7-0cd65ebcff28");
+	private static final UUID KEEP_TRANSLATE_TEMPLATE_ID = UUID.fromString("5e0b5d4b-6c7d-462d-b380-c299fb3fb2ff");
+	private static final UUID STALE_REVERT_TRANSLATE_TEMPLATE_ID = UUID.fromString("5446a40f-b0f7-4942-99d5-da7fe9f632eb");
+
+	// Restriction and equivalence translated in EL/LT/NL; technique_notes translated in none.
+	private static final UUID CHIP_RULE_ID = UUID.fromString("95fcf98d-fc75-4773-9034-22ad58584a1a");
+	private static final UUID CHIP_TEMPLATE_ID = UUID.fromString("2b7fe2ce-0ad3-4999-b3ba-618bd10e56fc");
+
+	private static final UUID TRANSLATION_FLAG_RULE_ID = UUID.fromString("a256697c-5499-4092-a396-9f92846c5a96");
+	private static final UUID TRANSLATION_FLAG_TEMPLATE_ID = UUID.fromString("12e06b1e-ef4e-4faf-ac3f-6b7a475e9798");
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -253,6 +273,175 @@ class SuggestionTemplateDaoImplTest {
 		var after = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(after).contains(MINCED_IN_SAUCE_RULE_ID);
+	}
+
+	@Test
+	void stageFieldTranslationStoresTheEditInTheWorkingCopyLeavingMasterUnchanged(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var before = factory
+				.withoutTransaction(em -> sut.findFieldTranslationsForEdit(em, TRANSLATE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		String masterRestrictionEl = before.get(RecipeLanguage.EL).text();
+		assertThat(before.get(RecipeLanguage.EL).version()).isEqualTo(0L);
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, "Greek restriction override", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory
+				.withoutTransaction(em -> sut.findFieldTranslationsForEdit(em, TRANSLATE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after.get(RecipeLanguage.EL).text()).isEqualTo("Greek restriction override");
+		assertThat(after.get(RecipeLanguage.EL).version()).isEqualTo(1L);
+
+		var master = factory.withTransaction(tx -> tx.find(SuggestionTemplateTranslationEntity.class, new SuggestionTemplateTranslationEntityId(TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(master.getRestriction()).isEqualTo(masterRestrictionEl);
+
+		var wc = factory.withTransaction(tx -> tx.find(SuggestionTemplateTranslationWcEntity.class, new SuggestionTemplateTranslationWcEntityId(TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wc.getRestriction()).isEqualTo("Greek restriction override");
+		assertThat(wc.getEquivalence()).isEqualTo(master.getEquivalence());
+	}
+
+	@Test
+	void stageFieldTranslationRejectsAStaleBaseVersionThenAcceptsTheCurrentOne(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, STALE_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.EQUIVALENCE, "First Greek equivalence", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory
+				.withTransaction(tx -> sut.stageFieldTranslation(tx, STALE_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.EQUIVALENCE, "Second Greek equivalence", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, STALE_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.EQUIVALENCE, "Second Greek equivalence", 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var forEdit = factory
+				.withoutTransaction(em -> sut.findFieldTranslationsForEdit(em, STALE_TRANSLATE_TEMPLATE_ID, SuggestionTemplateField.EQUIVALENCE))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.EL).text()).isEqualTo("Second Greek equivalence");
+		assertThat(forEdit.get(RecipeLanguage.EL).version()).isEqualTo(2L);
+	}
+
+	@Test
+	void revertFieldTranslationRemovesTheWorkingCopyRowWhenNoOverrideRemains(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var master = factory
+				.withoutTransaction(em -> sut.findFieldTranslationsForEdit(em, REVERT_TRANSLATE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		String masterRestrictionEl = master.get(RecipeLanguage.EL).text();
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, REVERT_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, "Temporary Greek override", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertFieldTranslation(tx, REVERT_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var wc = factory.withTransaction(tx -> tx.find(SuggestionTemplateTranslationWcEntity.class, new SuggestionTemplateTranslationWcEntityId(REVERT_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wc).isNull();
+
+		var after = factory
+				.withoutTransaction(em -> sut.findFieldTranslationsForEdit(em, REVERT_TRANSLATE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after.get(RecipeLanguage.EL).text()).isEqualTo(masterRestrictionEl);
+		assertThat(after.get(RecipeLanguage.EL).version()).isEqualTo(0L);
+	}
+
+	@Test
+	void revertFieldTranslationKeepsTheWorkingCopyRowWhenAnotherFieldIsStillOverridden(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var master = factory
+				.withoutTransaction(em -> sut.findFieldTranslationsForEdit(em, KEEP_TRANSLATE_TEMPLATE_ID, SuggestionTemplateField.RESTRICTION))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		String masterRestrictionEl = master.get(RecipeLanguage.EL).text();
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, KEEP_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, "Greek restriction override", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, KEEP_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.EQUIVALENCE, "Greek equivalence override", 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.revertFieldTranslation(tx, KEEP_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, 2L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var wc = factory.withTransaction(tx -> tx.find(SuggestionTemplateTranslationWcEntity.class, new SuggestionTemplateTranslationWcEntityId(KEEP_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wc).isNotNull();
+		assertThat(wc.getRestriction()).isEqualTo(masterRestrictionEl);
+		assertThat(wc.getEquivalence()).isEqualTo("Greek equivalence override");
+		assertThat(wc.getVersion()).isEqualTo(3L);
+	}
+
+	@Test
+	void revertFieldTranslationRejectsAStaleBaseVersionLeavingTheStagedRowIntact(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, STALE_REVERT_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, "Greek override to keep", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThatThrownBy(() -> factory
+				.withTransaction(tx -> sut.revertFieldTranslation(tx, STALE_REVERT_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS)))
+				.isInstanceOf(StaleVersionException.class);
+
+		var wc = factory.withTransaction(tx -> tx.find(SuggestionTemplateTranslationWcEntity.class, new SuggestionTemplateTranslationWcEntityId(STALE_REVERT_TRANSLATE_TEMPLATE_ID, RecipeLanguage.EL)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wc).isNotNull();
+		assertThat(wc.getRestriction()).isEqualTo("Greek override to keep");
+		assertThat(wc.getVersion()).isEqualTo(1L);
+	}
+
+	@Test
+	void findFieldTranslationLangsByRuleReportsPresentStagedAndMissingPerField(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var before = factory.withoutTransaction(em -> sut.findFieldTranslationLangsByRule(em, CHIP_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var chips = before.get(CHIP_TEMPLATE_ID);
+		assertThat(chips.restriction().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(chips.restriction().staged()).isEmpty();
+		assertThat(chips.equivalence().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(chips.techniqueNotes().present()).isEmpty();
+		assertThat(chips.techniqueNotes().staged()).isEmpty();
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, CHIP_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.TECHNIQUE_NOTES, "Greek technique notes", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory.withoutTransaction(em -> sut.findFieldTranslationLangsByRule(em, CHIP_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var afterChips = after.get(CHIP_TEMPLATE_ID);
+		assertThat(afterChips.techniqueNotes().staged()).containsExactly(RecipeLanguage.EL);
+		assertThat(afterChips.techniqueNotes().present()).isEmpty();
+		assertThat(afterChips.restriction().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(afterChips.restriction().staged()).isEmpty();
+	}
+
+	@Test
+	void findRuleIdsWithStagedTemplatesAlsoFlagsARuleWithAStagedTranslation(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var before = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(before).doesNotContain(TRANSLATION_FLAG_RULE_ID);
+
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, TRANSLATION_FLAG_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, "Staged translation for the flag", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var after = factory.withoutTransaction(sut::findRuleIdsWithStagedTemplates)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(after).contains(TRANSLATION_FLAG_RULE_ID);
 	}
 
 	private static Uni<Void> createRuleWithoutTemplates(ReactivePersistenceTxContext tx, UUID id) {

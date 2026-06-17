@@ -1,7 +1,12 @@
 package eu.dietwise.dao.impl.suggestions;
 
 import static java.util.stream.Collectors.toMap;
+import static eu.dietwise.common.utils.UniComprehensions.forc;
 
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,10 +17,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import jakarta.persistence.metamodel.SingularAttribute;
 
 import eu.dietwise.common.dao.EntityNotFoundException;
@@ -23,21 +32,34 @@ import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.SuggestionTemplateField;
+import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.dao.jpa.suggestions.RuleEntity_;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity_;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntityId;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity_;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntity;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntityId;
+import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntity_;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateWcEntity;
 import eu.dietwise.dao.jpa.suggestions.SuggestionTemplateWcEntity_;
 import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
+import eu.dietwise.services.model.suggestions.FieldTranslationLangs;
 import eu.dietwise.services.model.suggestions.StagedSuggestionTemplateOverlay;
+import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.model.ImmutableSuggestionTemplate;
 import eu.dietwise.v1.model.SuggestionTemplate;
+import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
 import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
+	private static final List<RecipeLanguage> TRANSLATABLE_LANGUAGES =
+			Arrays.stream(RecipeLanguage.values()).filter(lang -> lang != RecipeLanguage.EN).toList();
+
 	@Override
 	public Uni<List<SuggestionTemplate>> findByRule(ReactivePersistenceContext em, UUID ruleId) {
 		var cb = em.getCriteriaBuilder();
@@ -61,11 +83,67 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 
 	@Override
 	public Uni<Set<UUID>> findRuleIdsWithStagedTemplates(ReactivePersistenceContext em) {
+		return ruleIdsWithStagedFields(em).flatMap(fromFields ->
+				ruleIdsWithStagedTranslations(em).map(fromTranslations -> {
+					fromFields.addAll(fromTranslations);
+					return fromFields;
+				}));
+	}
+
+	private Uni<Set<UUID>> ruleIdsWithStagedFields(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
 		Root<SuggestionTemplateWcEntity> wc = q.from(SuggestionTemplateWcEntity.class);
 		q.select(wc.get(SuggestionTemplateWcEntity_.ruleId)).distinct(true);
 		return em.createQuery(q).getResultList().map(HashSet::new);
+	}
+
+	private Uni<Set<UUID>> ruleIdsWithStagedTranslations(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
+		Root<SuggestionTemplateEntity> st = q.from(SuggestionTemplateEntity.class);
+		Subquery<UUID> staged = q.subquery(UUID.class);
+		Root<SuggestionTemplateTranslationWcEntity> ttwc = staged.from(SuggestionTemplateTranslationWcEntity.class);
+		staged.select(ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId));
+		q.select(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id)).distinct(true)
+				.where(st.get(SuggestionTemplateEntity_.id).in(staged));
+		return em.createQuery(q).getResultList().map(HashSet::new);
+	}
+
+	@Override
+	public Uni<Map<UUID, FieldTranslationLangs>> findFieldTranslationLangsByRule(ReactivePersistenceContext em, UUID ruleId) {
+		return masterTranslationValuesByTemplate(em, ruleId).flatMap(master ->
+				stagedTranslationValuesByTemplate(em, ruleId).map(staged -> mergeFieldTranslationLangs(master, staged)));
+	}
+
+	@Override
+	public Uni<Map<RecipeLanguage, VersionedText>> findFieldTranslationsForEdit(ReactivePersistenceContext em, UUID templateId, SuggestionTemplateField field) {
+		return masterTranslationsForTemplate(em, templateId).flatMap(master ->
+				stagedTranslationsForTemplate(em, templateId).map(staged -> toFieldEditableTranslations(master, staged, field)));
+	}
+
+	@Override
+	public Uni<Void> stageFieldTranslation(ReactivePersistenceTxContext tx, UUID templateId, RecipeLanguage lang, SuggestionTemplateField field, String value, long baseVersion) {
+		return forc(
+				tx.find(SuggestionTemplateTranslationWcEntity.class, new SuggestionTemplateTranslationWcEntityId(templateId, lang)),
+				_ -> tx.find(SuggestionTemplateTranslationEntity.class, new SuggestionTemplateTranslationEntityId(templateId, lang)),
+				(existing, master) -> applyFieldTranslationEdit(tx, templateId, lang, field, value, baseVersion, existing, master)
+		);
+	}
+
+	@Override
+	public Uni<Void> revertFieldTranslation(ReactivePersistenceTxContext tx, UUID templateId, RecipeLanguage lang, SuggestionTemplateField field, long baseVersion) {
+		return tx.find(SuggestionTemplateTranslationWcEntity.class, new SuggestionTemplateTranslationWcEntityId(templateId, lang)).flatMap(existing -> {
+			if (existing == null) {
+				return Uni.createFrom().voidItem();
+			}
+			return tx.find(SuggestionTemplateTranslationEntity.class, new SuggestionTemplateTranslationEntityId(templateId, lang)).flatMap(master -> {
+				String masterValue = masterTranslationField(master, field);
+				return matchesMasterAfterSet(existing, field, masterValue, master)
+						? deleteStagedTranslation(tx, templateId, lang, baseVersion)
+						: bumpFieldTranslation(tx, templateId, lang, translationColumn(field), masterValue, baseVersion);
+			});
+		});
 	}
 
 	@Override
@@ -195,5 +273,232 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 				.equivalence(Optional.ofNullable(e.getEquivalence()))
 				.techniqueNotes(Optional.ofNullable(e.getTechniqueNotes()))
 				.build();
+	}
+
+	private Uni<Void> applyFieldTranslationEdit(
+			ReactivePersistenceTxContext tx,
+			UUID templateId,
+			RecipeLanguage lang,
+			SuggestionTemplateField field,
+			String value,
+			long baseVersion,
+			SuggestionTemplateTranslationWcEntity existing,
+			SuggestionTemplateTranslationEntity master
+	) {
+		boolean matchesMaster = matchesMasterAfterSet(existing, field, value, master);
+		if (existing == null) {
+			if (baseVersion != 0L) {
+				return Uni.createFrom().failure(new StaleVersionException(SuggestionTemplateTranslationEntity.class, templateId));
+			}
+			return matchesMaster ? Uni.createFrom().voidItem() : seedFieldTranslation(tx, templateId, lang, master, field, value);
+		}
+		return matchesMaster
+				? deleteStagedTranslation(tx, templateId, lang, baseVersion)
+				: bumpFieldTranslation(tx, templateId, lang, translationColumn(field), value, baseVersion);
+	}
+
+	private Uni<Void> seedFieldTranslation(ReactivePersistenceTxContext tx, UUID templateId, RecipeLanguage lang, SuggestionTemplateTranslationEntity master, SuggestionTemplateField field, String value) {
+		var wc = new SuggestionTemplateTranslationWcEntity();
+		wc.setSuggestionTemplateId(templateId);
+		wc.setLang(lang);
+		wc.setRestriction(masterTranslationField(master, SuggestionTemplateField.RESTRICTION));
+		wc.setEquivalence(masterTranslationField(master, SuggestionTemplateField.EQUIVALENCE));
+		wc.setTechniqueNotes(masterTranslationField(master, SuggestionTemplateField.TECHNIQUE_NOTES));
+		setTranslationField(wc, field, value);
+		wc.setVersion(1L);
+		return tx.persist(wc).replaceWithVoid();
+	}
+
+	private Uni<Void> bumpFieldTranslation(ReactivePersistenceTxContext tx, UUID templateId, RecipeLanguage lang, SingularAttribute<SuggestionTemplateTranslationWcEntity, String> field, String value, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaUpdate<SuggestionTemplateTranslationWcEntity> cu = cb.createCriteriaUpdate(SuggestionTemplateTranslationWcEntity.class);
+		Root<SuggestionTemplateTranslationWcEntity> wc = cu.getRoot();
+		cu.set(wc.get(field), value);
+		cu.set(wc.get(SuggestionTemplateTranslationWcEntity_.version), cb.sum(wc.get(SuggestionTemplateTranslationWcEntity_.version), 1L));
+		cu.where(translationRowAt(cb, wc, templateId, lang, baseVersion));
+		return tx.createUpdate(cu).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(SuggestionTemplateTranslationEntity.class, templateId)));
+	}
+
+	private Uni<Void> deleteStagedTranslation(ReactivePersistenceTxContext tx, UUID templateId, RecipeLanguage lang, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<SuggestionTemplateTranslationWcEntity> cd = cb.createCriteriaDelete(SuggestionTemplateTranslationWcEntity.class);
+		Root<SuggestionTemplateTranslationWcEntity> wc = cd.getRoot();
+		cd.where(translationRowAt(cb, wc, templateId, lang, baseVersion));
+		return tx.createDelete(cd).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(SuggestionTemplateTranslationEntity.class, templateId)));
+	}
+
+	private static Predicate translationRowAt(CriteriaBuilder cb, Root<SuggestionTemplateTranslationWcEntity> wc, UUID templateId, RecipeLanguage lang, long baseVersion) {
+		return cb.and(
+				cb.equal(wc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId), templateId),
+				cb.equal(wc.get(SuggestionTemplateTranslationWcEntity_.lang), lang),
+				cb.equal(wc.get(SuggestionTemplateTranslationWcEntity_.version), baseVersion));
+	}
+
+	private static boolean matchesMasterAfterSet(SuggestionTemplateTranslationWcEntity existing, SuggestionTemplateField field, String value, SuggestionTemplateTranslationEntity master) {
+		for (SuggestionTemplateField f : SuggestionTemplateField.values()) {
+			String effective = f == field ? value
+					: existing != null ? wcField(existing, f)
+					  : masterTranslationField(master, f);
+			if (!Objects.equals(effective, masterTranslationField(master, f))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private Uni<Map<UUID, Map<RecipeLanguage, TranslationValues>>> masterTranslationValuesByTemplate(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<SuggestionTemplateTranslationEntity> tt = q.from(SuggestionTemplateTranslationEntity.class);
+		q.multiselect(
+				tt.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.id),
+				tt.get(SuggestionTemplateTranslationEntity_.lang),
+				tt.get(SuggestionTemplateTranslationEntity_.restriction),
+				tt.get(SuggestionTemplateTranslationEntity_.equivalence),
+				tt.get(SuggestionTemplateTranslationEntity_.techniqueNotes)
+		).where(cb.equal(tt.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toValuesByTemplateThenLang);
+	}
+
+	private Uni<Map<UUID, Map<RecipeLanguage, TranslationValues>>> stagedTranslationValuesByTemplate(ReactivePersistenceContext em, UUID ruleId) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<SuggestionTemplateTranslationWcEntity> ttwc = q.from(SuggestionTemplateTranslationWcEntity.class);
+		Subquery<UUID> ruleTemplates = q.subquery(UUID.class);
+		Root<SuggestionTemplateEntity> st = ruleTemplates.from(SuggestionTemplateEntity.class);
+		ruleTemplates.select(st.get(SuggestionTemplateEntity_.id)).where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		q.multiselect(
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId),
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.lang),
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.restriction),
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.equivalence),
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.techniqueNotes)
+		).where(ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId).in(ruleTemplates));
+		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toValuesByTemplateThenLang);
+	}
+
+	private static Map<UUID, Map<RecipeLanguage, TranslationValues>> toValuesByTemplateThenLang(List<Tuple> rows) {
+		Map<UUID, Map<RecipeLanguage, TranslationValues>> result = new HashMap<>();
+		for (Tuple row : rows) {
+			result.computeIfAbsent(row.get(0, UUID.class), _ -> new EnumMap<>(RecipeLanguage.class))
+					.put(row.get(1, RecipeLanguage.class), new TranslationValues(row.get(2, String.class), row.get(3, String.class), row.get(4, String.class)));
+		}
+		return result;
+	}
+
+	private static Map<UUID, FieldTranslationLangs> mergeFieldTranslationLangs(
+			Map<UUID, Map<RecipeLanguage, TranslationValues>> master,
+			Map<UUID, Map<RecipeLanguage, TranslationValues>> staged
+	) {
+		Set<UUID> templateIds = new HashSet<>(master.keySet());
+		templateIds.addAll(staged.keySet());
+		Map<UUID, FieldTranslationLangs> result = new HashMap<>();
+		for (UUID templateId : templateIds) {
+			Map<RecipeLanguage, TranslationValues> m = master.getOrDefault(templateId, Map.of());
+			Map<RecipeLanguage, TranslationValues> s = staged.getOrDefault(templateId, Map.of());
+			result.put(templateId, new FieldTranslationLangs(
+					fieldLangs(m, s, SuggestionTemplateField.RESTRICTION),
+					fieldLangs(m, s, SuggestionTemplateField.EQUIVALENCE),
+					fieldLangs(m, s, SuggestionTemplateField.TECHNIQUE_NOTES)));
+		}
+		return result;
+	}
+
+	private static TranslationLangs fieldLangs(Map<RecipeLanguage, TranslationValues> master, Map<RecipeLanguage, TranslationValues> staged, SuggestionTemplateField field) {
+		Set<RecipeLanguage> present = EnumSet.noneOf(RecipeLanguage.class);
+		Set<RecipeLanguage> stagedLangs = EnumSet.noneOf(RecipeLanguage.class);
+		master.forEach((lang, values) -> {
+			if (valueOf(values, field) != null) {
+				present.add(lang);
+			}
+		});
+		staged.forEach((lang, values) -> {
+			String masterValue = master.containsKey(lang) ? valueOf(master.get(lang), field) : null;
+			if (!Objects.equals(valueOf(values, field), masterValue)) {
+				stagedLangs.add(lang);
+			}
+		});
+		return new TranslationLangs(present, stagedLangs);
+	}
+
+	private Uni<Map<RecipeLanguage, SuggestionTemplateTranslationEntity>> masterTranslationsForTemplate(ReactivePersistenceContext em, UUID templateId) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(SuggestionTemplateTranslationEntity.class);
+		Root<SuggestionTemplateTranslationEntity> tt = q.from(SuggestionTemplateTranslationEntity.class);
+		q.select(tt).where(cb.equal(tt.get(SuggestionTemplateTranslationEntity_.suggestionTemplate).get(SuggestionTemplateEntity_.id), templateId));
+		return em.createQuery(q).getResultList().map(rows -> rows.stream().collect(toMap(SuggestionTemplateTranslationEntity::getLang, t -> t)));
+	}
+
+	private Uni<Map<RecipeLanguage, SuggestionTemplateTranslationWcEntity>> stagedTranslationsForTemplate(ReactivePersistenceContext em, UUID templateId) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(SuggestionTemplateTranslationWcEntity.class);
+		Root<SuggestionTemplateTranslationWcEntity> ttwc = q.from(SuggestionTemplateTranslationWcEntity.class);
+		q.select(ttwc).where(cb.equal(ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId), templateId));
+		return em.createQuery(q).getResultList().map(rows -> rows.stream().collect(toMap(SuggestionTemplateTranslationWcEntity::getLang, w -> w)));
+	}
+
+	private static Map<RecipeLanguage, VersionedText> toFieldEditableTranslations(
+			Map<RecipeLanguage, SuggestionTemplateTranslationEntity> master,
+			Map<RecipeLanguage, SuggestionTemplateTranslationWcEntity> staged,
+			SuggestionTemplateField field
+	) {
+		Map<RecipeLanguage, VersionedText> result = new EnumMap<>(RecipeLanguage.class);
+		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
+			SuggestionTemplateTranslationWcEntity wc = staged.get(lang);
+			result.put(lang, wc != null
+					? new VersionedText(wcField(wc, field), wc.getVersion())
+					: new VersionedText(masterTranslationField(master.get(lang), field), 0L));
+		}
+		return result;
+	}
+
+	private static SingularAttribute<SuggestionTemplateTranslationWcEntity, String> translationColumn(SuggestionTemplateField field) {
+		return switch (field) {
+			case RESTRICTION -> SuggestionTemplateTranslationWcEntity_.restriction;
+			case EQUIVALENCE -> SuggestionTemplateTranslationWcEntity_.equivalence;
+			case TECHNIQUE_NOTES -> SuggestionTemplateTranslationWcEntity_.techniqueNotes;
+		};
+	}
+
+	private static String masterTranslationField(SuggestionTemplateTranslationEntity master, SuggestionTemplateField field) {
+		if (master == null) {
+			return null;
+		}
+		return switch (field) {
+			case RESTRICTION -> master.getRestriction();
+			case EQUIVALENCE -> master.getEquivalence();
+			case TECHNIQUE_NOTES -> master.getTechniqueNotes();
+		};
+	}
+
+	private static String wcField(SuggestionTemplateTranslationWcEntity wc, SuggestionTemplateField field) {
+		return switch (field) {
+			case RESTRICTION -> wc.getRestriction();
+			case EQUIVALENCE -> wc.getEquivalence();
+			case TECHNIQUE_NOTES -> wc.getTechniqueNotes();
+		};
+	}
+
+	private static void setTranslationField(SuggestionTemplateTranslationWcEntity wc, SuggestionTemplateField field, String value) {
+		switch (field) {
+			case RESTRICTION -> wc.setRestriction(value);
+			case EQUIVALENCE -> wc.setEquivalence(value);
+			case TECHNIQUE_NOTES -> wc.setTechniqueNotes(value);
+		}
+	}
+
+	private static String valueOf(TranslationValues values, SuggestionTemplateField field) {
+		return switch (field) {
+			case RESTRICTION -> values.restriction();
+			case EQUIVALENCE -> values.equivalence();
+			case TECHNIQUE_NOTES -> values.techniqueNotes();
+		};
+	}
+
+	private record TranslationValues(String restriction, String equivalence, String techniqueNotes) {
 	}
 }

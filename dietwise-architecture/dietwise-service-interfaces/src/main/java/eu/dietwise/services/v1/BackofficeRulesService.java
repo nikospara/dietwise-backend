@@ -69,6 +69,46 @@ public interface BackofficeRulesService {
 	Uni<Void> revertSuggestionTemplateField(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, long baseVersion);
 
 	/**
+	 * The effective translation of one field of a Suggestion Template for each non-English language (published master
+	 * overlaid by any Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the
+	 * per-field translations dialog. The returned map has an entry for every translatable language; a language with no
+	 * translation has a {@code null} text and version {@code 0}.
+	 *
+	 * @param user       The editor; must have the ADMIN role
+	 * @param templateId The Suggestion Template whose translations are being edited
+	 * @param field      The field whose translations are being edited
+	 */
+	Uni<Map<RecipeLanguage, VersionedText>> templateFieldTranslationsForEdit(User user, SuggestionTemplateId templateId, SuggestionTemplateField field);
+
+	/**
+	 * Stage one field of a Suggestion Template's translation for one language in the Working Copy, leaving published master
+	 * and recipe assessment untouched. Staging the value already in master, or clearing a field with no master translation,
+	 * removes the override.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param templateId  The Suggestion Template being translated
+	 * @param field       The field being translated
+	 * @param lang        The language being translated; must not be English
+	 * @param value       The proposed translated value; {@code null} clears it (falls back to English)
+	 * @param baseVersion The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> stageTemplateFieldTranslation(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, RecipeLanguage lang, String value, long baseVersion);
+
+	/**
+	 * Revert one staged field of a Suggestion Template's translation for one language, restoring the published master
+	 * translation. When no override remains the template+language Working Copy row is removed.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param templateId  The Suggestion Template whose staged translation is being reverted
+	 * @param field       The field being reverted
+	 * @param lang        The language being reverted; must not be English
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws IllegalArgumentException If {@code lang} is English, which is the master value rather than a translation
+	 */
+	Uni<Void> revertTemplateFieldTranslation(User user, SuggestionTemplateId templateId, SuggestionTemplateField field, RecipeLanguage lang, long baseVersion);
+
+	/**
 	 * Stage a new rationale for a Rule in the Working Copy, leaving published master and recipe assessment untouched.
 	 *
 	 * @param user        The editor; must have the ADMIN role

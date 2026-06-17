@@ -27,6 +27,7 @@
 		<class>eu.dietwise.dao.jpa.suggestions.RuleWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationEntity</class>
+		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateTranslationWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.SuggestionTemplateWcEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity</class>
 		<class>eu.dietwise.dao.jpa.suggestions.TriggerIngredientTranslationEntity</class>

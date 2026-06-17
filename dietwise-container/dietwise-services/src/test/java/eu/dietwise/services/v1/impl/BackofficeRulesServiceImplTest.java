@@ -38,6 +38,7 @@ import eu.dietwise.dao.suggestions.RuleDao;
 import eu.dietwise.dao.suggestions.SuggestionTemplateDao;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.authz.AuthorizationImpl;
+import eu.dietwise.services.model.suggestions.FieldTranslationLangs;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
@@ -120,6 +121,7 @@ class BackofficeRulesServiceImplTest {
 	@BeforeEach
 	void noStagedTemplatesByDefault() {
 		lenient().when(suggestionTemplateDao.findRuleIdsWithStagedTemplates(any())).thenReturn(Uni.createFrom().item(Set.of()));
+		lenient().when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), any())).thenReturn(Uni.createFrom().item(Map.of()));
 	}
 
 	@Test
@@ -303,6 +305,112 @@ class BackofficeRulesServiceImplTest {
 				.await().atMost(AWAIT))
 				.isInstanceOf(NotAuthorizedException.class);
 		verify(suggestionTemplateDao, never()).revertField(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void listSuggestionTemplatesReportsThePerFieldTranslationStates() {
+		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				suggestionTemplate(TEMPLATE_ID, "Brown lentils (cooked)", "Not for burgers without binder", "1:1", null))));
+		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				TEMPLATE_ID, new FieldTranslationLangs(
+						new TranslationLangs(Set.of(RecipeLanguage.EL, RecipeLanguage.NL), Set.of(RecipeLanguage.LT)),
+						new TranslationLangs(Set.of(RecipeLanguage.EL), Set.of()),
+						new TranslationLangs(Set.of(), Set.of())))));
+
+		StagedSuggestionTemplate template = newService()
+				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT).getFirst();
+
+		Map<RecipeLanguage, TranslationState> restriction = template.translations().get(SuggestionTemplateField.RESTRICTION);
+		assertThat(restriction.get(RecipeLanguage.EL)).isEqualTo(TranslationState.PRESENT);
+		assertThat(restriction.get(RecipeLanguage.LT)).isEqualTo(TranslationState.STAGED);
+		assertThat(restriction.get(RecipeLanguage.NL)).isEqualTo(TranslationState.PRESENT);
+		Map<RecipeLanguage, TranslationState> equivalence = template.translations().get(SuggestionTemplateField.EQUIVALENCE);
+		assertThat(equivalence.get(RecipeLanguage.EL)).isEqualTo(TranslationState.PRESENT);
+		assertThat(equivalence.get(RecipeLanguage.LT)).isEqualTo(TranslationState.MISSING);
+		assertThat(template.translations().get(SuggestionTemplateField.TECHNIQUE_NOTES).values())
+				.containsOnly(TranslationState.MISSING);
+	}
+
+	@Test
+	void templateFieldTranslationsForEditReturnsTheEffectiveTranslationsForAnAdmin() {
+		when(suggestionTemplateDao.findFieldTranslationsForEdit(any(), eq(TEMPLATE_ID), eq(SuggestionTemplateField.RESTRICTION)))
+				.thenReturn(Uni.createFrom().item(Map.of(RecipeLanguage.EL, new VersionedText("Greek restriction", 3L))));
+
+		Map<RecipeLanguage, VersionedText> translations = newService()
+				.templateFieldTranslationsForEdit(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION)
+				.await().atMost(AWAIT);
+
+		assertThat(translations.get(RecipeLanguage.EL)).isEqualTo(new VersionedText("Greek restriction", 3L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void templateFieldTranslationsForEditRejectsANonAdmin() {
+		assertThatThrownBy(() -> newService().templateFieldTranslationsForEdit(nonAdminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).findFieldTranslationsForEdit(any(), any(), any());
+	}
+
+	@Test
+	void stageTemplateFieldTranslationStagesTheTranslationForAnAdmin() {
+		when(suggestionTemplateDao.stageFieldTranslation(any(), eq(TEMPLATE_ID), eq(RecipeLanguage.EL), eq(SuggestionTemplateField.RESTRICTION), eq("Greek restriction"), eq(0L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().stageTemplateFieldTranslation(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, RecipeLanguage.EL, "Greek restriction", 0L)
+				.await().atMost(AWAIT);
+
+		verify(suggestionTemplateDao).stageFieldTranslation(any(), eq(TEMPLATE_ID), eq(RecipeLanguage.EL), eq(SuggestionTemplateField.RESTRICTION), eq("Greek restriction"), eq(0L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void stageTemplateFieldTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageTemplateFieldTranslation(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, RecipeLanguage.EN, "x", 0L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(suggestionTemplateDao, never()).stageFieldTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void stageTemplateFieldTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageTemplateFieldTranslation(nonAdminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, RecipeLanguage.EL, "x", 0L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).stageFieldTranslation(any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertTemplateFieldTranslationRemovesTheStagedTranslationForAnAdmin() {
+		when(suggestionTemplateDao.revertFieldTranslation(any(), eq(TEMPLATE_ID), eq(RecipeLanguage.EL), eq(SuggestionTemplateField.RESTRICTION), eq(1L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertTemplateFieldTranslation(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, RecipeLanguage.EL, 1L)
+				.await().atMost(AWAIT);
+
+		verify(suggestionTemplateDao).revertFieldTranslation(any(), eq(TEMPLATE_ID), eq(RecipeLanguage.EL), eq(SuggestionTemplateField.RESTRICTION), eq(1L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertTemplateFieldTranslationRejectsEnglishWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTemplateFieldTranslation(adminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, RecipeLanguage.EN, 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(suggestionTemplateDao, never()).revertFieldTranslation(any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertTemplateFieldTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTemplateFieldTranslation(nonAdminUser(), new GenericSuggestionTemplateId(TEMPLATE_ID.toString()), SuggestionTemplateField.RESTRICTION, RecipeLanguage.EL, 1L)
+				.await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(suggestionTemplateDao, never()).revertFieldTranslation(any(), any(), any(), any(), anyLong());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 

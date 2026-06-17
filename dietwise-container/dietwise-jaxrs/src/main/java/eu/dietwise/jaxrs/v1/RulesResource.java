@@ -67,6 +67,29 @@ public class RulesResource {
 	}
 
 	@GET
+	@Path("suggestion-templates/{templateId}/{field}/translations")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Uni<Map<RecipeLanguage, VersionedText>> templateFieldTranslationsForEdit(@PathParam("templateId") String templateId, @PathParam("field") String field, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.templateFieldTranslationsForEdit(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field));
+	}
+
+	@PUT
+	@Path("suggestion-templates/{templateId}/{field}/translations/{lang}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Uni<Void> stageTemplateFieldTranslation(@PathParam("templateId") String templateId, @PathParam("field") String field, @PathParam("lang") String lang, StageTemplateFieldRequest request, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.stageTemplateFieldTranslation(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), RecipeLanguage.valueOf(lang), request.value(), request.baseVersion());
+	}
+
+	@DELETE
+	@Path("suggestion-templates/{templateId}/{field}/translations/{lang}")
+	public Uni<Void> revertTemplateFieldTranslation(@PathParam("templateId") String templateId, @PathParam("field") String field, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+		var user = (User) crc.getSecurityContext().getUserPrincipal();
+		return backofficeRulesService.revertTemplateFieldTranslation(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), RecipeLanguage.valueOf(lang), baseVersion);
+	}
+
+	@GET
 	@Path("new-rule-options")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<NewRuleOptions> newRuleOptions(@Context ContainerRequestContext crc) {
