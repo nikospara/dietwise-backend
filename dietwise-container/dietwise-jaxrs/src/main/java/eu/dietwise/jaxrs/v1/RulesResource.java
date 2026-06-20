@@ -22,7 +22,9 @@ import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.types.SuggestionTemplateField;
 import eu.dietwise.common.types.VersionedText;
 import eu.dietwise.common.v1.model.User;
+import eu.dietwise.services.v1.BackofficeReferenceDataService;
 import eu.dietwise.services.v1.BackofficeRulesService;
+import eu.dietwise.services.v1.BackofficeSuggestionTemplatesService;
 import eu.dietwise.services.v1.types.AddedTemplate;
 import eu.dietwise.services.v1.types.AlternativeIngredientForEdit;
 import eu.dietwise.services.v1.types.NewRuleOptions;
@@ -36,6 +38,12 @@ public class RulesResource {
 	@Inject
 	BackofficeRulesService backofficeRulesService;
 
+	@Inject
+	BackofficeSuggestionTemplatesService backofficeSuggestionTemplatesService;
+
+	@Inject
+	BackofficeReferenceDataService backofficeReferenceDataService;
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<List<RuleResponse>> listRules(@Context ContainerRequestContext crc) {
@@ -48,7 +56,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<List<SuggestionTemplateResponse>> listSuggestionTemplates(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.listSuggestionTemplates(user, new GenericRuleId(id)).map(SuggestionTemplateResponse::fromAll);
+		return backofficeSuggestionTemplatesService.listSuggestionTemplates(user, new GenericRuleId(id)).map(SuggestionTemplateResponse::fromAll);
 	}
 
 	@POST
@@ -57,14 +65,14 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<AddedTemplate> addSuggestionTemplate(@PathParam("id") String id, AddTemplateRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.addSuggestionTemplate(user, new GenericRuleId(id), UUID.fromString(request.alternativeIngredientId()));
+		return backofficeSuggestionTemplatesService.addSuggestionTemplate(user, new GenericRuleId(id), UUID.fromString(request.alternativeIngredientId()));
 	}
 
 	@DELETE
 	@Path("suggestion-templates/{templateId}")
 	public Uni<Void> discardSuggestionTemplate(@PathParam("templateId") String templateId, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.discardSuggestionTemplate(user, new GenericSuggestionTemplateId(templateId), baseVersion);
+		return backofficeSuggestionTemplatesService.discardSuggestionTemplate(user, new GenericSuggestionTemplateId(templateId), baseVersion);
 	}
 
 	@PUT
@@ -73,7 +81,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<StagedVersionResponse> stageSuggestionTemplateField(@PathParam("templateId") String templateId, @PathParam("field") String field, StageTemplateFieldRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.stageSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), request.value(), request.baseVersion())
+		return backofficeSuggestionTemplatesService.stageSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), request.value(), request.baseVersion())
 				.map(StagedVersionResponse::new);
 	}
 
@@ -81,7 +89,7 @@ public class RulesResource {
 	@Path("suggestion-templates/{templateId}/{field}")
 	public Uni<Void> revertSuggestionTemplateField(@PathParam("templateId") String templateId, @PathParam("field") String field, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), baseVersion);
+		return backofficeSuggestionTemplatesService.revertSuggestionTemplateField(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), baseVersion);
 	}
 
 	@PUT
@@ -89,7 +97,7 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> setSuggestionTemplateActive(@PathParam("templateId") String templateId, SetActiveRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.setSuggestionTemplateActive(user, new GenericSuggestionTemplateId(templateId), request.active(), request.baseVersion());
+		return backofficeSuggestionTemplatesService.setSuggestionTemplateActive(user, new GenericSuggestionTemplateId(templateId), request.active(), request.baseVersion());
 	}
 
 	@GET
@@ -97,7 +105,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<Map<RecipeLanguage, VersionedText>> templateFieldTranslationsForEdit(@PathParam("templateId") String templateId, @PathParam("field") String field, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.templateFieldTranslationsForEdit(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field));
+		return backofficeSuggestionTemplatesService.templateFieldTranslationsForEdit(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field));
 	}
 
 	@PUT
@@ -105,14 +113,14 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> stageTemplateFieldTranslation(@PathParam("templateId") String templateId, @PathParam("field") String field, @PathParam("lang") String lang, StageTemplateFieldRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.stageTemplateFieldTranslation(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), RecipeLanguage.valueOf(lang), request.value(), request.baseVersion());
+		return backofficeSuggestionTemplatesService.stageTemplateFieldTranslation(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), RecipeLanguage.valueOf(lang), request.value(), request.baseVersion());
 	}
 
 	@DELETE
 	@Path("suggestion-templates/{templateId}/{field}/translations/{lang}")
 	public Uni<Void> revertTemplateFieldTranslation(@PathParam("templateId") String templateId, @PathParam("field") String field, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertTemplateFieldTranslation(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), RecipeLanguage.valueOf(lang), baseVersion);
+		return backofficeSuggestionTemplatesService.revertTemplateFieldTranslation(user, new GenericSuggestionTemplateId(templateId), SuggestionTemplateField.valueOf(field), RecipeLanguage.valueOf(lang), baseVersion);
 	}
 
 	@GET
@@ -128,7 +136,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<List<ReferenceOption>> alternativeIngredientOptions(@Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.alternativeIngredientOptions(user);
+		return backofficeSuggestionTemplatesService.alternativeIngredientOptions(user);
 	}
 
 	@POST
@@ -137,7 +145,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<ReferenceOption> createAlternativeIngredient(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.createAlternativeIngredient(user, request.name());
+		return backofficeReferenceDataService.createAlternativeIngredient(user, request.name());
 	}
 
 	@POST
@@ -158,7 +166,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<ReferenceOption> createTriggerIngredient(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.createTriggerIngredient(user, request.name());
+		return backofficeReferenceDataService.createTriggerIngredient(user, request.name());
 	}
 
 	@POST
@@ -167,7 +175,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<ReferenceOption> createRoleOrTechnique(CreateReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.createRoleOrTechnique(user, request.name());
+		return backofficeReferenceDataService.createRoleOrTechnique(user, request.name());
 	}
 
 	@GET
@@ -175,7 +183,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<ReferenceDetails> triggerIngredientForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.triggerIngredientForEdit(user, UUID.fromString(id));
+		return backofficeReferenceDataService.triggerIngredientForEdit(user, UUID.fromString(id));
 	}
 
 	@GET
@@ -183,7 +191,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<ReferenceDetails> roleOrTechniqueForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.roleOrTechniqueForEdit(user, UUID.fromString(id));
+		return backofficeReferenceDataService.roleOrTechniqueForEdit(user, UUID.fromString(id));
 	}
 
 	@PUT
@@ -191,7 +199,7 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> editTriggerIngredient(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.editTriggerIngredient(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
+		return backofficeReferenceDataService.editTriggerIngredient(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@PUT
@@ -199,21 +207,21 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> editRoleOrTechnique(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.editRoleOrTechnique(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
+		return backofficeReferenceDataService.editRoleOrTechnique(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@DELETE
 	@Path("trigger-ingredients/{id}")
 	public Uni<Void> revertTriggerIngredient(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertTriggerIngredient(user, UUID.fromString(id), baseVersion);
+		return backofficeReferenceDataService.revertTriggerIngredient(user, UUID.fromString(id), baseVersion);
 	}
 
 	@DELETE
 	@Path("roles-or-techniques/{id}")
 	public Uni<Void> revertRoleOrTechnique(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertRoleOrTechnique(user, UUID.fromString(id), baseVersion);
+		return backofficeReferenceDataService.revertRoleOrTechnique(user, UUID.fromString(id), baseVersion);
 	}
 
 	@GET
@@ -221,7 +229,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<Map<RecipeLanguage, ReferenceDetails>> triggerIngredientTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.triggerIngredientTranslationsForEdit(user, UUID.fromString(id));
+		return backofficeReferenceDataService.triggerIngredientTranslationsForEdit(user, UUID.fromString(id));
 	}
 
 	@PUT
@@ -229,14 +237,14 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> stageTriggerIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.stageTriggerIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
+		return backofficeReferenceDataService.stageTriggerIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@DELETE
 	@Path("trigger-ingredients/{id}/translations/{lang}")
 	public Uni<Void> revertTriggerIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertTriggerIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
+		return backofficeReferenceDataService.revertTriggerIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
 	}
 
 	@GET
@@ -244,7 +252,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<Map<RecipeLanguage, ReferenceDetails>> roleOrTechniqueTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.roleOrTechniqueTranslationsForEdit(user, UUID.fromString(id));
+		return backofficeReferenceDataService.roleOrTechniqueTranslationsForEdit(user, UUID.fromString(id));
 	}
 
 	@PUT
@@ -252,14 +260,14 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> stageRoleOrTechniqueTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.stageRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
+		return backofficeReferenceDataService.stageRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@DELETE
 	@Path("roles-or-techniques/{id}/translations/{lang}")
 	public Uni<Void> revertRoleOrTechniqueTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
+		return backofficeReferenceDataService.revertRoleOrTechniqueTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
 	}
 
 	@GET
@@ -267,7 +275,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<AlternativeIngredientForEdit> alternativeIngredientForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.alternativeIngredientForEdit(user, UUID.fromString(id));
+		return backofficeReferenceDataService.alternativeIngredientForEdit(user, UUID.fromString(id));
 	}
 
 	@PUT
@@ -275,14 +283,14 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> editAlternativeIngredient(@PathParam("id") String id, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.editAlternativeIngredient(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
+		return backofficeReferenceDataService.editAlternativeIngredient(user, UUID.fromString(id), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@DELETE
 	@Path("alternative-ingredients/{id}")
 	public Uni<Void> revertAlternativeIngredient(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertAlternativeIngredient(user, UUID.fromString(id), baseVersion);
+		return backofficeReferenceDataService.revertAlternativeIngredient(user, UUID.fromString(id), baseVersion);
 	}
 
 	@GET
@@ -290,7 +298,7 @@ public class RulesResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Uni<Map<RecipeLanguage, ReferenceDetails>> alternativeIngredientTranslationsForEdit(@PathParam("id") String id, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.alternativeIngredientTranslationsForEdit(user, UUID.fromString(id));
+		return backofficeReferenceDataService.alternativeIngredientTranslationsForEdit(user, UUID.fromString(id));
 	}
 
 	@PUT
@@ -298,14 +306,14 @@ public class RulesResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> stageAlternativeIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditReferenceRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.stageAlternativeIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
+		return backofficeReferenceDataService.stageAlternativeIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.explanationForLlm(), request.baseVersion());
 	}
 
 	@DELETE
 	@Path("alternative-ingredients/{id}/translations/{lang}")
 	public Uni<Void> revertAlternativeIngredientTranslation(@PathParam("id") String id, @PathParam("lang") String lang, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRulesService.revertAlternativeIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
+		return backofficeReferenceDataService.revertAlternativeIngredientTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), baseVersion);
 	}
 
 	@GET
