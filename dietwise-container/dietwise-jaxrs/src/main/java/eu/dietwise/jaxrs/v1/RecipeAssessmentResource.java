@@ -39,13 +39,4 @@ public class RecipeAssessmentResource {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
 		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrl(user, param)).encodeAsJsonArray(false).build();
 	}
-
-	@POST
-	@Path("url-dummy")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(@Context ContainerRequestContext crc, RecipeExtractionAndAssessmentParam param) {
-		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return RestMulti.fromMultiData(service.extractAndAssessRecipeFromUrlDummy(user, param)).encodeAsJsonArray(false).build();
-	}
 }

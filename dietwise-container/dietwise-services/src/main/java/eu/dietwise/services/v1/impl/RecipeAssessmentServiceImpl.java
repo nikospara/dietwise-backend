@@ -2,12 +2,9 @@ package eu.dietwise.services.v1.impl;
 
 import static eu.dietwise.common.utils.MultiComprehensions.emitInSequence;
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
-import static eu.dietwise.services.v1.types.RecipeDetectionType.JSONLD;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.v1.model.User;
@@ -21,26 +18,15 @@ import eu.dietwise.services.v1.extraction.impl.InvalidRecipeSourceUrlException;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.suggestions.MakeSuggestionsResult;
 import eu.dietwise.services.v1.suggestions.RecipeSuggestionsService;
-import eu.dietwise.services.v1.types.RecipeAndDetectionType;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.MoreThanOneRecipesAssessmentMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeAssessmentErrorMessage;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.RecipeExtractionRecipeAssessmentMessage;
-import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
-import eu.dietwise.v1.model.AppliesTo;
-import eu.dietwise.v1.model.ImmutableIngredient;
-import eu.dietwise.v1.model.ImmutableRecipe;
-import eu.dietwise.v1.model.ImmutableSuggestion;
 import eu.dietwise.v1.model.Recipe;
 import eu.dietwise.v1.model.RecipeAssessmentParam;
 import eu.dietwise.v1.model.RecipeExtractionAndAssessmentParam;
-import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.RecipeLanguage;
-import eu.dietwise.v1.types.impl.AlternativeIngredientImpl;
-import eu.dietwise.v1.types.impl.GenericRuleId;
-import eu.dietwise.v1.types.impl.GenericSuggestionTemplateId;
-import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.subscription.MultiEmitter;
@@ -194,52 +180,6 @@ public class RecipeAssessmentServiceImpl implements RecipeAssessmentService {
 			return Uni.createFrom().nullItem();
 		}
 		return recipeScoringService.makeScoringMessage(suggestionsResult.recommendations(), lang).invoke(emitter::emit);
-	}
-
-	@Override
-	public Multi<RecipeAssessmentMessage> extractAndAssessRecipeFromUrlDummy(User user, RecipeExtractionAndAssessmentParam param) {
-		var recipe = makeDummyRecipe();
-		var recipeMsg = new RecipeExtractionRecipeAssessmentMessage(List.of(new RecipeAndDetectionType(recipe, JSONLD)), "dummy page text");
-		List<Suggestion> suggestions = List.of(
-				dummyFromTextOnly(recipe, "Dummy suggestion one"),
-				dummyFromTextOnly(recipe, "Dummy suggestion two")
-		);
-		var suggestionsMsg = new SuggestionsRecipeAssessmentMessage(suggestions);
-		return Multi.createFrom().<RecipeAssessmentMessage>items(recipeMsg, suggestionsMsg)
-				.onItem().call(_ -> Uni.createFrom().nullItem().onItem().delayIt().by(Duration.ofSeconds(3L)));
-	}
-
-	private Recipe makeDummyRecipe() {
-		return ImmutableRecipe.builder()
-				.text("""
-						This is a dummy recipe, just for testing purposes
-						Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-						Ed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
-						""")
-				.addRecipeIngredients(
-						ImmutableIngredient.builder().nameInRecipe("800 g ground beef").build(),
-						ImmutableIngredient.builder().nameInRecipe("5 slices sandwich bread, 120 g").build(),
-						ImmutableIngredient.builder().nameInRecipe("¼ bunch parsley").build(),
-						ImmutableIngredient.builder().nameInRecipe("5-6 mint leaves").build(),
-						ImmutableIngredient.builder().nameInRecipe("1 tablespoon(s) ketchup").build(),
-						ImmutableIngredient.builder().nameInRecipe("1 egg, medium").build(),
-						ImmutableIngredient.builder().nameInRecipe("1 onion").build(),
-						ImmutableIngredient.builder().nameInRecipe("150g cheddar, grated").build(),
-						ImmutableIngredient.builder().nameInRecipe("100g cream cheese").build()
-				)
-				.build();
-	}
-
-	private Suggestion dummyFromTextOnly(Recipe recipe, String text) {
-		var ingredient = recipe.getRecipeIngredients().get(ThreadLocalRandom.current().nextInt(recipe.getRecipeIngredients().size()));
-		return ImmutableSuggestion.builder()
-				.id(new GenericSuggestionTemplateId(UUID.randomUUID().toString()))
-				.alternative(new AlternativeIngredientImpl("alternative"))
-				.target(new AppliesTo.AppliesToIngredient(ingredient.getId()))
-				.ruleId(new GenericRuleId("7"))
-				.recommendation(new RecommendationImpl("Increase milk"))
-				.text(text)
-				.build();
 	}
 
 	private <T extends Throwable> void handleError(MultiEmitter<? super RecipeAssessmentMessage> emitter, T error) {
