@@ -1,15 +1,20 @@
 package eu.dietwise.dao.impl.recommendations;
 
 import java.math.BigDecimal;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.types.ReferenceOption;
@@ -21,8 +26,10 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity_;
 import eu.dietwise.dao.recommendations.RecommendationDao;
+import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
+import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -140,6 +147,43 @@ public class RecommendationDaoImpl implements RecommendationDao {
 				.map(rows -> rows.stream()
 						.map(tuple -> new ReferenceOption(tuple.get(0, UUID.class), tuple.get(1, String.class)))
 						.toList());
+	}
+
+	@Override
+	public Uni<List<BackofficeRecommendation>> listForBackoffice(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(RecommendationEntity.class);
+		var recommendation = q.from(RecommendationEntity.class);
+		q.select(recommendation).orderBy(cb.asc(recommendation.get(RecommendationEntity_.name)));
+		return em.createQuery(q).getResultList()
+				.map(list -> list.stream().map(RecommendationDaoImpl::toBackofficeRecommendation).toList());
+	}
+
+	@Override
+	public Uni<Map<UUID, TranslationLangs>> findTranslationLangs(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<RecommendationTranslationEntity> t = q.from(RecommendationTranslationEntity.class);
+		q.select(cb.tuple(
+				t.get(RecommendationTranslationEntity_.recommendation).get(RecommendationEntity_.id),
+				t.get(RecommendationTranslationEntity_.lang)
+		)).where(cb.isNotNull(t.get(RecommendationTranslationEntity_.name)));
+		return em.createQuery(q).getResultList().map(RecommendationDaoImpl::toTranslationLangs);
+	}
+
+	private static Map<UUID, TranslationLangs> toTranslationLangs(List<Tuple> rows) {
+		Map<UUID, Set<RecipeLanguage>> presentById = new HashMap<>();
+		for (Tuple row : rows) {
+			presentById.computeIfAbsent(row.get(0, UUID.class), _ -> EnumSet.noneOf(RecipeLanguage.class))
+					.add(row.get(1, RecipeLanguage.class));
+		}
+		Map<UUID, TranslationLangs> result = new HashMap<>();
+		presentById.forEach((id, present) -> result.put(id, new TranslationLangs(present, EnumSet.noneOf(RecipeLanguage.class))));
+		return result;
+	}
+
+	private static BackofficeRecommendation toBackofficeRecommendation(RecommendationEntity e) {
+		return new BackofficeRecommendation(e.getId(), e.getName(), e.getComponentForScoring(), e.getWeight(), e.getExplanationForLlm());
 	}
 
 	private Uni<Map<UUID, RecommendationTranslationEntity>> loadTranslationsByRecommendationId(

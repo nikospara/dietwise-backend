@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM maven:3.9.11-eclipse-temurin-25 AS build
+FROM maven:3.9.15-eclipse-temurin-25 AS build
 
 ARG QUARKUS_LANGCHAIN4J_OLLAMA_CHAT_MODEL_MODEL_ID
 ARG QUARKUS_LANGCHAIN4J_OLLAMA_EXTRACT_CHAT_MODEL_MODEL_ID

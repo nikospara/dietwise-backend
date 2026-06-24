@@ -19,7 +19,9 @@ import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
+import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
+import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Recommendation;
@@ -224,6 +226,43 @@ public class RecommendationDaoImplTest {
 			assertThat(option.name()).isNotBlank();
 		});
 		assertThat(options).isSortedAccordingTo(Comparator.comparing(ReferenceOption::name));
+	}
+
+	@Test
+	@Order(8)
+	void testListForBackofficeReturnsEveryRecommendationsMasterFieldsSortedByName(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		List<BackofficeRecommendation> rows =
+				factory.withoutTransaction(sut::listForBackoffice)
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(rows).hasSize(15);
+		assertThat(rows).extracting(BackofficeRecommendation::name).isSortedAccordingTo(Comparator.naturalOrder());
+		var processedMeat = rows.stream().filter(r -> r.name().equals("Decrease processed meat")).findFirst().orElseThrow();
+		assertThat(processedMeat.id()).isNotNull();
+		assertThat(processedMeat.componentForScoring()).isEqualTo("processed meat");
+		assertThat(processedMeat.weight()).isEqualTo(RecommendationWeight.LIMITED);
+	}
+
+	@Test
+	@Order(9)
+	void testFindTranslationLangsReportsPresentMasterLanguagesWithNothingStaged(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		UUID calciumId = factory.withoutTransaction(sut::listForBackoffice)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS))
+				.stream().filter(r -> r.name().equals("Diet low in calcium")).map(BackofficeRecommendation::id).findFirst().orElseThrow();
+
+		Map<UUID, TranslationLangs> langs =
+				factory.withoutTransaction(sut::findTranslationLangs)
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(langs).containsKey(calciumId);
+		assertThat(langs.get(calciumId).present()).contains(RecipeLanguage.NL);
+		assertThat(langs.get(calciumId).staged()).isEmpty();
 	}
 
 	// KEEP THIS LAST! IT MESSES WITH THE DATA
