@@ -1,22 +1,30 @@
 package eu.dietwise.dao.impl.recommendations;
 
+import static eu.dietwise.common.utils.UniComprehensions.forc;
+
 import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
 
+import eu.dietwise.common.dao.EntityNotFoundException;
+import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
+import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
@@ -25,14 +33,17 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity_;
+import eu.dietwise.dao.jpa.recommendations.RecommendationWcEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationWcEntity_;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
+import eu.dietwise.services.model.recommendations.ExplanationOverride;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
-import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecipeLanguage;
+import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.impl.RecommendationComponentNameImpl;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import io.smallrye.mutiny.Uni;
@@ -169,6 +180,85 @@ public class RecommendationDaoImpl implements RecommendationDao {
 				t.get(RecommendationTranslationEntity_.lang)
 		)).where(cb.isNotNull(t.get(RecommendationTranslationEntity_.name)));
 		return em.createQuery(q).getResultList().map(RecommendationDaoImpl::toTranslationLangs);
+	}
+
+	@Override
+	public Uni<Map<UUID, ExplanationOverride>> findExplanationOverrides(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(RecommendationWcEntity.class);
+		q.from(RecommendationWcEntity.class);
+		return em.createQuery(q).getResultList()
+				.map(rows -> rows.stream().collect(Collectors.toMap(
+						RecommendationWcEntity::getId,
+						wc -> new ExplanationOverride(wc.getExplanationForLlm(), wc.getVersion()))));
+	}
+
+	@Override
+	public Uni<Long> stageExplanation(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, long baseVersion) {
+		return forc(
+				tx.find(RecommendationWcEntity.class, id),
+				_ -> tx.find(RecommendationEntity.class, id),
+				(existing, master) -> applyEdit(tx, id, explanationForLlm, baseVersion, existing, master)
+		);
+	}
+
+	private Uni<Long> applyEdit(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, long baseVersion, RecommendationWcEntity existing, RecommendationEntity master) {
+		if (master == null) {
+			return Uni.createFrom().failure(new EntityNotFoundException(RecommendationEntity.class, id));
+		}
+		boolean matchesMaster = Objects.equals(explanationForLlm, master.getExplanationForLlm());
+		if (existing == null) {
+			if (baseVersion != 0L) {
+				return Uni.createFrom().failure(new StaleVersionException(RecommendationEntity.class, id));
+			}
+			return matchesMaster ? Uni.createFrom().item(0L) : seedStaged(tx, id, explanationForLlm);
+		}
+		return matchesMaster
+				? deleteStaged(tx, id, baseVersion).replaceWith(0L)
+				: bumpStaged(tx, id, explanationForLlm, baseVersion);
+	}
+
+	private Uni<Long> seedStaged(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm) {
+		var entity = new RecommendationWcEntity();
+		entity.setId(id);
+		entity.setExplanationForLlm(explanationForLlm);
+		entity.setVersion(1L);
+		return tx.persist(entity).replaceWith(1L);
+	}
+
+	private Uni<Long> bumpStaged(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaUpdate<RecommendationWcEntity> cu = cb.createCriteriaUpdate(RecommendationWcEntity.class);
+		Root<RecommendationWcEntity> wc = cu.getRoot();
+		cu.set(wc.get(RecommendationWcEntity_.explanationForLlm), explanationForLlm);
+		cu.set(wc.get(RecommendationWcEntity_.version), cb.sum(wc.get(RecommendationWcEntity_.version), 1L));
+		cu.where(cb.and(
+				cb.equal(wc.get(RecommendationWcEntity_.id), id),
+				cb.equal(wc.get(RecommendationWcEntity_.version), baseVersion)
+		));
+		return tx.createUpdate(cu).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().item(baseVersion + 1)
+				: Uni.createFrom().failure(new StaleVersionException(RecommendationEntity.class, id)));
+	}
+
+	@Override
+	public Uni<Void> revertExplanation(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
+		return tx.find(RecommendationWcEntity.class, id).flatMap(existing -> existing == null
+				? Uni.createFrom().voidItem()
+				: deleteStaged(tx, id, baseVersion));
+	}
+
+	private Uni<Void> deleteStaged(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<RecommendationWcEntity> cd = cb.createCriteriaDelete(RecommendationWcEntity.class);
+		Root<RecommendationWcEntity> wc = cd.getRoot();
+		cd.where(cb.and(
+				cb.equal(wc.get(RecommendationWcEntity_.id), id),
+				cb.equal(wc.get(RecommendationWcEntity_.version), baseVersion)
+		));
+		return tx.createDelete(cd).execute().flatMap(rowsAffected -> rowsAffected == 1
+				? Uni.createFrom().voidItem()
+				: Uni.createFrom().failure(new StaleVersionException(RecommendationEntity.class, id)));
 	}
 
 	private static Map<UUID, TranslationLangs> toTranslationLangs(List<Tuple> rows) {

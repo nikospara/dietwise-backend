@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
@@ -14,6 +15,7 @@ import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
+import eu.dietwise.services.model.recommendations.ExplanationOverride;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.v1.BackofficeRecommendationsService;
 import eu.dietwise.services.v1.types.StagedRecommendation;
@@ -45,22 +47,46 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 		authorization.requireAdmin(user);
 		return persistenceContextFactory.withoutTransaction(em -> forcm(
 				recommendationDao.listForBackoffice(em),
-				_ -> recommendationDao.findTranslationLangs(em),
+				_ -> recommendationDao.findExplanationOverrides(em),
+				(_, _) -> recommendationDao.findTranslationLangs(em),
 				this::toStagedRecommendations
 		));
 	}
 
-	private List<StagedRecommendation> toStagedRecommendations(List<BackofficeRecommendation> rows, Map<java.util.UUID, TranslationLangs> langsById) {
-		return rows.stream().map(row -> toStagedRecommendation(row, langsById.get(row.id()))).toList();
+	@Override
+	public Uni<Long> stageExplanation(User user, UUID id, String explanation, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.stageExplanation(tx, id, explanation, baseVersion));
 	}
 
-	private static StagedRecommendation toStagedRecommendation(BackofficeRecommendation row, TranslationLangs langs) {
+	@Override
+	public Uni<Void> revertExplanation(User user, UUID id, long baseVersion) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.revertExplanation(tx, id, baseVersion));
+	}
+
+	private List<StagedRecommendation> toStagedRecommendations(
+			List<BackofficeRecommendation> rows,
+			Map<UUID, ExplanationOverride> overridesById,
+			Map<UUID, TranslationLangs> langsById
+	) {
+		return rows.stream()
+				.map(row -> toStagedRecommendation(row, overridesById.get(row.id()), langsById.get(row.id())))
+				.toList();
+	}
+
+	private static StagedRecommendation toStagedRecommendation(BackofficeRecommendation row, ExplanationOverride override, TranslationLangs langs) {
+		boolean changed = override != null;
+		String explanation = changed ? override.explanationForLlm() : row.explanationForLlm();
+		long version = changed ? override.version() : 0L;
 		return new StagedRecommendation(
 				row.id(),
 				row.name(),
 				row.componentForScoring(),
 				row.weight(),
-				row.explanationForLlm(),
+				explanation,
+				changed,
+				version,
 				toTranslationStates(langs));
 	}
 

@@ -4,6 +4,7 @@ import static eu.dietwise.common.test.testcontainers.DockerImageNames.POSTGRES_I
 import static eu.dietwise.v1.types.BiologicalGender.FEMALE;
 import static eu.dietwise.v1.types.BiologicalGender.MALE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
@@ -20,6 +22,7 @@ import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
+import eu.dietwise.services.model.recommendations.ExplanationOverride;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
@@ -265,9 +268,121 @@ public class RecommendationDaoImplTest {
 		assertThat(langs.get(calciumId).staged()).isEmpty();
 	}
 
-	// KEEP THIS LAST! IT MESSES WITH THE DATA
 	@Test
 	@Order(10)
+	void stageExplanationSeedsAWorkingCopyRowOverlaidByFindExplanationOverridesAndRevertRemovesIt(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Decrease red meat");
+
+		long version = stage(sessionFactory, id, "Staged red-meat explanation.", 0L);
+		assertThat(version).isEqualTo(1L);
+
+		Map<UUID, ExplanationOverride> overrides = overrides(sessionFactory);
+		assertThat(overrides).containsKey(id);
+		assertThat(overrides.get(id).explanationForLlm()).isEqualTo("Staged red-meat explanation.");
+		assertThat(overrides.get(id).version()).isEqualTo(1L);
+
+		revert(sessionFactory, id, 1L);
+		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+	}
+
+	@Test
+	@Order(11)
+	void stageExplanationTwiceBumpsTheVersion(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Decrease sodium");
+
+		assertThat(stage(sessionFactory, id, "First.", 0L)).isEqualTo(1L);
+		assertThat(stage(sessionFactory, id, "Second.", 1L)).isEqualTo(2L);
+
+		ExplanationOverride override = overrides(sessionFactory).get(id);
+		assertThat(override.explanationForLlm()).isEqualTo("Second.");
+		assertThat(override.version()).isEqualTo(2L);
+
+		revert(sessionFactory, id, 2L);
+	}
+
+	@Test
+	@Order(12)
+	void stageExplanationMatchingMasterCollapsesTheWorkingCopyRow(Mutiny.SessionFactory sessionFactory) {
+		BackofficeRecommendation master = lookup(sessionFactory, "Decrease sugar-sweetened beverages");
+
+		assertThat(stage(sessionFactory, master.id(), "A staged value.", 0L)).isEqualTo(1L);
+		assertThat(stage(sessionFactory, master.id(), master.explanationForLlm(), 1L)).isEqualTo(0L);
+
+		assertThat(overrides(sessionFactory)).doesNotContainKey(master.id());
+	}
+
+	@Test
+	@Order(13)
+	void stageExplanationWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Decrease trans fatty acids");
+		stage(sessionFactory, id, "Staged.", 0L);
+
+		assertThatThrownBy(() -> stage(sessionFactory, id, "Conflicting.", 0L))
+				.isInstanceOf(StaleVersionException.class);
+
+		revert(sessionFactory, id, 1L);
+		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+	}
+
+	@Test
+	@Order(14)
+	void revertExplanationWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in fiber");
+		stage(sessionFactory, id, "Staged.", 0L);
+
+		assertThatThrownBy(() -> revert(sessionFactory, id, 99L))
+				.isInstanceOf(StaleVersionException.class);
+
+		revert(sessionFactory, id, 1L);
+		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+	}
+
+	@Test
+	@Order(15)
+	void revertExplanationWithoutAStagedChangeIsANoOp(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in fruits");
+
+		revert(sessionFactory, id, 0L);
+
+		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+	}
+
+	private static BackofficeRecommendation lookup(Mutiny.SessionFactory sessionFactory, String name) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		return factory.withoutTransaction(sut::listForBackoffice)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS))
+				.stream().filter(r -> r.name().equals(name)).findFirst().orElseThrow();
+	}
+
+	private static UUID lookupId(Mutiny.SessionFactory sessionFactory, String name) {
+		return lookup(sessionFactory, name).id();
+	}
+
+	private static long stage(Mutiny.SessionFactory sessionFactory, UUID id, String explanationForLlm, long baseVersion) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		return factory.withTransaction(tx -> sut.stageExplanation(tx, id, explanationForLlm, baseVersion))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static void revert(Mutiny.SessionFactory sessionFactory, UUID id, long baseVersion) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		factory.withTransaction(tx -> sut.revertExplanation(tx, id, baseVersion))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static Map<UUID, ExplanationOverride> overrides(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		return factory.withoutTransaction(sut::findExplanationOverrides)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	// KEEP THIS LAST! IT MESSES WITH THE DATA
+	@Test
+	@Order(20)
 	void testInsertions(Mutiny.SessionFactory sessionFactory) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();

@@ -10,8 +10,10 @@ import eu.dietwise.v1.types.RecipeLanguage;
 
 /**
  * A single Recommendation as shown in the backoffice grid: its English name and component for scoring, its weight
- * ({@code ENCOURAGED} or {@code LIMITED}), its English explanation for the LLM (may be {@code null}) and, per non-English
- * language, the completeness state of its translation (language name to state name).
+ * ({@code ENCOURAGED} or {@code LIMITED}), its effective English explanation for the LLM (published master overlaid by
+ * any Staged Change, may be {@code null}), whether that explanation carries a pending change, the Working Copy version a
+ * subsequent edit must be based on ({@code 0} when it has no Staged Change) and, per non-English language, the
+ * completeness state of its translation (language name to state name).
  */
 public record RecommendationResponse(
 		String id,
@@ -19,6 +21,8 @@ public record RecommendationResponse(
 		String componentForScoring,
 		String weight,
 		String explanationForLlm,
+		boolean explanationChanged,
+		long version,
 		Map<String, String> translations
 ) {
 	public static RecommendationResponse from(StagedRecommendation recommendation) {
@@ -28,6 +32,8 @@ public record RecommendationResponse(
 				recommendation.componentForScoring(),
 				recommendation.weight().name(),
 				recommendation.explanationForLlm(),
+				recommendation.explanationChanged(),
+				recommendation.version(),
 				toStateNames(recommendation.translations()));
 	}
 

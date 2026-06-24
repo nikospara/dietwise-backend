@@ -1,6 +1,7 @@
 package eu.dietwise.services.v1;
 
 import java.util.List;
+import java.util.UUID;
 
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.services.v1.types.StagedRecommendation;
@@ -20,4 +21,27 @@ public interface BackofficeRecommendationsService {
 	 * @return All Recommendations, ordered by name
 	 */
 	Uni<List<StagedRecommendation>> listRecommendations(User user);
+
+	/**
+	 * Stage an edit to a Recommendation's English explanation for the LLM in the Working Copy, leaving published master
+	 * and recipe assessment untouched. Staging the value the Recommendation already has in master collapses the Staged
+	 * Change. The explanation may be {@code null} or empty.
+	 *
+	 * @param user           The editor; must have the ADMIN role
+	 * @param id             The Recommendation whose explanation is being staged
+	 * @param explanation    The proposed explanation; may be {@code null}
+	 * @param baseVersion    The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @return The Recommendation's new Working Copy version ({@code 0} when the edit collapsed back to master)
+	 */
+	Uni<Long> stageExplanation(User user, UUID id, String explanation, long baseVersion);
+
+	/**
+	 * Revert a Recommendation's staged explanation, restoring its published master value and removing the Working Copy
+	 * row. A no-op when no Staged Change exists.
+	 *
+	 * @param user        The editor; must have the ADMIN role
+	 * @param id          The Recommendation whose staged explanation is being reverted
+	 * @param baseVersion The Working Copy version the revert is based on
+	 */
+	Uni<Void> revertExplanation(User user, UUID id, long baseVersion);
 }
