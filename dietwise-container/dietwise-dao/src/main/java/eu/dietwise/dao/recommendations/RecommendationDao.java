@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
+import eu.dietwise.common.types.RecommendationTranslationDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
 import eu.dietwise.services.model.recommendations.ExplanationOverride;
@@ -82,4 +83,31 @@ public interface RecommendationDao {
 	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
 	 */
 	Uni<Void> revertExplanation(ReactivePersistenceTxContext tx, UUID id, long baseVersion);
+
+	/**
+	 * The effective translation of one Recommendation for each non-English language (published master overlaid by any
+	 * Staged Change) and the Working Copy version a subsequent edit must be based on, to pre-fill the translations dialog.
+	 * The returned map has an entry for every translatable language; a language with no translation has {@code null}
+	 * fields and version {@code 0}.
+	 */
+	Uni<Map<RecipeLanguage, RecommendationTranslationDetails>> findTranslationsForEdit(ReactivePersistenceContext em, UUID id);
+
+	/**
+	 * Stage a Recommendation's name, component for scoring and explanation translation for one language in the Working
+	 * Copy, leaving published master untouched. The three fields share one version and are staged together. Staging the
+	 * values already in master removes the override; reverting always removes the Working Copy row.
+	 *
+	 * @param baseVersion The Working Copy version the edit is based on ({@code 0} when no Staged Change exists yet)
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 */
+	Uni<Void> stageTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion);
+
+	/**
+	 * Revert a Recommendation's staged translation for one language, restoring the published master translation and
+	 * removing the Working Copy row. A no-op when no Staged Change exists.
+	 *
+	 * @param baseVersion The Working Copy version the revert is based on
+	 * @throws eu.dietwise.common.dao.StaleVersionException If {@code baseVersion} no longer matches the current version
+	 */
+	Uni<Void> revertTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, long baseVersion);
 }

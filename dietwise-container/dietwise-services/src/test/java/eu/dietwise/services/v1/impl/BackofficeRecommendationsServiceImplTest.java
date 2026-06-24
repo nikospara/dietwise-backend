@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import eu.dietwise.common.test.jpa.MockReactivePersistenceContextFactory;
+import eu.dietwise.common.types.RecommendationTranslationDetails;
 import eu.dietwise.common.types.authorization.NotAuthorizedException;
 import eu.dietwise.common.v1.model.ImmutableUser;
 import eu.dietwise.common.v1.model.User;
@@ -150,6 +151,99 @@ class BackofficeRecommendationsServiceImplTest {
 		assertThatThrownBy(() -> newService().revertExplanation(nonAdminUser(), RECOMMENDATION_ID, 0L).await().atMost(AWAIT))
 				.isInstanceOf(NotAuthorizedException.class);
 		verify(recommendationDao, never()).revertExplanation(any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void listRecommendationsReflectsStagedTranslationLanguages() {
+		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
+				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Cured and smoked."))));
+		when(recommendationDao.findExplanationOverrides(any())).thenReturn(Uni.createFrom().item(Map.of()));
+		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
+				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.NL)))));
+
+		StagedRecommendation r = newService().listRecommendations(adminUser()).await().atMost(AWAIT).get(0);
+
+		assertThat(r.translations().get(RecipeLanguage.EL)).isEqualTo(TranslationState.PRESENT);
+		assertThat(r.translations().get(RecipeLanguage.NL)).isEqualTo(TranslationState.STAGED);
+		assertThat(r.translations().get(RecipeLanguage.LT)).isEqualTo(TranslationState.MISSING);
+	}
+
+	@Test
+	void translationsForEditReturnsPerLanguageDetailsForAnAdminWithoutOpeningATransaction() {
+		Map<RecipeLanguage, RecommendationTranslationDetails> details = Map.of(
+				RecipeLanguage.EL, new RecommendationTranslationDetails("Όνομα", "συστατικό", "Εξήγηση.", 2L),
+				RecipeLanguage.LT, new RecommendationTranslationDetails(null, null, null, 0L),
+				RecipeLanguage.NL, new RecommendationTranslationDetails(null, null, null, 0L));
+		when(recommendationDao.findTranslationsForEdit(any(), eq(RECOMMENDATION_ID)))
+				.thenReturn(Uni.createFrom().item(details));
+
+		Map<RecipeLanguage, RecommendationTranslationDetails> result =
+				newService().translationsForEdit(adminUser(), RECOMMENDATION_ID).await().atMost(AWAIT);
+
+		assertThat(result).isEqualTo(details);
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void stageTranslationStagesInATransactionForAnAdmin() {
+		when(recommendationDao.stageTranslation(any(), eq(RECOMMENDATION_ID), eq(RecipeLanguage.EL), eq("Όνομα"), eq("συστατικό"), eq("Εξήγηση."), eq(2L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().stageTranslation(adminUser(), RECOMMENDATION_ID, RecipeLanguage.EL, "Όνομα", "συστατικό", "Εξήγηση.", 2L).await().atMost(AWAIT);
+
+		verify(recommendationDao).stageTranslation(any(), eq(RECOMMENDATION_ID), eq(RecipeLanguage.EL), eq("Όνομα"), eq("συστατικό"), eq("Εξήγηση."), eq(2L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void revertTranslationRevertsInATransactionForAnAdmin() {
+		when(recommendationDao.revertTranslation(any(), eq(RECOMMENDATION_ID), eq(RecipeLanguage.NL), eq(3L)))
+				.thenReturn(Uni.createFrom().voidItem());
+
+		newService().revertTranslation(adminUser(), RECOMMENDATION_ID, RecipeLanguage.NL, 3L).await().atMost(AWAIT);
+
+		verify(recommendationDao).revertTranslation(any(), eq(RECOMMENDATION_ID), eq(RecipeLanguage.NL), eq(3L));
+		assertThat(persistenceContextFactory.getOpenedTransactions()).hasSize(1);
+	}
+
+	@Test
+	void stageTranslationRejectsEnglishAsATranslationTargetWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageTranslation(adminUser(), RECOMMENDATION_ID, RecipeLanguage.EN, "x", "y", "z", 0L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(recommendationDao, never()).stageTranslation(any(), any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertTranslationRejectsEnglishAsATranslationTargetWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTranslation(adminUser(), RECOMMENDATION_ID, RecipeLanguage.EN, 0L).await().atMost(AWAIT))
+				.isInstanceOf(IllegalArgumentException.class);
+		verify(recommendationDao, never()).revertTranslation(any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void translationsForEditRejectsANonAdminWithoutReadingData() {
+		assertThatThrownBy(() -> newService().translationsForEdit(nonAdminUser(), RECOMMENDATION_ID).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(recommendationDao, never()).findTranslationsForEdit(any(), any());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void stageTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().stageTranslation(nonAdminUser(), RECOMMENDATION_ID, RecipeLanguage.EL, "x", "y", "z", 0L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(recommendationDao, never()).stageTranslation(any(), any(), any(), any(), any(), any(), anyLong());
+		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
+	}
+
+	@Test
+	void revertTranslationRejectsANonAdminWithoutOpeningATransaction() {
+		assertThatThrownBy(() -> newService().revertTranslation(nonAdminUser(), RECOMMENDATION_ID, RecipeLanguage.EL, 0L).await().atMost(AWAIT))
+				.isInstanceOf(NotAuthorizedException.class);
+		verify(recommendationDao, never()).revertTranslation(any(), any(), any(), anyLong());
 		assertThat(persistenceContextFactory.getOpenedTransactions()).isEmpty();
 	}
 

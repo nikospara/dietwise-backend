@@ -244,4 +244,21 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="recommendation_translation_working_copy" author="nikospara">
+		<createTable tableName="DW_RECOMMENDATION_TRANSLATION_WC" remarks="Working Copy mirror of DW_RECOMMENDATION_TRANSLATION: proposed per-language Recommendation name, component for scoring and explanation translations staged for publish; sparse, a row exists only for a changed translation">
+			<column name="recommendation_id" type="UUID" remarks="The Recommendation this translation belongs to; resolved against published master, not a foreign key">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION_WC__RECOMMENDATION_ID" primaryKey="true" primaryKeyName="PK_DW_RECOMMENDATION_TRANSLATION_WC" />
+			</column>
+			<column name="lang" type="VARCHAR(10)">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION_WC__LANG" primaryKey="true" primaryKeyName="PK_DW_RECOMMENDATION_TRANSLATION_WC" />
+			</column>
+			<column name="name" type="VARCHAR(200)" remarks="Proposed translated name" />
+			<column name="component_for_scoring" type="VARCHAR(200)" remarks="Proposed translated component for scoring" />
+			<column name="explanation_for_llm" type="VARCHAR(300)" remarks="Proposed translated explanation for the LLM" />
+			<column name="version" type="BIGINT" remarks="Working Copy optimistic-concurrency version; incremented on each staged change to this translation">
+				<constraints nullable="false" notNullConstraintName="NL_DW_RECOMMENDATION_TRANSLATION_WC__VERSION" />
+			</column>
+		</createTable>
+	</changeSet>
 </databaseChangeLog>

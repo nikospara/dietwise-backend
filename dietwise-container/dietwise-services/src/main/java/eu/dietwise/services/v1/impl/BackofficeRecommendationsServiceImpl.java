@@ -2,15 +2,13 @@ package eu.dietwise.services.v1.impl;
 
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
-import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
+import eu.dietwise.common.types.RecommendationTranslationDetails;
 import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.authz.Authorization;
@@ -19,15 +17,11 @@ import eu.dietwise.services.model.recommendations.ExplanationOverride;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.v1.BackofficeRecommendationsService;
 import eu.dietwise.services.v1.types.StagedRecommendation;
-import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class BackofficeRecommendationsServiceImpl implements BackofficeRecommendationsService {
-	private static final List<RecipeLanguage> TRANSLATABLE_LANGUAGES =
-			Arrays.stream(RecipeLanguage.values()).filter(lang -> lang != RecipeLanguage.EN).toList();
-
 	private final RecommendationDao recommendationDao;
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
 	private final Authorization authorization;
@@ -65,6 +59,26 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 		return persistenceContextFactory.withTransaction(tx -> recommendationDao.revertExplanation(tx, id, baseVersion));
 	}
 
+	@Override
+	public Uni<Map<RecipeLanguage, RecommendationTranslationDetails>> translationsForEdit(User user, UUID id) {
+		authorization.requireAdmin(user);
+		return persistenceContextFactory.withoutTransaction(em -> recommendationDao.findTranslationsForEdit(em, id));
+	}
+
+	@Override
+	public Uni<Void> stageTranslation(User user, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion) {
+		authorization.requireAdmin(user);
+		BackofficeTranslations.requireTranslatableLanguage(lang);
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.stageTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, baseVersion));
+	}
+
+	@Override
+	public Uni<Void> revertTranslation(User user, UUID id, RecipeLanguage lang, long baseVersion) {
+		authorization.requireAdmin(user);
+		BackofficeTranslations.requireTranslatableLanguage(lang);
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.revertTranslation(tx, id, lang, baseVersion));
+	}
+
 	private List<StagedRecommendation> toStagedRecommendations(
 			List<BackofficeRecommendation> rows,
 			Map<UUID, ExplanationOverride> overridesById,
@@ -87,18 +101,6 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 				explanation,
 				changed,
 				version,
-				toTranslationStates(langs));
-	}
-
-	private static Map<RecipeLanguage, TranslationState> toTranslationStates(TranslationLangs langs) {
-		Set<RecipeLanguage> present = langs == null ? Set.of() : langs.present();
-		Set<RecipeLanguage> staged = langs == null ? Set.of() : langs.staged();
-		Map<RecipeLanguage, TranslationState> states = new EnumMap<>(RecipeLanguage.class);
-		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
-			states.put(lang, staged.contains(lang)
-					? TranslationState.STAGED
-					: present.contains(lang) ? TranslationState.PRESENT : TranslationState.MISSING);
-		}
-		return states;
+				BackofficeTranslations.translationStates(langs));
 	}
 }

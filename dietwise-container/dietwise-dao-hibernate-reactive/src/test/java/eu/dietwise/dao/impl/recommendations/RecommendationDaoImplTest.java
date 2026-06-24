@@ -17,6 +17,7 @@ import eu.dietwise.common.dao.StaleVersionException;
 import eu.dietwise.common.dao.reactive.hibernate.ReactivePersistenceContextFactoryImpl;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
+import eu.dietwise.common.types.RecommendationTranslationDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
@@ -347,6 +348,78 @@ public class RecommendationDaoImplTest {
 		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
 	}
 
+	@Test
+	@Order(16)
+	void stageTranslationSeedsAWorkingCopyRowReflectedInForEditAndChipsAndRevertRemovesIt(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in legumes");
+
+		stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Όσπρια", "όσπρια", "Φάε όσπρια.", 0L);
+
+		Map<RecipeLanguage, RecommendationTranslationDetails> forEdit = translationsForEdit(sessionFactory, id);
+		assertThat(forEdit).containsOnlyKeys(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		RecommendationTranslationDetails el = forEdit.get(RecipeLanguage.EL);
+		assertThat(el.name()).isEqualTo("Όσπρια");
+		assertThat(el.componentForScoring()).isEqualTo("όσπρια");
+		assertThat(el.explanationForLlm()).isEqualTo("Φάε όσπρια.");
+		assertThat(el.version()).isEqualTo(1L);
+		assertThat(translationLangs(sessionFactory).get(id).staged()).contains(RecipeLanguage.EL);
+
+		revertTranslation(sessionFactory, id, RecipeLanguage.EL, 1L);
+
+		assertThat(translationsForEdit(sessionFactory, id).get(RecipeLanguage.EL).version()).isEqualTo(0L);
+	}
+
+	@Test
+	@Order(17)
+	void stageTranslationTwiceBumpsTheVersion(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in milk");
+
+		stageTranslation(sessionFactory, id, RecipeLanguage.LT, "Pienas 1", "pienas 1", "Gerk pieną 1.", 0L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.LT, "Pienas 2", "pienas 2", "Gerk pieną 2.", 1L);
+
+		RecommendationTranslationDetails lt = translationsForEdit(sessionFactory, id).get(RecipeLanguage.LT);
+		assertThat(lt.name()).isEqualTo("Pienas 2");
+		assertThat(lt.componentForScoring()).isEqualTo("pienas 2");
+		assertThat(lt.explanationForLlm()).isEqualTo("Gerk pieną 2.");
+		assertThat(lt.version()).isEqualTo(2L);
+
+		revertTranslation(sessionFactory, id, RecipeLanguage.LT, 2L);
+	}
+
+	@Test
+	@Order(18)
+	void stageTranslationMatchingMasterCollapsesTheWorkingCopyRow(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in calcium");
+		RecommendationTranslationDetails master = translationsForEdit(sessionFactory, id).get(RecipeLanguage.NL);
+		assertThat(master.version()).isEqualTo(0L);
+
+		stageTranslation(sessionFactory, id, RecipeLanguage.NL, "Anders", "anders", "Anders.", 0L);
+		assertThat(translationsForEdit(sessionFactory, id).get(RecipeLanguage.NL).version()).isEqualTo(1L);
+
+		stageTranslation(sessionFactory, id, RecipeLanguage.NL, master.name(), master.componentForScoring(), master.explanationForLlm(), 1L);
+
+		RecommendationTranslationDetails afterCollapse = translationsForEdit(sessionFactory, id).get(RecipeLanguage.NL);
+		assertThat(afterCollapse.version()).isEqualTo(0L);
+		assertThat(afterCollapse.name()).isEqualTo(master.name());
+		TranslationLangs langs = translationLangs(sessionFactory).get(id);
+		assertThat(langs.present()).contains(RecipeLanguage.NL);
+		assertThat(langs.staged()).doesNotContain(RecipeLanguage.NL);
+	}
+
+	@Test
+	@Order(19)
+	void stageTranslationWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in nuts and seeds");
+
+		stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Ξηροί καρποί", "ξηροί καρποί", "Φάε ξηρούς καρπούς.", 0L);
+
+		assertThatThrownBy(() -> stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Σύγκρουση", "σύγκρουση", "Σύγκρουση.", 0L))
+				.isInstanceOf(StaleVersionException.class);
+
+		revertTranslation(sessionFactory, id, RecipeLanguage.EL, 1L);
+		assertThat(translationsForEdit(sessionFactory, id).get(RecipeLanguage.EL).version()).isEqualTo(0L);
+	}
+
 	private static BackofficeRecommendation lookup(Mutiny.SessionFactory sessionFactory, String name) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
@@ -377,6 +450,34 @@ public class RecommendationDaoImplTest {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
 		return factory.withoutTransaction(sut::findExplanationOverrides)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static Map<RecipeLanguage, RecommendationTranslationDetails> translationsForEdit(Mutiny.SessionFactory sessionFactory, UUID id) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		return factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, id))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static Map<UUID, TranslationLangs> translationLangs(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		return factory.withoutTransaction(sut::findTranslationLangs)
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static void stageTranslation(Mutiny.SessionFactory sessionFactory, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		factory.withTransaction(tx -> sut.stageTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, baseVersion))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static void revertTranslation(Mutiny.SessionFactory sessionFactory, UUID id, RecipeLanguage lang, long baseVersion) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		factory.withTransaction(tx -> sut.revertTranslation(tx, id, lang, baseVersion))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
