@@ -32,6 +32,10 @@ import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceTxContext;
 import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
+import eu.dietwise.dao.jpa.recommendations.RecommendationEntity_;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientComponentForScoringWcEntity;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientComponentForScoringWcEntityId;
+import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientComponentForScoringWcEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
@@ -45,6 +49,7 @@ import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.AlternativeIngredientDao;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
+import eu.dietwise.services.model.suggestions.BackofficeAlternativeIngredient;
 import eu.dietwise.services.model.suggestions.ImmutableAlternativeIngredient;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.Country;
@@ -74,6 +79,58 @@ public class AlternativeIngredientDaoImpl implements AlternativeIngredientDao {
 	@Override
 	public Uni<List<ReferenceOption>> listOptions(ReactivePersistenceContext em) {
 		return masterOptions(em).flatMap(master -> mirrorOptions(em).map(mirror -> mergeOptions(master, mirror)));
+	}
+
+	@Override
+	public Uni<List<BackofficeAlternativeIngredient>> listForBackoffice(ReactivePersistenceContext em) {
+		return masterNamesById(em).flatMap(master -> mirrorRowsById(em).map(mirror -> mergeBackoffice(master, mirror)));
+	}
+
+	@Override
+	public Uni<Map<UUID, Set<UUID>>> findMasterRecommendationLinks(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<AlternativeIngredientEntity> ai = q.from(AlternativeIngredientEntity.class);
+		var rec = ai.join(AlternativeIngredientEntity_.componentsForScoring);
+		q.select(cb.tuple(ai.get(AlternativeIngredientEntity_.id), rec.get(RecommendationEntity_.id)));
+		return em.createQuery(q).getResultList().map(rows -> {
+			Map<UUID, Set<UUID>> byId = new HashMap<>();
+			for (Tuple row : rows) {
+				byId.computeIfAbsent(row.get(0, UUID.class), _ -> new HashSet<>()).add(row.get(1, UUID.class));
+			}
+			return byId;
+		});
+	}
+
+	@Override
+	public Uni<Map<UUID, Map<UUID, Boolean>>> findStagedRecommendationLinks(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(AlternativeIngredientComponentForScoringWcEntity.class);
+		q.from(AlternativeIngredientComponentForScoringWcEntity.class);
+		return em.createQuery(q).getResultList().map(rows -> {
+			Map<UUID, Map<UUID, Boolean>> byId = new HashMap<>();
+			for (AlternativeIngredientComponentForScoringWcEntity row : rows) {
+				byId.computeIfAbsent(row.getAlternativeIngredientId(), _ -> new HashMap<>())
+						.put(row.getRecommendationId(), row.isPresent());
+			}
+			return byId;
+		});
+	}
+
+	@Override
+	public Uni<Void> toggleRecommendationLink(ReactivePersistenceTxContext tx, UUID alternativeIngredientId, UUID recommendationId, boolean present) {
+		return forc(
+				tx.find(AlternativeIngredientComponentForScoringWcEntity.class, new AlternativeIngredientComponentForScoringWcEntityId(alternativeIngredientId, recommendationId)),
+				_ -> masterHasLink(tx, alternativeIngredientId, recommendationId),
+				(existing, masterHasLink) -> applyToggle(tx, alternativeIngredientId, recommendationId, present, existing, masterHasLink)
+		);
+	}
+
+	@Override
+	public Uni<Void> discardAlternativeIngredient(ReactivePersistenceTxContext tx, UUID id) {
+		return deleteStagedLinksFor(tx, id)
+				.chain(() -> deleteStagedTranslationsFor(tx, id))
+				.chain(() -> deleteWorkingCopyRow(tx, id));
 	}
 
 	@Override
@@ -121,8 +178,8 @@ public class AlternativeIngredientDaoImpl implements AlternativeIngredientDao {
 		return tx.find(AlternativeIngredientWcEntity.class, id).flatMap(existing -> existing == null
 				? Uni.createFrom().voidItem()
 				: tx.find(AlternativeIngredientEntity.class, id).flatMap(master -> master == null
-						? Uni.createFrom().failure(new EntityNotFoundException(AlternativeIngredientEntity.class, id, "No published Alternative Ingredient to revert"))
-						: deleteStaged(tx, id, baseVersion)));
+																				   ? Uni.createFrom().failure(new EntityNotFoundException(AlternativeIngredientEntity.class, id, "No published Alternative Ingredient to revert"))
+																				   : deleteStaged(tx, id, baseVersion)));
 	}
 
 	@Override
@@ -363,6 +420,118 @@ public class AlternativeIngredientDaoImpl implements AlternativeIngredientDao {
 		master.forEach(option -> byId.put(option.id(), option));
 		mirror.forEach(option -> byId.put(option.id(), option));
 		return byId.values().stream().sorted(Comparator.comparing(ReferenceOption::name)).toList();
+	}
+
+	private Uni<Map<UUID, String>> masterNamesById(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> q = cb.createTupleQuery();
+		Root<AlternativeIngredientEntity> root = q.from(AlternativeIngredientEntity.class);
+		q.select(cb.tuple(root.get(AlternativeIngredientEntity_.id), root.get(AlternativeIngredientEntity_.name)));
+		return em.createQuery(q).getResultList().map(rows -> {
+			Map<UUID, String> byId = new HashMap<>();
+			for (Tuple row : rows) {
+				byId.put(row.get(0, UUID.class), row.get(1, String.class));
+			}
+			return byId;
+		});
+	}
+
+	private Uni<Map<UUID, AlternativeIngredientWcEntity>> mirrorRowsById(ReactivePersistenceContext em) {
+		var cb = em.getCriteriaBuilder();
+		var q = cb.createQuery(AlternativeIngredientWcEntity.class);
+		q.from(AlternativeIngredientWcEntity.class);
+		return em.createQuery(q).getResultList().map(list -> list.stream()
+				.collect(Collectors.toMap(AlternativeIngredientWcEntity::getId, w -> w)));
+	}
+
+	private static List<BackofficeAlternativeIngredient> mergeBackoffice(Map<UUID, String> master, Map<UUID, AlternativeIngredientWcEntity> mirror) {
+		Set<UUID> ids = new HashSet<>(master.keySet());
+		ids.addAll(mirror.keySet());
+		return ids.stream().map(id -> {
+			AlternativeIngredientWcEntity wc = mirror.get(id);
+			boolean published = master.containsKey(id);
+			return wc != null
+					? new BackofficeAlternativeIngredient(id, wc.getName(), published, wc.getVersion())
+					: new BackofficeAlternativeIngredient(id, master.get(id), true, 0L);
+		}).sorted(Comparator.comparing(BackofficeAlternativeIngredient::name)).toList();
+	}
+
+	private Uni<Boolean> masterHasLink(ReactivePersistenceTxContext tx, UUID alternativeIngredientId, UUID recommendationId) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaQuery<UUID> q = cb.createQuery(UUID.class);
+		Root<AlternativeIngredientEntity> ai = q.from(AlternativeIngredientEntity.class);
+		var rec = ai.join(AlternativeIngredientEntity_.componentsForScoring);
+		q.select(ai.get(AlternativeIngredientEntity_.id)).where(cb.and(
+				cb.equal(ai.get(AlternativeIngredientEntity_.id), alternativeIngredientId),
+				cb.equal(rec.get(RecommendationEntity_.id), recommendationId)));
+		return tx.createQuery(q).getResultList().map(rows -> !rows.isEmpty());
+	}
+
+	private Uni<Void> applyToggle(ReactivePersistenceTxContext tx, UUID alternativeIngredientId, UUID recommendationId, boolean present, AlternativeIngredientComponentForScoringWcEntity existing, boolean masterHasLink) {
+		if (present == masterHasLink) {
+			return existing == null ? Uni.createFrom().voidItem() : deleteStagedLink(tx, alternativeIngredientId, recommendationId);
+		}
+		if (existing == null) {
+			return seedStagedLink(tx, alternativeIngredientId, recommendationId, present);
+		}
+		return existing.isPresent() == present
+				? Uni.createFrom().voidItem()
+				: updateStagedLink(tx, alternativeIngredientId, recommendationId, present);
+	}
+
+	private Uni<Void> seedStagedLink(ReactivePersistenceTxContext tx, UUID alternativeIngredientId, UUID recommendationId, boolean present) {
+		var entity = new AlternativeIngredientComponentForScoringWcEntity();
+		entity.setAlternativeIngredientId(alternativeIngredientId);
+		entity.setRecommendationId(recommendationId);
+		entity.setPresent(present);
+		return tx.persist(entity).replaceWithVoid();
+	}
+
+	private Uni<Void> updateStagedLink(ReactivePersistenceTxContext tx, UUID alternativeIngredientId, UUID recommendationId, boolean present) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaUpdate<AlternativeIngredientComponentForScoringWcEntity> cu = cb.createCriteriaUpdate(AlternativeIngredientComponentForScoringWcEntity.class);
+		Root<AlternativeIngredientComponentForScoringWcEntity> wc = cu.getRoot();
+		cu.set(wc.get(AlternativeIngredientComponentForScoringWcEntity_.present), present);
+		cu.where(linkRowAt(cb, wc, alternativeIngredientId, recommendationId));
+		return tx.createUpdate(cu).execute().replaceWithVoid();
+	}
+
+	private Uni<Void> deleteStagedLink(ReactivePersistenceTxContext tx, UUID alternativeIngredientId, UUID recommendationId) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<AlternativeIngredientComponentForScoringWcEntity> cd = cb.createCriteriaDelete(AlternativeIngredientComponentForScoringWcEntity.class);
+		Root<AlternativeIngredientComponentForScoringWcEntity> wc = cd.getRoot();
+		cd.where(linkRowAt(cb, wc, alternativeIngredientId, recommendationId));
+		return tx.createDelete(cd).execute().replaceWithVoid();
+	}
+
+	private static Predicate linkRowAt(CriteriaBuilder cb, Root<AlternativeIngredientComponentForScoringWcEntity> wc, UUID alternativeIngredientId, UUID recommendationId) {
+		return cb.and(
+				cb.equal(wc.get(AlternativeIngredientComponentForScoringWcEntity_.alternativeIngredientId), alternativeIngredientId),
+				cb.equal(wc.get(AlternativeIngredientComponentForScoringWcEntity_.recommendationId), recommendationId));
+	}
+
+	private Uni<Void> deleteStagedLinksFor(ReactivePersistenceTxContext tx, UUID id) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<AlternativeIngredientComponentForScoringWcEntity> cd = cb.createCriteriaDelete(AlternativeIngredientComponentForScoringWcEntity.class);
+		Root<AlternativeIngredientComponentForScoringWcEntity> wc = cd.getRoot();
+		cd.where(cb.equal(wc.get(AlternativeIngredientComponentForScoringWcEntity_.alternativeIngredientId), id));
+		return tx.createDelete(cd).execute().replaceWithVoid();
+	}
+
+	private Uni<Void> deleteStagedTranslationsFor(ReactivePersistenceTxContext tx, UUID id) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<AlternativeIngredientTranslationWcEntity> cd = cb.createCriteriaDelete(AlternativeIngredientTranslationWcEntity.class);
+		Root<AlternativeIngredientTranslationWcEntity> wc = cd.getRoot();
+		cd.where(cb.equal(wc.get(AlternativeIngredientTranslationWcEntity_.alternativeIngredientId), id));
+		return tx.createDelete(cd).execute().replaceWithVoid();
+	}
+
+	private Uni<Void> deleteWorkingCopyRow(ReactivePersistenceTxContext tx, UUID id) {
+		var cb = tx.getCriteriaBuilder();
+		CriteriaDelete<AlternativeIngredientWcEntity> cd = cb.createCriteriaDelete(AlternativeIngredientWcEntity.class);
+		Root<AlternativeIngredientWcEntity> wc = cd.getRoot();
+		cd.where(cb.equal(wc.get(AlternativeIngredientWcEntity_.id), id));
+		return tx.createDelete(cd).execute().replaceWithVoid();
 	}
 
 	private Uni<Map<UUID, AlternativeIngredientTranslationEntity>> loadTranslationsByAlternativeIngredientId(

@@ -7,9 +7,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import eu.dietwise.common.dao.EntityNotFoundException;
 import eu.dietwise.common.dao.StaleVersionException;
@@ -19,11 +22,14 @@ import eu.dietwise.common.types.ReferenceDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.common.test.jpa.HibernateReactiveExtension;
 import eu.dietwise.common.test.liquibase.LiquibaseExtension;
+import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientSeasonalityEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity;
+import eu.dietwise.services.model.suggestions.BackofficeAlternativeIngredient;
 import eu.dietwise.v1.types.RecipeLanguage;
+import eu.dietwise.v1.types.RecommendationWeight;
 import eu.dietwise.v1.types.Seasonality;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -75,6 +81,17 @@ class AlternativeIngredientDaoImplTest {
 	private static final String STAGED_NL_EXPLANATION = "Romige cashewbasis.";
 	private static final String RESTAGED_NL_NAME = "Cashewroom herzien";
 	private static final String RESTAGED_NL_EXPLANATION = "Herziene uitleg.";
+
+	private static final UUID GRID_UNCHANGED_AI_ID = UUID.fromString("a1c2d3e4-0030-4f5a-8b9c-0d1e2f3a0030");
+	private static final UUID GRID_EDITED_AI_ID = UUID.fromString("a1c2d3e4-0031-4f5a-8b9c-0d1e2f3a0031");
+	private static final UUID LINK_AI_ID = UUID.fromString("a1c2d3e4-0032-4f5a-8b9c-0d1e2f3a0032");
+	private static final UUID TOGGLE_REMOVE_AI_ID = UUID.fromString("a1c2d3e4-0033-4f5a-8b9c-0d1e2f3a0033");
+	private static final UUID TOGGLE_ADD_AI_ID = UUID.fromString("a1c2d3e4-0034-4f5a-8b9c-0d1e2f3a0034");
+	private static final UUID REC_A_ID = UUID.fromString("a1c2d3e4-00a0-4f5a-8b9c-0d1e2f3a00a0");
+	private static final UUID REC_B_ID = UUID.fromString("a1c2d3e4-00a1-4f5a-8b9c-0d1e2f3a00a1");
+	private static final UUID REC_C_ID = UUID.fromString("a1c2d3e4-00a2-4f5a-8b9c-0d1e2f3a00a2");
+	private static final UUID REC_D_ID = UUID.fromString("a1c2d3e4-00a3-4f5a-8b9c-0d1e2f3a00a3");
+	private static final UUID REC_E_ID = UUID.fromString("a1c2d3e4-00a4-4f5a-8b9c-0d1e2f3a00a4");
 
 	@Container
 	private static final PostgreSQLContainer postgres = new PostgreSQLContainer(POSTGRES_IMAGE);
@@ -544,6 +561,119 @@ class AlternativeIngredientDaoImplTest {
 		assertThat(details.published()).isFalse();
 	}
 
+	@Test
+	@Order(20)
+	void listForBackofficeOverlaysWorkingCopyOnMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistAlternativeIngredient(tx, GRID_UNCHANGED_AI_ID, "Grid unchanged cream"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> persistAlternativeIngredient(tx, GRID_EDITED_AI_ID, "Grid edited cream"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editAlternativeIngredient(tx, GRID_EDITED_AI_ID, "Grid edited cream (wc)", "Edited.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var wcOnlyId = factory.withTransaction(tx -> sut.createAlternativeIngredient(tx, "Grid working-copy-only cream"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var rows = factory.withoutTransaction(sut::listForBackoffice).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var byId = rows.stream().collect(Collectors.toMap(BackofficeAlternativeIngredient::id, r -> r));
+
+		assertThat(byId.get(GRID_UNCHANGED_AI_ID))
+				.isEqualTo(new BackofficeAlternativeIngredient(GRID_UNCHANGED_AI_ID, "Grid unchanged cream", true, 0L));
+		assertThat(byId.get(GRID_EDITED_AI_ID))
+				.isEqualTo(new BackofficeAlternativeIngredient(GRID_EDITED_AI_ID, "Grid edited cream (wc)", true, 1L));
+		assertThat(byId.get(wcOnlyId))
+				.isEqualTo(new BackofficeAlternativeIngredient(wcOnlyId, "Grid working-copy-only cream", false, 1L));
+		assertThat(rows).isSortedAccordingTo(Comparator.comparing(BackofficeAlternativeIngredient::name));
+	}
+
+	@Test
+	@Order(21)
+	void findMasterRecommendationLinksGroupsRecommendationsByIngredient(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRecommendation(tx, REC_A_ID, "Grid component A")
+						.chain(() -> persistRecommendation(tx, REC_B_ID, "Grid component B"))
+						.chain(() -> persistAlternativeIngredientLinkedTo(tx, LINK_AI_ID, "Grid linked cream", REC_A_ID, REC_B_ID)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var links = factory.withoutTransaction(sut::findMasterRecommendationLinks).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(links.get(LINK_AI_ID)).containsExactlyInAnyOrder(REC_A_ID, REC_B_ID);
+	}
+
+	@Test
+	@Order(22)
+	void toggleRecommendationLinkStagesRemovalThenCollapsesBackToMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRecommendation(tx, REC_C_ID, "Grid component C")
+						.chain(() -> persistAlternativeIngredientLinkedTo(tx, TOGGLE_REMOVE_AI_ID, "Grid toggle-remove cream", REC_C_ID)))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.toggleRecommendationLink(tx, TOGGLE_REMOVE_AI_ID, REC_C_ID, false))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var staged = factory.withoutTransaction(sut::findStagedRecommendationLinks).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(staged.get(TOGGLE_REMOVE_AI_ID)).containsEntry(REC_C_ID, false);
+
+		factory.withTransaction(tx -> sut.toggleRecommendationLink(tx, TOGGLE_REMOVE_AI_ID, REC_C_ID, true))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var collapsed = factory.withoutTransaction(sut::findStagedRecommendationLinks).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(collapsed).doesNotContainKey(TOGGLE_REMOVE_AI_ID);
+	}
+
+	@Test
+	@Order(23)
+	void toggleRecommendationLinkStagesAdditionThenCollapsesBackToMaster(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		factory.withTransaction(tx -> persistRecommendation(tx, REC_D_ID, "Grid component D")
+						.chain(() -> persistAlternativeIngredient(tx, TOGGLE_ADD_AI_ID, "Grid toggle-add cream")))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.toggleRecommendationLink(tx, TOGGLE_ADD_AI_ID, REC_D_ID, true))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var staged = factory.withoutTransaction(sut::findStagedRecommendationLinks).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(staged.get(TOGGLE_ADD_AI_ID)).containsEntry(REC_D_ID, true);
+
+		factory.withTransaction(tx -> sut.toggleRecommendationLink(tx, TOGGLE_ADD_AI_ID, REC_D_ID, false))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var collapsed = factory.withoutTransaction(sut::findStagedRecommendationLinks).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(collapsed).doesNotContainKey(TOGGLE_ADD_AI_ID);
+	}
+
+	@Test
+	@Order(24)
+	void discardAlternativeIngredientRemovesAllWorkingCopyTraces(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var wcOnlyId = factory.withTransaction(tx -> sut.createAlternativeIngredient(tx, "Grid discard cream"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> persistRecommendation(tx, REC_E_ID, "Grid component E"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.toggleRecommendationLink(tx, wcOnlyId, REC_E_ID, true))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, wcOnlyId, RecipeLanguage.NL, "Discard naam", "Uitleg.", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		factory.withTransaction(tx -> sut.discardAlternativeIngredient(tx, wcOnlyId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var options = factory.withoutTransaction(sut::listOptions).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(options.stream().filter(option -> option.id().equals(wcOnlyId))).isEmpty();
+		var stagedLinks = factory.withoutTransaction(sut::findStagedRecommendationLinks).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(stagedLinks).doesNotContainKey(wcOnlyId);
+		var langs = factory.withoutTransaction(sut::findTranslationLangs).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(langs).doesNotContainKey(wcOnlyId);
+		var wcRow = factory.withoutTransaction(em -> em.find(AlternativeIngredientWcEntity.class, wcOnlyId)).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(wcRow).isNull();
+	}
+
 	private static Uni<Void> persistAlternativeIngredient(ReactivePersistenceTxContext tx, UUID id, String name) {
 		var entity = new AlternativeIngredientEntity();
 		entity.setId(id);
@@ -558,6 +688,25 @@ class AlternativeIngredientDaoImplTest {
 		translation.setName(name);
 		translation.setExplanationForLlm(explanationForLlm);
 		return tx.persist(translation).replaceWithVoid();
+	}
+
+	private static Uni<Void> persistRecommendation(ReactivePersistenceTxContext tx, UUID id, String componentForScoring) {
+		var rec = new RecommendationEntity();
+		rec.setId(id);
+		rec.setName(componentForScoring);
+		rec.setComponentForScoring(componentForScoring);
+		rec.setWeight(RecommendationWeight.ENCOURAGED);
+		return tx.persist(rec).replaceWithVoid();
+	}
+
+	private static Uni<Void> persistAlternativeIngredientLinkedTo(ReactivePersistenceTxContext tx, UUID id, String name, UUID... recommendationIds) {
+		var entity = new AlternativeIngredientEntity();
+		entity.setId(id);
+		entity.setName(name);
+		entity.setComponentsForScoring(Arrays.stream(recommendationIds)
+				.map(recId -> tx.getReference(RecommendationEntity.class, recId))
+				.collect(Collectors.toSet()));
+		return tx.persist(entity).replaceWithVoid();
 	}
 
 	private static Seasonality seasonality(int monthFrom, int monthTo) {
