@@ -157,7 +157,10 @@ public class BackofficeSuggestionTemplatesServiceImpl implements BackofficeSugge
 						masterActive.getOrDefault(template.getId().asUuid(), true),
 						alternativeOverlay));
 		Stream<StagedSuggestionTemplate> added = newTemplates.stream()
-				.map(newTemplate -> toNewStagedSuggestionTemplate(newTemplate, alternativeOverlay));
+				.map(newTemplate -> toNewStagedSuggestionTemplate(
+						newTemplate,
+						translationLangs.get(newTemplate.template().getId().asUuid()),
+						alternativeOverlay));
 		return Stream.concat(published, added).toList();
 	}
 
@@ -191,7 +194,7 @@ public class BackofficeSuggestionTemplatesServiceImpl implements BackofficeSugge
 		return new StagedSuggestionTemplate(effective, alternativeId, changedFields, translations, alternativeTranslations, overlay.active(), overlay.active() != masterActive, true, overlay.version());
 	}
 
-	private static StagedSuggestionTemplate toNewStagedSuggestionTemplate(NewSuggestionTemplate newTemplate, AlternativeOverlay alternativeOverlay) {
+	private static StagedSuggestionTemplate toNewStagedSuggestionTemplate(NewSuggestionTemplate newTemplate, FieldTranslationLangs translationLangs, AlternativeOverlay alternativeOverlay) {
 		SuggestionTemplate master = newTemplate.template();
 		UUID alternativeId = alternativeOverlay.alternativeIdsByTemplate().get(master.getId().asUuid());
 		String effectiveName = effectiveAlternativeName(master, alternativeId, alternativeOverlay.stagedNames());
@@ -202,7 +205,7 @@ public class BackofficeSuggestionTemplatesServiceImpl implements BackofficeSugge
 				effective,
 				alternativeId,
 				EnumSet.noneOf(SuggestionTemplateField.class),
-				templateTranslationStates(null),
+				templateTranslationStates(translationLangs),
 				alternativeTranslationStates(alternativeId, alternativeOverlay.translationLangs()),
 				true,
 				false,

@@ -349,6 +349,30 @@ class BackofficeSuggestionTemplatesServiceImplTest {
 	}
 
 	@Test
+	void listSuggestionTemplatesReportsThePerFieldTranslationStatesOfAWorkingCopyOnlyTemplate() {
+		when(suggestionTemplateDao.findByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of()));
+		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of()));
+		when(suggestionTemplateDao.findNewByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(List.of(
+				new NewSuggestionTemplate(suggestionTemplate(NEW_TEMPLATE_ID, "Smoked tofu cubes", null, null, null), 1L))));
+		when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
+				NEW_TEMPLATE_ID, new FieldTranslationLangs(
+						new TranslationLangs(Set.of(), Set.of(RecipeLanguage.EL)),
+						new TranslationLangs(Set.of(), Set.of()),
+						new TranslationLangs(Set.of(), Set.of())))));
+
+		StagedSuggestionTemplate added = newService()
+				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT).getFirst();
+
+		assertThat(added.published()).isFalse();
+		Map<RecipeLanguage, TranslationState> restriction = added.translations().get(SuggestionTemplateField.RESTRICTION);
+		assertThat(restriction.get(RecipeLanguage.EL)).isEqualTo(TranslationState.STAGED);
+		assertThat(restriction.get(RecipeLanguage.LT)).isEqualTo(TranslationState.MISSING);
+		assertThat(restriction.get(RecipeLanguage.NL)).isEqualTo(TranslationState.MISSING);
+		assertThat(added.translations().get(SuggestionTemplateField.EQUIVALENCE).values())
+				.containsOnly(TranslationState.MISSING);
+	}
+
+	@Test
 	void addSuggestionTemplateCreatesANewTemplateWhenTheRuleHasNoneForTheAlternative() {
 		when(suggestionTemplateDao.findTemplateIdByRuleAndAlternative(any(), eq(RULE_ID), eq(ALTERNATIVE_INGREDIENT_ID)))
 				.thenReturn(Uni.createFrom().item(Optional.empty()));

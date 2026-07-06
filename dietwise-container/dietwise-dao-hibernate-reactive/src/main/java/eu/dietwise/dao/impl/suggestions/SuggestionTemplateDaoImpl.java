@@ -651,16 +651,21 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<SuggestionTemplateTranslationWcEntity> ttwc = q.from(SuggestionTemplateTranslationWcEntity.class);
-		Subquery<UUID> ruleTemplates = q.subquery(UUID.class);
-		Root<SuggestionTemplateEntity> st = ruleTemplates.from(SuggestionTemplateEntity.class);
-		ruleTemplates.select(st.get(SuggestionTemplateEntity_.id)).where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		Subquery<UUID> masterTemplates = q.subquery(UUID.class);
+		Root<SuggestionTemplateEntity> st = masterTemplates.from(SuggestionTemplateEntity.class);
+		masterTemplates.select(st.get(SuggestionTemplateEntity_.id)).where(cb.equal(st.get(SuggestionTemplateEntity_.rule).get(RuleEntity_.id), ruleId));
+		Subquery<UUID> workingCopyTemplates = q.subquery(UUID.class);
+		Root<SuggestionTemplateWcEntity> wc = workingCopyTemplates.from(SuggestionTemplateWcEntity.class);
+		workingCopyTemplates.select(wc.get(SuggestionTemplateWcEntity_.id)).where(cb.equal(wc.get(SuggestionTemplateWcEntity_.ruleId), ruleId));
 		q.select(cb.tuple(
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.lang),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.restriction),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.equivalence),
 				ttwc.get(SuggestionTemplateTranslationWcEntity_.techniqueNotes)
-		)).where(ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId).in(ruleTemplates));
+		)).where(cb.or(
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId).in(masterTemplates),
+				ttwc.get(SuggestionTemplateTranslationWcEntity_.suggestionTemplateId).in(workingCopyTemplates)));
 		return em.createQuery(q).getResultList().map(SuggestionTemplateDaoImpl::toValuesByTemplateThenLang);
 	}
 

@@ -123,6 +123,7 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID DISCARD_STALE_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000005");
 	private static final UUID REFUSE_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000006");
 	private static final UUID REFUSE_TEMPLATE_ID = UUID.fromString("15000000-0000-4000-8000-0000000000c1");
+	private static final UUID NEW_TEMPLATE_CHIP_RULE_ID = UUID.fromString("15000000-0000-4000-8000-000000000007");
 
 	// Issue 17: dedicated AlternativeIngredients referenced only by Issue-17 fixtures, so the blast-radius count and the
 	// shared-AlternativeIngredient flag stay deterministic regardless of test order.
@@ -185,7 +186,9 @@ class SuggestionTemplateDaoImplTest {
 								session, DISCARD_STALE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 discard-stale role", List.of()))
 						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
 								session, REFUSE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 refuse role",
-								List.of(new SuggestionTemplateFixtures.Template(REFUSE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Refuse fixture", true)))))
+								List.of(new SuggestionTemplateFixtures.Template(REFUSE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Refuse fixture", true))))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, NEW_TEMPLATE_CHIP_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 15 new-template-chip role", List.of())))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
@@ -609,6 +612,27 @@ class SuggestionTemplateDaoImplTest {
 		assertThat(afterChips.techniqueNotes().present()).isEmpty();
 		assertThat(afterChips.restriction().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
 		assertThat(afterChips.restriction().staged()).isEmpty();
+	}
+
+	@Test
+	void findFieldTranslationLangsByRuleReportsAStagedTranslationForAWorkingCopyOnlyTemplate(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionTemplateDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newTemplateId = factory.withTransaction(tx -> sut.addTemplate(tx, NEW_TEMPLATE_CHIP_RULE_ID, FIRST_ALTERNATIVE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, newTemplateId, RecipeLanguage.EL, SuggestionTemplateField.RESTRICTION, "Greek restriction for a new template", 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var langs = factory.withoutTransaction(em -> sut.findFieldTranslationLangsByRule(em, NEW_TEMPLATE_CHIP_RULE_ID))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var chips = langs.get(newTemplateId);
+		assertThat(chips).isNotNull();
+		assertThat(chips.restriction().staged()).containsExactly(RecipeLanguage.EL);
+		assertThat(chips.restriction().present()).isEmpty();
+		assertThat(chips.equivalence().staged()).isEmpty();
+		assertThat(chips.techniqueNotes().staged()).isEmpty();
 	}
 
 	@Test
