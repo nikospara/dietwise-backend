@@ -19,15 +19,18 @@ public class ScoringDataTest {
 	@Test
 	void testSerialization() throws Exception {
 		Map<RecommendationComponentName, RecommendationWeight> recommendationWeights = Map.of(new RecommendationComponentNameImpl("rec1"), RecommendationWeight.LIMITED);
+		Map<RecommendationComponentName, String> humanFriendlyDisplays = Map.of(new RecommendationComponentNameImpl("rec1"), "Eat less processed meat");
 		Map<IngredientId, Set<RecommendationComponentName>> recommendationsPerIngredient = Map.of(new GenericIngredientId("id"), Set.of(new RecommendationComponentNameImpl("rec2")));
 		var recipe = ImmutableScoringData.builder()
 				.totalNumberOfRecomendations(15)
 				.recommendationWeights(recommendationWeights)
+				.humanFriendlyDisplays(humanFriendlyDisplays)
 				.recommendationsPerIngredient(recommendationsPerIngredient)
 				.build();
 		var om = ObjectMapperModelUtils.applyDefaultObjectMapperConfiguration(new ObjectMapper());
 		om.registerModule(new Jdk8Module()); // at runtime Quarkus provides this
 		var result = om.writeValueAsString(recipe);
 		assertThat(result).doesNotContain("RecommendationComponentNameImpl", "GenericIngredientId");
+		assertThat(result).contains("Eat less processed meat");
 	}
 }

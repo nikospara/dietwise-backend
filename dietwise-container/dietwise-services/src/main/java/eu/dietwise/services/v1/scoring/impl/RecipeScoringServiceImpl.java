@@ -52,6 +52,9 @@ public class RecipeScoringServiceImpl implements RecipeScoringService {
 		var scoringData = ImmutableScoringData.builder()
 				.totalNumberOfRecomendations(recommendationComponents.size())
 				.recommendationWeights(recommendationComponents.stream().collect(toMap(RecommendationComponent::getComponentForScoring, RecommendationComponent::getWeight)))
+				.humanFriendlyDisplays(recommendationComponents.stream()
+						.filter(rc -> rc.getHumanFriendlyDisplay().isPresent())
+						.collect(toMap(RecommendationComponent::getComponentForScoring, rc -> rc.getHumanFriendlyDisplay().get())))
 				.recommendationsPerIngredient(recommendationNamesPerIngredient)
 				.build();
 		return new ScoringRecipeAssessmentMessage(scoringData);

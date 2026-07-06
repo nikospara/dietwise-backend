@@ -73,6 +73,9 @@ class RecipeScoringServiceImplTest {
 		assertThat(message.scoringData().getRecommendationWeights())
 				.containsEntry(new RecommendationComponentNameImpl("Fiber"), RecommendationWeight.ENCOURAGED)
 				.containsEntry(new RecommendationComponentNameImpl("Sodium"), RecommendationWeight.LIMITED);
+		assertThat(message.scoringData().getHumanFriendlyDisplays())
+				.containsEntry(new RecommendationComponentNameImpl("Fiber"), "High-fiber foods")
+				.doesNotContainKey(new RecommendationComponentNameImpl("Sodium"));
 		assertThat(message.scoringData().getRecommendationsPerIngredient())
 				.containsEntry(
 						new GenericIngredientId(INGREDIENT_1),
@@ -83,12 +86,12 @@ class RecipeScoringServiceImplTest {
 	}
 
 	private static RecommendationComponent recommendationComponent(
-			String componentName, RecommendationWeight weight, String explanationForLlm) {
+			String componentName, RecommendationWeight weight, String humanFriendlyDisplay) {
 		return ImmutableRecommendationComponent.builder()
 				.recommendation(new RecommendationImpl(componentName + "-recommendation"))
 				.componentForScoring(new RecommendationComponentNameImpl(componentName))
 				.weight(weight)
-				.explanationForLlm(Optional.ofNullable(explanationForLlm))
+				.humanFriendlyDisplay(Optional.ofNullable(humanFriendlyDisplay))
 				.build();
 	}
 }

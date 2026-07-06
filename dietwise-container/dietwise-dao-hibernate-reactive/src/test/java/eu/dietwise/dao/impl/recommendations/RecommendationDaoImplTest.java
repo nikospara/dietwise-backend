@@ -456,6 +456,55 @@ public class RecommendationDaoImplTest {
 		assertThat(translationsForEdit(sessionFactory, id).get(RecipeLanguage.EL).version()).isEqualTo(0L);
 	}
 
+	@Test
+	@Order(22)
+	void listAllRecommendationsForScoringUsesTheTranslatedHumanFriendlyDisplayFallingBackToMasterAndTheMasterWhenNoTranslation(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+		UUID calciumId = lookupId(sessionFactory, "Diet low in calcium");
+		setMasterHumanFriendlyDisplay(sessionFactory, calciumId, "Watch your calcium");
+		setTranslationHumanFriendlyDisplay(sessionFactory, calciumId, RecipeLanguage.NL, "Let op je calcium");
+
+		List<RecommendationComponent> english =
+				factory.withoutTransaction(em -> sut.listAllRecommendationsForScoring(em, RecipeLanguage.EN))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		List<RecommendationComponent> dutch =
+				factory.withoutTransaction(em -> sut.listAllRecommendationsForScoring(em, RecipeLanguage.NL))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// no English translation row exists, so it falls back to the master value
+		assertThat(componentForScoring(english, "calcium").getHumanFriendlyDisplay()).contains("Watch your calcium");
+		// the Dutch translation overrides the master value
+		assertThat(componentForScoring(dutch, "calcium").getHumanFriendlyDisplay()).contains("Let op je calcium");
+		// a recommendation with no human friendly display anywhere stays empty
+		assertThat(componentForScoring(english, "processed meat").getHumanFriendlyDisplay()).isEmpty();
+	}
+
+	private static RecommendationComponent componentForScoring(List<RecommendationComponent> components, String componentForScoring) {
+		return components.stream()
+				.filter(rc -> rc.getComponentForScoring().asString().equals(componentForScoring))
+				.findFirst().orElseThrow();
+	}
+
+	private static void setMasterHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID id, String value) {
+		sessionFactory.withTransaction(session ->
+						session.createNativeQuery("update DW_RECOMMENDATION set human_friendly_display = :value where id = :id")
+								.setParameter("value", value)
+								.setParameter("id", id)
+								.executeUpdate())
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static void setTranslationHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID id, RecipeLanguage lang, String value) {
+		sessionFactory.withTransaction(session ->
+						session.createNativeQuery("update DW_RECOMMENDATION_TRANSLATION set human_friendly_display = :value where recommendation_id = :id and lang = :lang")
+								.setParameter("value", value)
+								.setParameter("id", id)
+								.setParameter("lang", lang.name())
+								.executeUpdate())
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
 	private static BackofficeRecommendation lookup(Mutiny.SessionFactory sessionFactory, String name) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
@@ -519,7 +568,7 @@ public class RecommendationDaoImplTest {
 
 	// KEEP THIS LAST! IT MESSES WITH THE DATA
 	@Test
-	@Order(22)
+	@Order(23)
 	void testInsertions(Mutiny.SessionFactory sessionFactory) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();

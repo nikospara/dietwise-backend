@@ -16,4 +16,6 @@ public interface RecommendationComponent {
 	RecommendationWeight getWeight();
 
 	Optional<String> getExplanationForLlm();
+
+	Optional<String> getHumanFriendlyDisplay();
 }

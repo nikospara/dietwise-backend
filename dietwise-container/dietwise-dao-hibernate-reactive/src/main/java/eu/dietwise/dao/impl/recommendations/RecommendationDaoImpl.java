@@ -154,11 +154,13 @@ public class RecommendationDaoImpl implements RecommendationDao {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(RecommendationEntity.class);
 		q.from(RecommendationEntity.class);
-		return em.createQuery(q).getResultList()
-				.flatMap(values -> loadTranslationsByRecommendationId(em, lang)
-						.map(translationsById -> values.stream()
-								.map(value -> toRecommendationComponent(value, translationsById.get(value.getId())))
-								.toList()));
+		return forcm(
+				em.createQuery(q).getResultList(),
+				_ -> loadTranslationsByRecommendationId(em, lang),
+				(values, translationsById) -> values.stream()
+						.map(value -> toRecommendationComponent(value, translationsById.get(value.getId())))
+						.toList()
+		);
 	}
 
 	@Override
@@ -474,6 +476,7 @@ public class RecommendationDaoImpl implements RecommendationDao {
 						t != null && t.getComponentForScoring() != null ? t.getComponentForScoring() : e.getComponentForScoring()))
 				.weight(e.getWeight())
 				.explanationForLlm(Optional.ofNullable(t != null && t.getExplanationForLlm() != null ? t.getExplanationForLlm() : e.getExplanationForLlm()))
+				.humanFriendlyDisplay(Optional.ofNullable(t != null && t.getHumanFriendlyDisplay() != null ? t.getHumanFriendlyDisplay() : e.getHumanFriendlyDisplay()))
 				.build();
 	}
 }

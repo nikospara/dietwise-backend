@@ -14,5 +14,7 @@ public interface ScoringData {
 
 	Map<RecommendationComponentName, RecommendationWeight> getRecommendationWeights();
 
+	Map<RecommendationComponentName, String> getHumanFriendlyDisplays();
+
 	Map<IngredientId, Set<RecommendationComponentName>> getRecommendationsPerIngredient();
 }
