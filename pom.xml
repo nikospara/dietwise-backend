@@ -27,12 +27,12 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.37.0</version.quarkus.platform>
+		<version.quarkus.platform>3.37.1</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.assertj>3.27.7</version.assertj>
 		<version.h2>2.1.210</version.h2>
-		<version.hibernate-validator-cdi>9.1.0.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
+		<version.hibernate-validator-cdi>9.1.1.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
 		<version.keycloak>26.6.1</version.keycloak>
 		<version.liquibase>5.0.3</version.liquibase>

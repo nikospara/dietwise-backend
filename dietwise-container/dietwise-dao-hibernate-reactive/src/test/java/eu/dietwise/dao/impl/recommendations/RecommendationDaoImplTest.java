@@ -23,7 +23,7 @@ import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
-import eu.dietwise.services.model.recommendations.ExplanationOverride;
+import eu.dietwise.services.model.recommendations.MasterOverride;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
@@ -271,89 +271,123 @@ public class RecommendationDaoImplTest {
 
 	@Test
 	@Order(10)
-	void stageExplanationSeedsAWorkingCopyRowOverlaidByFindExplanationOverridesAndRevertRemovesIt(Mutiny.SessionFactory sessionFactory) {
+	void stageMasterSeedsAWorkingCopyRowOverlaidByFindMasterOverridesAndRevertRemovesIt(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Decrease red meat");
 
-		long version = stage(sessionFactory, id, "Staged red-meat explanation.", 0L);
+		long version = stageMaster(sessionFactory, id, "Staged red-meat explanation.", "Staged red-meat display.", 0L);
 		assertThat(version).isEqualTo(1L);
 
-		Map<UUID, ExplanationOverride> overrides = overrides(sessionFactory);
+		Map<UUID, MasterOverride> overrides = masterOverrides(sessionFactory);
 		assertThat(overrides).containsKey(id);
 		assertThat(overrides.get(id).explanationForLlm()).isEqualTo("Staged red-meat explanation.");
+		assertThat(overrides.get(id).humanFriendlyDisplay()).isEqualTo("Staged red-meat display.");
 		assertThat(overrides.get(id).version()).isEqualTo(1L);
 
-		revert(sessionFactory, id, 1L);
-		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+		revertMaster(sessionFactory, id, 1L);
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(id);
 	}
 
 	@Test
 	@Order(11)
-	void stageExplanationTwiceBumpsTheVersion(Mutiny.SessionFactory sessionFactory) {
+	void stageMasterTwiceBumpsTheVersion(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Decrease sodium");
 
-		assertThat(stage(sessionFactory, id, "First.", 0L)).isEqualTo(1L);
-		assertThat(stage(sessionFactory, id, "Second.", 1L)).isEqualTo(2L);
+		assertThat(stageMaster(sessionFactory, id, "First.", "Display 1.", 0L)).isEqualTo(1L);
+		assertThat(stageMaster(sessionFactory, id, "Second.", "Display 2.", 1L)).isEqualTo(2L);
 
-		ExplanationOverride override = overrides(sessionFactory).get(id);
+		MasterOverride override = masterOverrides(sessionFactory).get(id);
 		assertThat(override.explanationForLlm()).isEqualTo("Second.");
+		assertThat(override.humanFriendlyDisplay()).isEqualTo("Display 2.");
 		assertThat(override.version()).isEqualTo(2L);
 
-		revert(sessionFactory, id, 2L);
+		revertMaster(sessionFactory, id, 2L);
 	}
 
 	@Test
 	@Order(12)
-	void stageExplanationMatchingMasterCollapsesTheWorkingCopyRow(Mutiny.SessionFactory sessionFactory) {
+	void stageMasterMatchingMasterCollapsesTheWorkingCopyRow(Mutiny.SessionFactory sessionFactory) {
 		BackofficeRecommendation master = lookup(sessionFactory, "Decrease sugar-sweetened beverages");
 
-		assertThat(stage(sessionFactory, master.id(), "A staged value.", 0L)).isEqualTo(1L);
-		assertThat(stage(sessionFactory, master.id(), master.explanationForLlm(), 1L)).isEqualTo(0L);
+		assertThat(stageMaster(sessionFactory, master.id(), "A staged value.", "A staged display.", 0L)).isEqualTo(1L);
+		assertThat(stageMaster(sessionFactory, master.id(), master.explanationForLlm(), master.humanFriendlyDisplay(), 1L)).isEqualTo(0L);
 
-		assertThat(overrides(sessionFactory)).doesNotContainKey(master.id());
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(master.id());
 	}
 
 	@Test
 	@Order(13)
-	void stageExplanationWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
+	void stageMasterWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Decrease trans fatty acids");
-		stage(sessionFactory, id, "Staged.", 0L);
+		stageMaster(sessionFactory, id, "Staged.", "Staged display.", 0L);
 
-		assertThatThrownBy(() -> stage(sessionFactory, id, "Conflicting.", 0L))
+		assertThatThrownBy(() -> stageMaster(sessionFactory, id, "Conflicting.", "Conflicting display.", 0L))
 				.isInstanceOf(StaleVersionException.class);
 
-		revert(sessionFactory, id, 1L);
-		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+		revertMaster(sessionFactory, id, 1L);
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(id);
 	}
 
 	@Test
 	@Order(14)
-	void revertExplanationWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
+	void revertMasterWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Diet low in fiber");
-		stage(sessionFactory, id, "Staged.", 0L);
+		stageMaster(sessionFactory, id, "Staged.", "Staged display.", 0L);
 
-		assertThatThrownBy(() -> revert(sessionFactory, id, 99L))
+		assertThatThrownBy(() -> revertMaster(sessionFactory, id, 99L))
 				.isInstanceOf(StaleVersionException.class);
 
-		revert(sessionFactory, id, 1L);
-		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+		revertMaster(sessionFactory, id, 1L);
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(id);
 	}
 
 	@Test
 	@Order(15)
-	void revertExplanationWithoutAStagedChangeIsANoOp(Mutiny.SessionFactory sessionFactory) {
+	void revertMasterWithoutAStagedChangeIsANoOp(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Diet low in fruits");
 
-		revert(sessionFactory, id, 0L);
+		revertMaster(sessionFactory, id, 0L);
 
-		assertThat(overrides(sessionFactory)).doesNotContainKey(id);
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(id);
 	}
 
 	@Test
 	@Order(16)
+	void stageMasterKeepsTheRowWhileOnlyOneFieldDiffersAndCollapsesWhenBothMatch(Mutiny.SessionFactory sessionFactory) {
+		BackofficeRecommendation master = lookup(sessionFactory, "Diet low in vegetables");
+
+		assertThat(stageMaster(sessionFactory, master.id(), "Eat veg.", "More vegetables!", 0L)).isEqualTo(1L);
+		// explanation back to master, human friendly display still differs: the shared row survives and its version bumps
+		assertThat(stageMaster(sessionFactory, master.id(), master.explanationForLlm(), "More vegetables!", 1L)).isEqualTo(2L);
+		MasterOverride override = masterOverrides(sessionFactory).get(master.id());
+		assertThat(override.explanationForLlm()).isEqualTo(master.explanationForLlm());
+		assertThat(override.humanFriendlyDisplay()).isEqualTo("More vegetables!");
+		assertThat(override.version()).isEqualTo(2L);
+
+		// both fields back to master: the row collapses
+		assertThat(stageMaster(sessionFactory, master.id(), master.explanationForLlm(), master.humanFriendlyDisplay(), 2L)).isEqualTo(0L);
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(master.id());
+	}
+
+	@Test
+	@Order(17)
+	void stageMasterCreatesTheRowWhenOnlyHumanFriendlyDisplayDiffersFromMaster(Mutiny.SessionFactory sessionFactory) {
+		BackofficeRecommendation master = lookup(sessionFactory, "Diet low in whole grains");
+
+		assertThat(stageMaster(sessionFactory, master.id(), master.explanationForLlm(), "Whole grains rock!", 0L)).isEqualTo(1L);
+		MasterOverride override = masterOverrides(sessionFactory).get(master.id());
+		assertThat(override.explanationForLlm()).isEqualTo(master.explanationForLlm());
+		assertThat(override.humanFriendlyDisplay()).isEqualTo("Whole grains rock!");
+
+		revertMaster(sessionFactory, master.id(), 1L);
+		assertThat(masterOverrides(sessionFactory)).doesNotContainKey(master.id());
+	}
+
+	@Test
+	@Order(18)
 	void stageTranslationSeedsAWorkingCopyRowReflectedInForEditAndChipsAndRevertRemovesIt(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Diet low in legumes");
 
-		stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Όσπρια", "όσπρια", "Φάε όσπρια.", 0L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Όσπρια", "όσπρια", "Φάε όσπρια.", "Τρώγε όσπρια!", 0L);
 
 		Map<RecipeLanguage, RecommendationTranslationDetails> forEdit = translationsForEdit(sessionFactory, id);
 		assertThat(forEdit).containsOnlyKeys(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
@@ -361,6 +395,7 @@ public class RecommendationDaoImplTest {
 		assertThat(el.name()).isEqualTo("Όσπρια");
 		assertThat(el.componentForScoring()).isEqualTo("όσπρια");
 		assertThat(el.explanationForLlm()).isEqualTo("Φάε όσπρια.");
+		assertThat(el.humanFriendlyDisplay()).isEqualTo("Τρώγε όσπρια!");
 		assertThat(el.version()).isEqualTo(1L);
 		assertThat(translationLangs(sessionFactory).get(id).staged()).contains(RecipeLanguage.EL);
 
@@ -370,33 +405,34 @@ public class RecommendationDaoImplTest {
 	}
 
 	@Test
-	@Order(17)
+	@Order(19)
 	void stageTranslationTwiceBumpsTheVersion(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Diet low in milk");
 
-		stageTranslation(sessionFactory, id, RecipeLanguage.LT, "Pienas 1", "pienas 1", "Gerk pieną 1.", 0L);
-		stageTranslation(sessionFactory, id, RecipeLanguage.LT, "Pienas 2", "pienas 2", "Gerk pieną 2.", 1L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.LT, "Pienas 1", "pienas 1", "Gerk pieną 1.", "Pienas rodo 1", 0L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.LT, "Pienas 2", "pienas 2", "Gerk pieną 2.", "Pienas rodo 2", 1L);
 
 		RecommendationTranslationDetails lt = translationsForEdit(sessionFactory, id).get(RecipeLanguage.LT);
 		assertThat(lt.name()).isEqualTo("Pienas 2");
 		assertThat(lt.componentForScoring()).isEqualTo("pienas 2");
 		assertThat(lt.explanationForLlm()).isEqualTo("Gerk pieną 2.");
+		assertThat(lt.humanFriendlyDisplay()).isEqualTo("Pienas rodo 2");
 		assertThat(lt.version()).isEqualTo(2L);
 
 		revertTranslation(sessionFactory, id, RecipeLanguage.LT, 2L);
 	}
 
 	@Test
-	@Order(18)
+	@Order(20)
 	void stageTranslationMatchingMasterCollapsesTheWorkingCopyRow(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Diet low in calcium");
 		RecommendationTranslationDetails master = translationsForEdit(sessionFactory, id).get(RecipeLanguage.NL);
 		assertThat(master.version()).isEqualTo(0L);
 
-		stageTranslation(sessionFactory, id, RecipeLanguage.NL, "Anders", "anders", "Anders.", 0L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.NL, "Anders", "anders", "Anders.", "Anders weergeven.", 0L);
 		assertThat(translationsForEdit(sessionFactory, id).get(RecipeLanguage.NL).version()).isEqualTo(1L);
 
-		stageTranslation(sessionFactory, id, RecipeLanguage.NL, master.name(), master.componentForScoring(), master.explanationForLlm(), 1L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.NL, master.name(), master.componentForScoring(), master.explanationForLlm(), master.humanFriendlyDisplay(), 1L);
 
 		RecommendationTranslationDetails afterCollapse = translationsForEdit(sessionFactory, id).get(RecipeLanguage.NL);
 		assertThat(afterCollapse.version()).isEqualTo(0L);
@@ -407,13 +443,13 @@ public class RecommendationDaoImplTest {
 	}
 
 	@Test
-	@Order(19)
+	@Order(21)
 	void stageTranslationWithAStaleBaseVersionIsRejected(Mutiny.SessionFactory sessionFactory) {
 		UUID id = lookupId(sessionFactory, "Diet low in nuts and seeds");
 
-		stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Ξηροί καρποί", "ξηροί καρποί", "Φάε ξηρούς καρπούς.", 0L);
+		stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Ξηροί καρποί", "ξηροί καρποί", "Φάε ξηρούς καρπούς.", "Τρώγε ξηρούς καρπούς!", 0L);
 
-		assertThatThrownBy(() -> stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Σύγκρουση", "σύγκρουση", "Σύγκρουση.", 0L))
+		assertThatThrownBy(() -> stageTranslation(sessionFactory, id, RecipeLanguage.EL, "Σύγκρουση", "σύγκρουση", "Σύγκρουση.", "Σύγκρουση οθόνης.", 0L))
 				.isInstanceOf(StaleVersionException.class);
 
 		revertTranslation(sessionFactory, id, RecipeLanguage.EL, 1L);
@@ -432,24 +468,24 @@ public class RecommendationDaoImplTest {
 		return lookup(sessionFactory, name).id();
 	}
 
-	private static long stage(Mutiny.SessionFactory sessionFactory, UUID id, String explanationForLlm, long baseVersion) {
+	private static long stageMaster(Mutiny.SessionFactory sessionFactory, UUID id, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
-		return factory.withTransaction(tx -> sut.stageExplanation(tx, id, explanationForLlm, baseVersion))
+		return factory.withTransaction(tx -> sut.stageMaster(tx, id, explanationForLlm, humanFriendlyDisplay, baseVersion))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
-	private static void revert(Mutiny.SessionFactory sessionFactory, UUID id, long baseVersion) {
+	private static void revertMaster(Mutiny.SessionFactory sessionFactory, UUID id, long baseVersion) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
-		factory.withTransaction(tx -> sut.revertExplanation(tx, id, baseVersion))
+		factory.withTransaction(tx -> sut.revertMaster(tx, id, baseVersion))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
-	private static Map<UUID, ExplanationOverride> overrides(Mutiny.SessionFactory sessionFactory) {
+	private static Map<UUID, MasterOverride> masterOverrides(Mutiny.SessionFactory sessionFactory) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
-		return factory.withoutTransaction(sut::findExplanationOverrides)
+		return factory.withoutTransaction(sut::findMasterOverrides)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
@@ -467,10 +503,10 @@ public class RecommendationDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
-	private static void stageTranslation(Mutiny.SessionFactory sessionFactory, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion) {
+	private static void stageTranslation(Mutiny.SessionFactory sessionFactory, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();
-		factory.withTransaction(tx -> sut.stageTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, baseVersion))
+		factory.withTransaction(tx -> sut.stageTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, humanFriendlyDisplay, baseVersion))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
@@ -483,7 +519,7 @@ public class RecommendationDaoImplTest {
 
 	// KEEP THIS LAST! IT MESSES WITH THE DATA
 	@Test
-	@Order(20)
+	@Order(22)
 	void testInsertions(Mutiny.SessionFactory sessionFactory) {
 		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
 		var sut = new RecommendationDaoImpl();

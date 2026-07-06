@@ -275,4 +275,19 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="recommendation_human_friendly_display" author="nikospara">
+		<addColumn tableName="DW_RECOMMENDATION">
+			<column name="human_friendly_display" type="VARCHAR(300)" remarks="Human friendly display of this component/ingredient shown to the user, English" />
+		</addColumn>
+		<addColumn tableName="DW_RECOMMENDATION_TRANSLATION">
+			<column name="human_friendly_display" type="VARCHAR(300)" remarks="Translated human friendly display shown to the user" />
+		</addColumn>
+		<addColumn tableName="DW_RECOMMENDATION_WC">
+			<column name="human_friendly_display" type="VARCHAR(300)" remarks="Proposed human friendly display shown to the user, English" />
+		</addColumn>
+		<addColumn tableName="DW_RECOMMENDATION_TRANSLATION_WC">
+			<column name="human_friendly_display" type="VARCHAR(300)" remarks="Proposed translated human friendly display shown to the user" />
+		</addColumn>
+	</changeSet>
 </databaseChangeLog>

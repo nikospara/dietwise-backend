@@ -37,6 +37,12 @@ public class RecommendationEntity {
 	@Column(name = "explanation_for_llm")
 	private String explanationForLlm;
 
+	/**
+	 * The optional human friendly display of this recommendation.
+	 */
+	@Column(name = "human_friendly_display")
+	private String humanFriendlyDisplay;
+
 	@OneToMany(mappedBy = "recommendation", fetch = LAZY)
 	private Set<RecommendationTranslationEntity> translations;
 
@@ -78,6 +84,14 @@ public class RecommendationEntity {
 
 	public void setExplanationForLlm(String explanationForLlm) {
 		this.explanationForLlm = explanationForLlm;
+	}
+
+	public String getHumanFriendlyDisplay() {
+		return humanFriendlyDisplay;
+	}
+
+	public void setHumanFriendlyDisplay(String humanFriendlyDisplay) {
+		this.humanFriendlyDisplay = humanFriendlyDisplay;
 	}
 
 	public Set<RecommendationTranslationEntity> getTranslations() {

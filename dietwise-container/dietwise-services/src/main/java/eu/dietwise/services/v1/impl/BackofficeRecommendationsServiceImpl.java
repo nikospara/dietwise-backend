@@ -4,6 +4,7 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -13,7 +14,7 @@ import eu.dietwise.common.v1.model.User;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.authz.Authorization;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
-import eu.dietwise.services.model.recommendations.ExplanationOverride;
+import eu.dietwise.services.model.recommendations.MasterOverride;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.v1.BackofficeRecommendationsService;
 import eu.dietwise.services.v1.types.StagedRecommendation;
@@ -41,22 +42,22 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 		authorization.requireAdmin(user);
 		return persistenceContextFactory.withoutTransaction(em -> forcm(
 				recommendationDao.listForBackoffice(em),
-				_ -> recommendationDao.findExplanationOverrides(em),
+				_ -> recommendationDao.findMasterOverrides(em),
 				(_, _) -> recommendationDao.findTranslationLangs(em),
 				this::toStagedRecommendations
 		));
 	}
 
 	@Override
-	public Uni<Long> stageExplanation(User user, UUID id, String explanation, long baseVersion) {
+	public Uni<Long> stageMaster(User user, UUID id, String explanation, String humanFriendlyDisplay, long baseVersion) {
 		authorization.requireAdmin(user);
-		return persistenceContextFactory.withTransaction(tx -> recommendationDao.stageExplanation(tx, id, explanation, baseVersion));
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.stageMaster(tx, id, explanation, humanFriendlyDisplay, baseVersion));
 	}
 
 	@Override
-	public Uni<Void> revertExplanation(User user, UUID id, long baseVersion) {
+	public Uni<Void> revertMaster(User user, UUID id, long baseVersion) {
 		authorization.requireAdmin(user);
-		return persistenceContextFactory.withTransaction(tx -> recommendationDao.revertExplanation(tx, id, baseVersion));
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.revertMaster(tx, id, baseVersion));
 	}
 
 	@Override
@@ -66,10 +67,10 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 	}
 
 	@Override
-	public Uni<Void> stageTranslation(User user, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion) {
+	public Uni<Void> stageTranslation(User user, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		authorization.requireAdmin(user);
 		BackofficeTranslations.requireTranslatableLanguage(lang);
-		return persistenceContextFactory.withTransaction(tx -> recommendationDao.stageTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, baseVersion));
+		return persistenceContextFactory.withTransaction(tx -> recommendationDao.stageTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, humanFriendlyDisplay, baseVersion));
 	}
 
 	@Override
@@ -81,7 +82,7 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 
 	private List<StagedRecommendation> toStagedRecommendations(
 			List<BackofficeRecommendation> rows,
-			Map<UUID, ExplanationOverride> overridesById,
+			Map<UUID, MasterOverride> overridesById,
 			Map<UUID, TranslationLangs> langsById
 	) {
 		return rows.stream()
@@ -89,17 +90,22 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 				.toList();
 	}
 
-	private static StagedRecommendation toStagedRecommendation(BackofficeRecommendation row, ExplanationOverride override, TranslationLangs langs) {
-		boolean changed = override != null;
-		String explanation = changed ? override.explanationForLlm() : row.explanationForLlm();
-		long version = changed ? override.version() : 0L;
+	private static StagedRecommendation toStagedRecommendation(BackofficeRecommendation row, MasterOverride override, TranslationLangs langs) {
+		boolean staged = override != null;
+		String explanation = staged ? override.explanationForLlm() : row.explanationForLlm();
+		String humanFriendlyDisplay = staged ? override.humanFriendlyDisplay() : row.humanFriendlyDisplay();
+		boolean explanationChanged = staged && !Objects.equals(override.explanationForLlm(), row.explanationForLlm());
+		boolean humanFriendlyDisplayChanged = staged && !Objects.equals(override.humanFriendlyDisplay(), row.humanFriendlyDisplay());
+		long version = staged ? override.version() : 0L;
 		return new StagedRecommendation(
 				row.id(),
 				row.name(),
 				row.componentForScoring(),
 				row.weight(),
 				explanation,
-				changed,
+				explanationChanged,
+				humanFriendlyDisplay,
+				humanFriendlyDisplayChanged,
 				version,
 				BackofficeTranslations.translationStates(langs));
 	}

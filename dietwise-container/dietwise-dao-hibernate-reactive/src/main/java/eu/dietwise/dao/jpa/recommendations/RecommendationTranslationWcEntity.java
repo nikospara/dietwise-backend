@@ -14,9 +14,9 @@ import eu.dietwise.v1.types.RecipeLanguage;
 
 /**
  * The Working Copy mirror of {@link RecommendationTranslationEntity}: a proposed per-language Recommendation name,
- * component for scoring and explanation translation staged for publish. Sparse — a row exists only for a translation
- * that differs from published master. The Recommendation is stored as a raw id and resolved against published master at
- * read time, so this table carries no foreign keys.
+ * component for scoring, explanation and human friendly display translation staged for publish. Sparse — a row exists
+ * only for a translation that differs from published master. The Recommendation is stored as a raw id and resolved
+ * against published master at read time, so this table carries no foreign keys.
  */
 @Entity
 @IdClass(RecommendationTranslationWcEntityId.class)
@@ -39,6 +39,9 @@ public class RecommendationTranslationWcEntity {
 
 	@Column(name = "explanation_for_llm")
 	private String explanationForLlm;
+
+	@Column(name = "human_friendly_display")
+	private String humanFriendlyDisplay;
 
 	@Column(name = "version")
 	private long version;
@@ -81,6 +84,14 @@ public class RecommendationTranslationWcEntity {
 
 	public void setExplanationForLlm(String explanationForLlm) {
 		this.explanationForLlm = explanationForLlm;
+	}
+
+	public String getHumanFriendlyDisplay() {
+		return humanFriendlyDisplay;
+	}
+
+	public void setHumanFriendlyDisplay(String humanFriendlyDisplay) {
+		this.humanFriendlyDisplay = humanFriendlyDisplay;
 	}
 
 	public long getVersion() {

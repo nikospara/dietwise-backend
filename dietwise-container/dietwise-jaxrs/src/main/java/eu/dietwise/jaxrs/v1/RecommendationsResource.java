@@ -35,20 +35,20 @@ public class RecommendationsResource {
 	}
 
 	@PUT
-	@Path("{id}/explanation")
+	@Path("{id}/master")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Uni<StagedVersionResponse> stageExplanation(@PathParam("id") String id, StageExplanationRequest request, @Context ContainerRequestContext crc) {
+	public Uni<StagedVersionResponse> stageMaster(@PathParam("id") String id, StageMasterRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRecommendationsService.stageExplanation(user, UUID.fromString(id), request.explanationForLlm(), request.baseVersion())
+		return backofficeRecommendationsService.stageMaster(user, UUID.fromString(id), request.explanationForLlm(), request.humanFriendlyDisplay(), request.baseVersion())
 				.map(StagedVersionResponse::new);
 	}
 
 	@DELETE
-	@Path("{id}/explanation")
-	public Uni<Void> revertExplanation(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
+	@Path("{id}/master")
+	public Uni<Void> revertMaster(@PathParam("id") String id, @QueryParam("baseVersion") long baseVersion, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRecommendationsService.revertExplanation(user, UUID.fromString(id), baseVersion);
+		return backofficeRecommendationsService.revertMaster(user, UUID.fromString(id), baseVersion);
 	}
 
 	@GET
@@ -64,7 +64,7 @@ public class RecommendationsResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Uni<Void> stageTranslation(@PathParam("id") String id, @PathParam("lang") String lang, EditRecommendationTranslationRequest request, @Context ContainerRequestContext crc) {
 		var user = (User) crc.getSecurityContext().getUserPrincipal();
-		return backofficeRecommendationsService.stageTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.componentForScoring(), request.explanationForLlm(), request.baseVersion());
+		return backofficeRecommendationsService.stageTranslation(user, UUID.fromString(id), RecipeLanguage.valueOf(lang), request.name(), request.componentForScoring(), request.explanationForLlm(), request.humanFriendlyDisplay(), request.baseVersion());
 	}
 
 	@DELETE

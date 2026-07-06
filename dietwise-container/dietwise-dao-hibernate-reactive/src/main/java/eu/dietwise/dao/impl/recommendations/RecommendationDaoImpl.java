@@ -48,8 +48,8 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationWcEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationWcEntity_;
 import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
-import eu.dietwise.services.model.recommendations.ExplanationOverride;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
+import eu.dietwise.services.model.recommendations.MasterOverride;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
@@ -216,54 +216,57 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	}
 
 	@Override
-	public Uni<Map<UUID, ExplanationOverride>> findExplanationOverrides(ReactivePersistenceContext em) {
+	public Uni<Map<UUID, MasterOverride>> findMasterOverrides(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createQuery(RecommendationWcEntity.class);
 		q.from(RecommendationWcEntity.class);
 		return em.createQuery(q).getResultList()
 				.map(rows -> rows.stream().collect(Collectors.toMap(
 						RecommendationWcEntity::getId,
-						wc -> new ExplanationOverride(wc.getExplanationForLlm(), wc.getVersion()))));
+						wc -> new MasterOverride(wc.getExplanationForLlm(), wc.getHumanFriendlyDisplay(), wc.getVersion()))));
 	}
 
 	@Override
-	public Uni<Long> stageExplanation(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, long baseVersion) {
+	public Uni<Long> stageMaster(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		return forc(
 				tx.find(RecommendationWcEntity.class, id),
 				_ -> tx.find(RecommendationEntity.class, id),
-				(existing, master) -> applyEdit(tx, id, explanationForLlm, baseVersion, existing, master)
+				(existing, master) -> applyEdit(tx, id, explanationForLlm, humanFriendlyDisplay, baseVersion, existing, master)
 		);
 	}
 
-	private Uni<Long> applyEdit(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, long baseVersion, RecommendationWcEntity existing, RecommendationEntity master) {
+	private Uni<Long> applyEdit(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, String humanFriendlyDisplay, long baseVersion, RecommendationWcEntity existing, RecommendationEntity master) {
 		if (master == null) {
 			return Uni.createFrom().failure(new EntityNotFoundException(RecommendationEntity.class, id));
 		}
-		boolean matchesMaster = Objects.equals(explanationForLlm, master.getExplanationForLlm());
+		boolean matchesMaster = Objects.equals(explanationForLlm, master.getExplanationForLlm())
+				&& Objects.equals(humanFriendlyDisplay, master.getHumanFriendlyDisplay());
 		if (existing == null) {
 			if (baseVersion != 0L) {
 				return Uni.createFrom().failure(new StaleVersionException(RecommendationEntity.class, id));
 			}
-			return matchesMaster ? Uni.createFrom().item(0L) : seedStaged(tx, id, explanationForLlm);
+			return matchesMaster ? Uni.createFrom().item(0L) : seedStaged(tx, id, explanationForLlm, humanFriendlyDisplay);
 		}
 		return matchesMaster
 				? deleteStaged(tx, id, baseVersion).replaceWith(0L)
-				: bumpStaged(tx, id, explanationForLlm, baseVersion);
+				: bumpStaged(tx, id, explanationForLlm, humanFriendlyDisplay, baseVersion);
 	}
 
-	private Uni<Long> seedStaged(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm) {
+	private Uni<Long> seedStaged(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, String humanFriendlyDisplay) {
 		var entity = new RecommendationWcEntity();
 		entity.setId(id);
 		entity.setExplanationForLlm(explanationForLlm);
+		entity.setHumanFriendlyDisplay(humanFriendlyDisplay);
 		entity.setVersion(1L);
 		return tx.persist(entity).replaceWith(1L);
 	}
 
-	private Uni<Long> bumpStaged(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, long baseVersion) {
+	private Uni<Long> bumpStaged(ReactivePersistenceTxContext tx, UUID id, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		var cb = tx.getCriteriaBuilder();
 		CriteriaUpdate<RecommendationWcEntity> cu = cb.createCriteriaUpdate(RecommendationWcEntity.class);
 		Root<RecommendationWcEntity> wc = cu.getRoot();
 		cu.set(wc.get(RecommendationWcEntity_.explanationForLlm), explanationForLlm);
+		cu.set(wc.get(RecommendationWcEntity_.humanFriendlyDisplay), humanFriendlyDisplay);
 		cu.set(wc.get(RecommendationWcEntity_.version), cb.sum(wc.get(RecommendationWcEntity_.version), 1L));
 		cu.where(cb.and(
 				cb.equal(wc.get(RecommendationWcEntity_.id), id),
@@ -275,7 +278,7 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	}
 
 	@Override
-	public Uni<Void> revertExplanation(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
+	public Uni<Void> revertMaster(ReactivePersistenceTxContext tx, UUID id, long baseVersion) {
 		return tx.find(RecommendationWcEntity.class, id).flatMap(existing -> existing == null
 				? Uni.createFrom().voidItem()
 				: deleteStaged(tx, id, baseVersion));
@@ -327,61 +330,65 @@ public class RecommendationDaoImpl implements RecommendationDao {
 			RecommendationTranslationEntity m = master.get(lang);
 			RecommendationTranslationWcEntity wc = staged.get(lang);
 			if (wc != null) {
-				result.put(lang, new RecommendationTranslationDetails(wc.getName(), wc.getComponentForScoring(), wc.getExplanationForLlm(), wc.getVersion()));
+				result.put(lang, new RecommendationTranslationDetails(wc.getName(), wc.getComponentForScoring(), wc.getExplanationForLlm(), wc.getHumanFriendlyDisplay(), wc.getVersion()));
 			} else if (m != null) {
-				result.put(lang, new RecommendationTranslationDetails(m.getName(), m.getComponentForScoring(), m.getExplanationForLlm(), 0L));
+				result.put(lang, new RecommendationTranslationDetails(m.getName(), m.getComponentForScoring(), m.getExplanationForLlm(), m.getHumanFriendlyDisplay(), 0L));
 			} else {
-				result.put(lang, new RecommendationTranslationDetails(null, null, null, 0L));
+				result.put(lang, new RecommendationTranslationDetails(null, null, null, null, 0L));
 			}
 		}
 		return result;
 	}
 
 	@Override
-	public Uni<Void> stageTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion) {
+	public Uni<Void> stageTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		return forc(
 				tx.find(RecommendationTranslationWcEntity.class, new RecommendationTranslationWcEntityId(id, lang)),
 				_ -> tx.find(RecommendationTranslationEntity.class, new RecommendationTranslationEntityId(id, lang)),
-				(existing, master) -> applyTranslationEdit(tx, id, lang, name, componentForScoring, explanationForLlm, baseVersion, existing, master)
+				(existing, master) -> applyTranslationEdit(tx, id, lang, name, componentForScoring, explanationForLlm, humanFriendlyDisplay, baseVersion, existing, master)
 		);
 	}
 
-	private Uni<Void> applyTranslationEdit(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion, RecommendationTranslationWcEntity existing, RecommendationTranslationEntity master) {
+	private Uni<Void> applyTranslationEdit(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, String humanFriendlyDisplay, long baseVersion, RecommendationTranslationWcEntity existing, RecommendationTranslationEntity master) {
 		String masterName = master == null ? null : master.getName();
 		String masterComponent = master == null ? null : master.getComponentForScoring();
 		String masterExplanation = master == null ? null : master.getExplanationForLlm();
+		String masterHumanFriendlyDisplay = master == null ? null : master.getHumanFriendlyDisplay();
 		boolean matchesMaster = Objects.equals(name, masterName)
 				&& Objects.equals(componentForScoring, masterComponent)
-				&& Objects.equals(explanationForLlm, masterExplanation);
+				&& Objects.equals(explanationForLlm, masterExplanation)
+				&& Objects.equals(humanFriendlyDisplay, masterHumanFriendlyDisplay);
 		if (existing == null) {
 			if (baseVersion != 0L) {
 				return Uni.createFrom().failure(new StaleVersionException(RecommendationTranslationEntity.class, id));
 			}
-			return matchesMaster ? Uni.createFrom().voidItem() : seedStagedTranslation(tx, id, lang, name, componentForScoring, explanationForLlm);
+			return matchesMaster ? Uni.createFrom().voidItem() : seedStagedTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, humanFriendlyDisplay);
 		}
 		return matchesMaster
 				? deleteStagedTranslation(tx, id, lang, baseVersion)
-				: bumpStagedTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, baseVersion);
+				: bumpStagedTranslation(tx, id, lang, name, componentForScoring, explanationForLlm, humanFriendlyDisplay, baseVersion);
 	}
 
-	private Uni<Void> seedStagedTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm) {
+	private Uni<Void> seedStagedTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, String humanFriendlyDisplay) {
 		var entity = new RecommendationTranslationWcEntity();
 		entity.setRecommendationId(id);
 		entity.setLang(lang);
 		entity.setName(name);
 		entity.setComponentForScoring(componentForScoring);
 		entity.setExplanationForLlm(explanationForLlm);
+		entity.setHumanFriendlyDisplay(humanFriendlyDisplay);
 		entity.setVersion(1L);
 		return tx.persist(entity).replaceWithVoid();
 	}
 
-	private Uni<Void> bumpStagedTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, long baseVersion) {
+	private Uni<Void> bumpStagedTranslation(ReactivePersistenceTxContext tx, UUID id, RecipeLanguage lang, String name, String componentForScoring, String explanationForLlm, String humanFriendlyDisplay, long baseVersion) {
 		var cb = tx.getCriteriaBuilder();
 		CriteriaUpdate<RecommendationTranslationWcEntity> cu = cb.createCriteriaUpdate(RecommendationTranslationWcEntity.class);
 		Root<RecommendationTranslationWcEntity> wc = cu.getRoot();
 		cu.set(wc.get(RecommendationTranslationWcEntity_.name), name);
 		cu.set(wc.get(RecommendationTranslationWcEntity_.componentForScoring), componentForScoring);
 		cu.set(wc.get(RecommendationTranslationWcEntity_.explanationForLlm), explanationForLlm);
+		cu.set(wc.get(RecommendationTranslationWcEntity_.humanFriendlyDisplay), humanFriendlyDisplay);
 		cu.set(wc.get(RecommendationTranslationWcEntity_.version), cb.sum(wc.get(RecommendationTranslationWcEntity_.version), 1L));
 		cu.where(translationRowAt(cb, wc, id, lang, baseVersion));
 		return tx.createUpdate(cu).execute().flatMap(rows -> rows == 1
@@ -435,7 +442,7 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	}
 
 	private static BackofficeRecommendation toBackofficeRecommendation(RecommendationEntity e) {
-		return new BackofficeRecommendation(e.getId(), e.getName(), e.getComponentForScoring(), e.getWeight(), e.getExplanationForLlm());
+		return new BackofficeRecommendation(e.getId(), e.getName(), e.getComponentForScoring(), e.getWeight(), e.getExplanationForLlm(), e.getHumanFriendlyDisplay());
 	}
 
 	private Uni<Map<UUID, RecommendationTranslationEntity>> loadTranslationsByRecommendationId(

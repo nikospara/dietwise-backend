@@ -69,9 +69,9 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 	@Test
 	void recommendationGridKeepsOnlyEncouragedColumnsAndOverlaysLinksForAnAdmin() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(REC_LEGUMES_ID, "Increase legumes", "legumes", RecommendationWeight.ENCOURAGED, null),
-				new BackofficeRecommendation(REC_PROCESSED_MEAT_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, null),
-				new BackofficeRecommendation(REC_WHOLE_GRAINS_ID, "Increase whole grains", "whole grains", RecommendationWeight.ENCOURAGED, null))));
+				new BackofficeRecommendation(REC_LEGUMES_ID, "Increase legumes", "legumes", RecommendationWeight.ENCOURAGED, null, null),
+				new BackofficeRecommendation(REC_PROCESSED_MEAT_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, null, null),
+				new BackofficeRecommendation(REC_WHOLE_GRAINS_ID, "Increase whole grains", "whole grains", RecommendationWeight.ENCOURAGED, null, null))));
 		when(alternativeIngredientDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
 				new BackofficeAlternativeIngredient(AI_LENTILS_ID, "Lentils", true, 0L),
 				new BackofficeAlternativeIngredient(AI_TOFU_ID, "Tofu", false, 2L))));

@@ -37,6 +37,9 @@ public class RecommendationTranslationEntity {
 	@Column(name = "explanation_for_llm")
 	private String explanationForLlm;
 
+	@Column(name = "human_friendly_display")
+	private String humanFriendlyDisplay;
+
 	public RecommendationEntity getRecommendation() {
 		return recommendation;
 	}
@@ -75,5 +78,13 @@ public class RecommendationTranslationEntity {
 
 	public void setExplanationForLlm(String explanationForLlm) {
 		this.explanationForLlm = explanationForLlm;
+	}
+
+	public String getHumanFriendlyDisplay() {
+		return humanFriendlyDisplay;
+	}
+
+	public void setHumanFriendlyDisplay(String humanFriendlyDisplay) {
+		this.humanFriendlyDisplay = humanFriendlyDisplay;
 	}
 }
