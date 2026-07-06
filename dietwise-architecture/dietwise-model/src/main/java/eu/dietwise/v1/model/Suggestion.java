@@ -20,6 +20,8 @@ public interface Suggestion extends SuggestionTemplate {
 
 	Recommendation getRecommendation();
 
+	Optional<String> getHumanFriendlyRecommendationDisplay();
+
 	Optional<Seasonality> getSeasonality();
 
 	Optional<Cost> getCost();

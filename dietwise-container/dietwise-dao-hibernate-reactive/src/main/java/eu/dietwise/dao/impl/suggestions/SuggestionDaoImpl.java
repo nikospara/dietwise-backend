@@ -330,6 +330,10 @@ public class SuggestionDaoImpl implements SuggestionDao {
 						recommendationTranslation != null && recommendationTranslation.getName() != null
 								? recommendationTranslation.getName()
 								: e.getRule().getRecommendation().getName()))
+				.humanFriendlyRecommendationDisplay(Optional.ofNullable(
+						recommendationTranslation != null && recommendationTranslation.getHumanFriendlyDisplay() != null
+								? recommendationTranslation.getHumanFriendlyDisplay()
+								: e.getRule().getRecommendation().getHumanFriendlyDisplay()))
 				.seasonality(Optional.ofNullable(seasonality).map(SuggestionDaoImpl::toSeasonality))
 				.cost(Optional.ofNullable(cost))
 				.alternativeComponentNames(alternativeComponentNames)

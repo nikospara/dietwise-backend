@@ -259,4 +259,43 @@ class SuggestionDaoImplTest {
 
 		assertThat(suggestions).isEmpty();
 	}
+
+	@Test
+	@Order(5)
+	void retrieveByRulePopulatesHumanFriendlyDisplayFromTheRecommendationFallingBackToMasterWhenNoTranslation(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var ingredient = ImmutableIngredient.builder()
+				.id(new GenericIngredientId(INGREDIENT_ID.toString()))
+				.nameInRecipe("beef mince")
+				.build();
+		setMasterHumanFriendlyDisplay(sessionFactory, DECREASE_RED_MEAT_RECOMMENDATION_ID, "Eat less red meat");
+		setTranslationHumanFriendlyDisplay(sessionFactory, DECREASE_RED_MEAT_RECOMMENDATION_ID, RecipeLanguage.NL, "Eet minder rood vlees");
+
+		var english = factory.withoutTransaction(em ->
+				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient, RecipeLanguage.EN)
+		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		var dutch = factory.withoutTransaction(em ->
+				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient, RecipeLanguage.NL)
+		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(english).isNotEmpty();
+		assertThat(english).allSatisfy(suggestion ->
+				assertThat(suggestion.getHumanFriendlyRecommendationDisplay()).contains("Eat less red meat"));
+		assertThat(dutch).isNotEmpty();
+		assertThat(dutch).allSatisfy(suggestion ->
+				assertThat(suggestion.getHumanFriendlyRecommendationDisplay()).contains("Eet minder rood vlees"));
+	}
+
+	private static void setMasterHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID recommendationId, String value) {
+		sessionFactory.withTransaction(session -> session.createNativeQuery("update DW_RECOMMENDATION set human_friendly_display = :value where id = :id")
+				.setParameter("value", value).setParameter("id", recommendationId).executeUpdate())
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static void setTranslationHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID recommendationId, RecipeLanguage lang, String value) {
+		sessionFactory.withTransaction(session -> session.createNativeQuery("update DW_RECOMMENDATION_TRANSLATION set human_friendly_display = :value where recommendation_id = :id and lang = :lang")
+				.setParameter("value", value).setParameter("id", recommendationId).setParameter("lang", lang.name()).executeUpdate())
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
 }
