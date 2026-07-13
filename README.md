@@ -119,6 +119,18 @@ mvn org.liquibase:liquibase-maven-plugin:rollback \
 
 Full info [here](https://docs.liquibase.com/tools-integrations/maven/commands/maven-rollback.html).
 
+#### Updating the master tables from the working copies of the backoffice
+
+Run the `dietwise-publish` tool:
+
+```bash
+QUARKUS_DATASOURCE_JDBC_URL=... QUARKUS_DATASOURCE_USERNAME=... QUARKUS_DATASOURCE_PASSWORD=... \
+mvn -q -pl dietwise-tools/dietwise-publish exec:java > changelogs/YYYYMMDD_publish.xml
+```
+
+Wire the output into `changelog.xml` (optional args: `exec:java -Dexec.args="<changeset-id> <author>"`; id
+defaults to `publish_working_copy_<timestamp>`). Empty WC → nothing on stdout, a note on stderr.
+
 ### Building the Docker image
 
 The root Dockerfile executes the entire Maven build (no tests) and then creates the application image.

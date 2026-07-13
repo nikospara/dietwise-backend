@@ -34,6 +34,8 @@ COPY dietwise-container/pom.xml dietwise-container/pom.xml
 COPY dietwise-docker/dietwise-docker-keycloak/pom.xml dietwise-docker/dietwise-docker-keycloak/pom.xml
 COPY dietwise-docker/dietwise-docker-postgres/pom.xml dietwise-docker/dietwise-docker-postgres/pom.xml
 COPY dietwise-docker/pom.xml dietwise-docker/pom.xml
+COPY dietwise-tools/dietwise-publish/pom.xml dietwise-tools/dietwise-publish/pom.xml
+COPY dietwise-tools/pom.xml dietwise-tools/pom.xml
 COPY pom.xml pom.xml
 # END auto-pom-copy
 

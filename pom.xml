@@ -17,6 +17,7 @@
 		<module>dietwise-common</module>
 		<module>dietwise-container</module>
 		<module>dietwise-docker</module>
+		<module>dietwise-tools</module>
 	</modules>
 
 	<properties>

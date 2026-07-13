@@ -80,6 +80,11 @@ Treat them as any other code using the database with Hibernate Reactive.
 - Changelog file used at runtime: `changelog.xml` (loaded from classpath via dependency resources from `dietwise-dao-hibernate-reactive`).
 - Master changelog source file:
   - `dietwise-container/dietwise-dao-hibernate-reactive/src/main/resources/changelog.xml`
+- When adding, removing, or changing a Working Copy (`*_WC`) table or its master counterpart, update the `Tables`
+  registry in the publish tool (`dietwise-tools/dietwise-publish`, class
+  `eu.dietwise.tools.publish.schema.Tables`). It is the tool's hand-maintained source of schema truth for generating
+  the Working-Copy-to-master publish changeset; it does not auto-discover the schema. Its round-trip test on a real
+  database will fail if the registry drifts from the actual columns.
 
 ## Configuration Expectations
 - DB properties are expected from environment/profile and default to invalid placeholders in source.
