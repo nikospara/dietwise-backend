@@ -3,9 +3,11 @@ package eu.dietwise.tools.publish;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import eu.dietwise.tools.publish.model.Cell;
 import eu.dietwise.tools.publish.model.ColumnChange;
@@ -16,6 +18,7 @@ import eu.dietwise.tools.publish.model.Row;
 import eu.dietwise.tools.publish.model.TableSnapshot;
 import eu.dietwise.tools.publish.model.UpdateRow;
 import eu.dietwise.tools.publish.schema.ColumnSpec;
+import eu.dietwise.tools.publish.schema.ColumnType;
 import eu.dietwise.tools.publish.schema.MirrorSpec;
 import eu.dietwise.tools.publish.schema.TableSpec;
 import eu.dietwise.tools.publish.schema.Tables;
@@ -29,6 +32,9 @@ public final class PublishPlanner {
 	private static final String VERSION = "version";
 
 	public PublishPlan plan(Map<String, List<Row>> masterRowsByTable, Map<String, List<Row>> workingCopyRowsByTable) {
+		Map<String, List<Row>> master = cleanStrings(masterRowsByTable, MirrorSpec::master);
+		Map<String, List<Row>> workingCopyRows = cleanStrings(workingCopyRowsByTable, MirrorSpec::wc);
+
 		List<InsertRow> inserts = new ArrayList<>();
 		List<UpdateRow> updates = new ArrayList<>();
 		List<DeleteRow> deletes = new ArrayList<>();
@@ -36,9 +42,9 @@ public final class PublishPlanner {
 		long fingerprint = 0L;
 
 		for (MirrorSpec mirror : Tables.all()) {
-			List<Row> wcRows = workingCopyRowsByTable.getOrDefault(mirror.wc().name(), List.of());
+			List<Row> wcRows = workingCopyRows.getOrDefault(mirror.wc().name(), List.of());
 			Map<List<String>, Row> masterByKey = indexByPrimaryKey(
-					mirror.master(), masterRowsByTable.getOrDefault(mirror.master().name(), List.of()));
+					mirror.master(), master.getOrDefault(mirror.master().name(), List.of()));
 
 			for (Row wcRow : wcRows) {
 				switch (mirror.kind()) {
@@ -60,6 +66,33 @@ public final class PublishPlanner {
 
 		return new PublishPlan(List.copyOf(inserts), List.copyOf(updates), List.copyOf(deletes),
 				List.copyOf(workingCopy), fingerprint);
+	}
+
+	/**
+	 * Returns a copy of the rows with every {@code STRING} column {@link StringCleanup#clean cleaned}. Cleaning the
+	 * inputs before diffing means both the published values and the values restored on rollback are clean, and a
+	 * difference that is only whitespace does not register as a change.
+	 */
+	private Map<String, List<Row>> cleanStrings(Map<String, List<Row>> rowsByTable, Function<MirrorSpec, TableSpec> side) {
+		Map<String, List<Row>> cleaned = new LinkedHashMap<>();
+		for (MirrorSpec mirror : Tables.all()) {
+			TableSpec spec = side.apply(mirror);
+			List<Row> rows = new ArrayList<>();
+			for (Row row : rowsByTable.getOrDefault(spec.name(), List.of())) {
+				rows.add(cleanRow(spec, row));
+			}
+			cleaned.put(spec.name(), rows);
+		}
+		return cleaned;
+	}
+
+	private Row cleanRow(TableSpec spec, Row row) {
+		Row.Builder builder = Row.builder();
+		for (ColumnSpec column : spec.columns()) {
+			String value = row.get(column.name());
+			builder.set(column.name(), column.type() == ColumnType.STRING ? StringCleanup.clean(value) : value);
+		}
+		return builder.build();
 	}
 
 	private void planSnapshot(MirrorSpec mirror, Row wcRow, Map<List<String>, Row> masterByKey,

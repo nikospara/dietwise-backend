@@ -11,6 +11,7 @@ import eu.dietwise.tools.publish.model.DeleteRow;
 import eu.dietwise.tools.publish.model.InsertRow;
 import eu.dietwise.tools.publish.model.PublishPlan;
 import eu.dietwise.tools.publish.model.Row;
+import eu.dietwise.tools.publish.model.TableSnapshot;
 import eu.dietwise.tools.publish.model.UpdateRow;
 import eu.dietwise.tools.publish.schema.ColumnType;
 import org.junit.jupiter.api.Test;
@@ -218,6 +219,59 @@ class PublishPlannerTest {
 		assertThat(plan.workingCopy()).hasSize(2);
 		assertThat(plan.workingCopy()).extracting("table")
 				.containsExactlyInAnyOrder("DW_TRIGGER_INGREDIENT_WC", "DW_RULE_WC");
+	}
+
+	@Test
+	void dirtyStringsAreCleanedInInserts() {
+		Map<String, List<Row>> wc = Map.of("DW_TRIGGER_INGREDIENT_WC", List.of(
+				Row.builder().set("id", TI_ID).set("name", "  Beef ").set("explanation_for_llm", "red\tmeat\n\nsource")
+						.set("version", "1").build()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).containsExactly(new InsertRow("DW_TRIGGER_INGREDIENT", List.of(
+				new Cell("id", ColumnType.UUID, TI_ID),
+				new Cell("name", ColumnType.STRING, "Beef"),
+				new Cell("explanation_for_llm", ColumnType.STRING, "red meat source"))));
+	}
+
+	@Test
+	void dirtyStringsAreCleanedInBothDirectionsOfAnUpdate() {
+		Map<String, List<Row>> master = Map.of("DW_RULE", List.of(rule("old    rationale", "true")));
+		Map<String, List<Row>> wc = Map.of("DW_RULE_WC", List.of(ruleWc("new\trationale", "true")));
+
+		PublishPlan plan = sut.plan(master, wc);
+
+		assertThat(plan.updates()).containsExactly(new UpdateRow("DW_RULE",
+				List.of(new Cell("id", ColumnType.UUID, RULE_ID)),
+				List.of(new ColumnChange("rationale", ColumnType.STRING, "old rationale", "new rationale"))));
+	}
+
+	@Test
+	void aDifferenceOnlyInWhitespaceIsNotAChange() {
+		Map<String, List<Row>> master = Map.of("DW_RULE", List.of(rule("same rationale", "true")));
+		Map<String, List<Row>> wc = Map.of("DW_RULE_WC", List.of(ruleWc("  same   rationale ", "true")));
+
+		PublishPlan plan = sut.plan(master, wc);
+
+		assertThat(plan.inserts()).isEmpty();
+		assertThat(plan.updates()).isEmpty();
+		assertThat(plan.deletes()).isEmpty();
+	}
+
+	@Test
+	void theWorkingCopySnapshotIsCleanedForRollbackRestore() {
+		Map<String, List<Row>> wc = Map.of("DW_TRIGGER_INGREDIENT_WC", List.of(
+				Row.builder().set("id", TI_ID).set("name", "  Beef ").set("explanation_for_llm", "red\tmeat")
+						.set("version", "1").build()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.workingCopy()).containsExactly(new TableSnapshot("DW_TRIGGER_INGREDIENT_WC", List.of(List.of(
+				new Cell("id", ColumnType.UUID, TI_ID),
+				new Cell("name", ColumnType.STRING, "Beef"),
+				new Cell("explanation_for_llm", ColumnType.STRING, "red meat"),
+				new Cell("version", ColumnType.BIGINT, "1")))));
 	}
 
 	@Test
