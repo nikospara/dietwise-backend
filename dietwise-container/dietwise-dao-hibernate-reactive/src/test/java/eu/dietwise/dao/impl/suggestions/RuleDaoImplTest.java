@@ -700,7 +700,7 @@ class RuleDaoImplTest {
 
 		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(langs.get(TRANSLATION_EDIT_RULE_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_EDIT_RULE_ID).full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.NL);
 		assertThat(langs.get(TRANSLATION_EDIT_RULE_ID).staged()).containsExactly(RecipeLanguage.NL);
 	}
 
@@ -726,7 +726,7 @@ class RuleDaoImplTest {
 		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(langs.get(TRANSLATION_COLLAPSE_RULE_ID).staged()).isEmpty();
-		assertThat(langs.get(TRANSLATION_COLLAPSE_RULE_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_COLLAPSE_RULE_ID).full()).containsExactly(RecipeLanguage.EL);
 		var forEdit = factory.withoutTransaction(em -> sut.findRationaleTranslationsForEdit(em, TRANSLATION_COLLAPSE_RULE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new VersionedText(MASTER_EL_RATIONALE, 0L));
@@ -776,7 +776,7 @@ class RuleDaoImplTest {
 		var langs = factory.withoutTransaction(sut::findRationaleTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(langs.get(TRANSLATION_REVERT_RULE_ID).staged()).isEmpty();
-		assertThat(langs.get(TRANSLATION_REVERT_RULE_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_REVERT_RULE_ID).full()).containsExactly(RecipeLanguage.EL);
 	}
 
 	@Test

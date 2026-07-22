@@ -397,7 +397,7 @@ class BackofficeRulesServiceImplTest {
 		when(triggerIngredientDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				RULE_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.NL)))));
+				RULE_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL, RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.of(RecipeLanguage.NL)))));
 		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
@@ -418,9 +418,9 @@ class BackofficeRulesServiceImplTest {
 		when(roleOrTechniqueDao.findStagedNames(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(ruleDao.findRationaleTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(triggerIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				TRIGGER_INGREDIENT_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.LT)))));
+				TRIGGER_INGREDIENT_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL, RecipeLanguage.LT), EnumSet.noneOf(RecipeLanguage.class), EnumSet.of(RecipeLanguage.LT)))));
 		when(roleOrTechniqueDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				ROLE_OR_TECHNIQUE_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class)))));
+				ROLE_OR_TECHNIQUE_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.noneOf(RecipeLanguage.class)))));
 
 		StagedRule staged = newService().listRules(adminUser()).await().atMost(AWAIT).getFirst();
 

@@ -265,7 +265,8 @@ public class RecommendationDaoImplTest {
 						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		assertThat(langs).containsKey(calciumId);
-		assertThat(langs.get(calciumId).present()).contains(RecipeLanguage.NL);
+		assertThat(langs.get(calciumId).partial()).contains(RecipeLanguage.NL);
+		assertThat(langs.get(calciumId).full()).doesNotContain(RecipeLanguage.NL);
 		assertThat(langs.get(calciumId).staged()).isEmpty();
 	}
 
@@ -438,7 +439,7 @@ public class RecommendationDaoImplTest {
 		assertThat(afterCollapse.version()).isEqualTo(0L);
 		assertThat(afterCollapse.name()).isEqualTo(master.name());
 		TranslationLangs langs = translationLangs(sessionFactory).get(id);
-		assertThat(langs.present()).contains(RecipeLanguage.NL);
+		assertThat(langs.partial()).contains(RecipeLanguage.NL);
 		assertThat(langs.staged()).doesNotContain(RecipeLanguage.NL);
 	}
 
@@ -478,6 +479,23 @@ public class RecommendationDaoImplTest {
 		assertThat(componentForScoring(dutch, "calcium").getHumanFriendlyDisplay()).contains("Let op je calcium");
 		// a recommendation with no human friendly display anywhere stays empty
 		assertThat(componentForScoring(english, "processed meat").getHumanFriendlyDisplay()).isEmpty();
+	}
+
+	@Test
+	@Order(24)
+	void stageTranslationClearedToEmptyReportsTheLanguageAsMissingNotStaged(Mutiny.SessionFactory sessionFactory) {
+		UUID id = lookupId(sessionFactory, "Diet low in calcium");
+
+		// Clearing every field of an existing translation leaves a Working Copy row whose effective value is empty:
+		// the language must read as missing (it falls back to English), not as a pending change (an orange chip).
+		stageTranslation(sessionFactory, id, RecipeLanguage.NL, null, null, null, null, 0L);
+
+		TranslationLangs langs = translationLangs(sessionFactory).get(id);
+		assertThat(langs.full()).doesNotContain(RecipeLanguage.NL);
+		assertThat(langs.partial()).doesNotContain(RecipeLanguage.NL);
+		assertThat(langs.staged()).contains(RecipeLanguage.NL);
+
+		revertTranslation(sessionFactory, id, RecipeLanguage.NL, 1L);
 	}
 
 	private static RecommendationComponent componentForScoring(List<RecommendationComponent> components, String componentForScoring) {

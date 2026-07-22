@@ -5,15 +5,11 @@ import static eu.dietwise.common.utils.UniComprehensions.forc;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
@@ -42,6 +38,7 @@ import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.TriggerIngredientDao;
 import eu.dietwise.services.model.suggestions.ImmutableTriggerIngredient;
+import eu.dietwise.dao.impl.translations.GridTranslations;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.TriggerIngredient;
 import eu.dietwise.v1.types.RecipeLanguage;
@@ -119,45 +116,31 @@ public class TriggerIngredientDaoImpl implements TriggerIngredientDao {
 
 	@Override
 	public Uni<Map<UUID, TranslationLangs>> findTranslationLangs(ReactivePersistenceContext em) {
-		return masterTranslationLangs(em).flatMap(master -> stagedTranslationLangs(em).map(staged -> mergeTranslationLangs(master, staged)));
+		return masterTranslationRows(em).flatMap(master -> stagedTranslationRows(em).map(wc -> GridTranslations.classify(master, wc, 2)));
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> masterTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> masterTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<TriggerIngredientTranslationEntity> t = q.from(TriggerIngredientTranslationEntity.class);
-		q.select(cb.tuple(t.get(TriggerIngredientTranslationEntity_.triggerIngredient).get(TriggerIngredientEntity_.id), t.get(TriggerIngredientTranslationEntity_.lang)))
-				.where(cb.isNotNull(t.get(TriggerIngredientTranslationEntity_.name)));
-		return em.createQuery(q).getResultList().map(TriggerIngredientDaoImpl::toLangsById);
+		q.select(cb.tuple(
+				t.get(TriggerIngredientTranslationEntity_.triggerIngredient).get(TriggerIngredientEntity_.id),
+				t.get(TriggerIngredientTranslationEntity_.lang),
+				t.get(TriggerIngredientTranslationEntity_.name),
+				t.get(TriggerIngredientTranslationEntity_.explanationForLlm)));
+		return em.createQuery(q).getResultList();
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> stagedTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> stagedTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<TriggerIngredientTranslationWcEntity> t = q.from(TriggerIngredientTranslationWcEntity.class);
-		q.select(cb.tuple(t.get(TriggerIngredientTranslationWcEntity_.triggerIngredientId), t.get(TriggerIngredientTranslationWcEntity_.lang)));
-		return em.createQuery(q).getResultList().map(TriggerIngredientDaoImpl::toLangsById);
-	}
-
-	private static Map<UUID, Set<RecipeLanguage>> toLangsById(List<Tuple> rows) {
-		Map<UUID, Set<RecipeLanguage>> byId = new HashMap<>();
-		for (Tuple row : rows) {
-			byId.computeIfAbsent(row.get(0, UUID.class), _ -> EnumSet.noneOf(RecipeLanguage.class))
-					.add(row.get(1, RecipeLanguage.class));
-		}
-		return byId;
-	}
-
-	private static Map<UUID, TranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
-		Set<UUID> ids = new HashSet<>(master.keySet());
-		ids.addAll(staged.keySet());
-		Map<UUID, TranslationLangs> result = new HashMap<>();
-		for (UUID id : ids) {
-			result.put(id, new TranslationLangs(
-					master.getOrDefault(id, EnumSet.noneOf(RecipeLanguage.class)),
-					staged.getOrDefault(id, EnumSet.noneOf(RecipeLanguage.class))));
-		}
-		return result;
+		q.select(cb.tuple(
+				t.get(TriggerIngredientTranslationWcEntity_.triggerIngredientId),
+				t.get(TriggerIngredientTranslationWcEntity_.lang),
+				t.get(TriggerIngredientTranslationWcEntity_.name),
+				t.get(TriggerIngredientTranslationWcEntity_.explanationForLlm)));
+		return em.createQuery(q).getResultList();
 	}
 
 	@Override

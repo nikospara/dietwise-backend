@@ -697,20 +697,20 @@ public class SuggestionTemplateDaoImpl implements SuggestionTemplateDao {
 	}
 
 	private static TranslationLangs fieldLangs(Map<RecipeLanguage, TranslationValues> master, Map<RecipeLanguage, TranslationValues> staged, SuggestionTemplateField field) {
-		Set<RecipeLanguage> present = EnumSet.noneOf(RecipeLanguage.class);
-		Set<RecipeLanguage> stagedLangs = EnumSet.noneOf(RecipeLanguage.class);
-		master.forEach((lang, values) -> {
-			if (valueOf(values, field) != null) {
-				present.add(lang);
-			}
-		});
+		Set<RecipeLanguage> changed = EnumSet.noneOf(RecipeLanguage.class);
 		staged.forEach((lang, values) -> {
 			String masterValue = master.containsKey(lang) ? valueOf(master.get(lang), field) : null;
 			if (!Objects.equals(valueOf(values, field), masterValue)) {
-				stagedLangs.add(lang);
+				changed.add(lang);
 			}
 		});
-		return new TranslationLangs(present, stagedLangs);
+		return TranslationLangs.classify(fieldValues(master, field), fieldValues(staged, field), changed);
+	}
+
+	private static Map<RecipeLanguage, List<String>> fieldValues(Map<RecipeLanguage, TranslationValues> values, SuggestionTemplateField field) {
+		Map<RecipeLanguage, List<String>> result = new EnumMap<>(RecipeLanguage.class);
+		values.forEach((lang, translation) -> result.put(lang, Arrays.asList(valueOf(translation, field))));
+		return result;
 	}
 
 	private Uni<Map<RecipeLanguage, SuggestionTemplateTranslationEntity>> masterTranslationsForTemplate(ReactivePersistenceContext em, UUID templateId) {

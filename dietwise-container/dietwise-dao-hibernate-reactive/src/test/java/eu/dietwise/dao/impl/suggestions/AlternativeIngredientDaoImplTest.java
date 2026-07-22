@@ -351,7 +351,7 @@ class AlternativeIngredientDaoImplTest {
 
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-		assertThat(langs.get(TRANSLATION_AI_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_AI_ID).full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.NL);
 		assertThat(langs.get(TRANSLATION_AI_ID).staged()).containsExactly(RecipeLanguage.NL);
 	}
 
@@ -377,7 +377,7 @@ class AlternativeIngredientDaoImplTest {
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(langs.get(TRANSLATION_COLLAPSE_AI_ID).staged()).isEmpty();
-		assertThat(langs.get(TRANSLATION_COLLAPSE_AI_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_COLLAPSE_AI_ID).full()).containsExactly(RecipeLanguage.EL);
 		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, TRANSLATION_COLLAPSE_AI_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(forEdit.get(RecipeLanguage.EL)).isEqualTo(new ReferenceDetails(MASTER_EL_NAME, MASTER_EL_EXPLANATION, 0L, true));
@@ -427,7 +427,7 @@ class AlternativeIngredientDaoImplTest {
 		var langs = factory.withoutTransaction(sut::findTranslationLangs)
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(langs.get(TRANSLATION_REVERT_AI_ID).staged()).isEmpty();
-		assertThat(langs.get(TRANSLATION_REVERT_AI_ID).present()).containsExactly(RecipeLanguage.EL);
+		assertThat(langs.get(TRANSLATION_REVERT_AI_ID).full()).containsExactly(RecipeLanguage.EL);
 	}
 
 	@Test

@@ -224,9 +224,9 @@ class BackofficeSuggestionTemplatesServiceImplTest {
 		when(suggestionTemplateDao.findStagedOverlayByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of()));
 		when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
 				TEMPLATE_ID, new FieldTranslationLangs(
-						new TranslationLangs(Set.of(RecipeLanguage.EL, RecipeLanguage.NL), Set.of(RecipeLanguage.LT)),
-						new TranslationLangs(Set.of(RecipeLanguage.EL), Set.of()),
-						new TranslationLangs(Set.of(), Set.of())))));
+						new TranslationLangs(Set.of(RecipeLanguage.EL, RecipeLanguage.NL, RecipeLanguage.LT), Set.of(), Set.of(RecipeLanguage.LT)),
+						new TranslationLangs(Set.of(RecipeLanguage.EL), Set.of(), Set.of()),
+						new TranslationLangs(Set.of(), Set.of(), Set.of())))));
 
 		StagedSuggestionTemplate template = newService()
 				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT).getFirst();
@@ -356,9 +356,9 @@ class BackofficeSuggestionTemplatesServiceImplTest {
 				new NewSuggestionTemplate(suggestionTemplate(NEW_TEMPLATE_ID, "Smoked tofu cubes", null, null, null), 1L))));
 		when(suggestionTemplateDao.findFieldTranslationLangsByRule(any(), eq(RULE_ID))).thenReturn(Uni.createFrom().item(Map.of(
 				NEW_TEMPLATE_ID, new FieldTranslationLangs(
-						new TranslationLangs(Set.of(), Set.of(RecipeLanguage.EL)),
-						new TranslationLangs(Set.of(), Set.of()),
-						new TranslationLangs(Set.of(), Set.of())))));
+						new TranslationLangs(Set.of(RecipeLanguage.EL), Set.of(), Set.of(RecipeLanguage.EL)),
+						new TranslationLangs(Set.of(), Set.of(), Set.of()),
+						new TranslationLangs(Set.of(), Set.of(), Set.of())))));
 
 		StagedSuggestionTemplate added = newService()
 				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT).getFirst();
@@ -454,7 +454,7 @@ class BackofficeSuggestionTemplatesServiceImplTest {
 		when(alternativeIngredientDao.findStagedNames(any()))
 				.thenReturn(Uni.createFrom().item(Map.of(ALTERNATIVE_INGREDIENT_ID, "Smoked tofu cubes (revised)")));
 		when(alternativeIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				ALTERNATIVE_INGREDIENT_ID, new TranslationLangs(Set.of(RecipeLanguage.EL), Set.of(RecipeLanguage.NL)))));
+				ALTERNATIVE_INGREDIENT_ID, new TranslationLangs(Set.of(RecipeLanguage.EL, RecipeLanguage.NL), Set.of(), Set.of(RecipeLanguage.NL)))));
 
 		StagedSuggestionTemplate template = newService()
 				.listSuggestionTemplates(adminUser(), new GenericRuleId(RULE_ID.toString())).await().atMost(AWAIT).getFirst();

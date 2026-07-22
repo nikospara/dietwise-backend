@@ -33,19 +33,29 @@ final class BackofficeTranslations {
 	}
 
 	static Map<RecipeLanguage, TranslationState> translationStates(TranslationLangs langs) {
-		Set<RecipeLanguage> present = langs == null ? Set.of() : langs.present();
+		Set<RecipeLanguage> full = langs == null ? Set.of() : langs.full();
+		Set<RecipeLanguage> partial = langs == null ? Set.of() : langs.partial();
 		Set<RecipeLanguage> staged = langs == null ? Set.of() : langs.staged();
 		Map<RecipeLanguage, TranslationState> states = new EnumMap<>(RecipeLanguage.class);
 		for (RecipeLanguage lang : TRANSLATABLE_LANGUAGES) {
-			states.put(lang, translationState(lang, present, staged));
+			states.put(lang, translationState(lang, full, partial, staged));
 		}
 		return states;
 	}
 
-	private static TranslationState translationState(RecipeLanguage lang, Set<RecipeLanguage> present, Set<RecipeLanguage> staged) {
+	private static TranslationState translationState(RecipeLanguage lang, Set<RecipeLanguage> full, Set<RecipeLanguage> partial, Set<RecipeLanguage> staged) {
 		if (staged.contains(lang)) {
-			return TranslationState.STAGED;
+			if (full.contains(lang)) {
+				return TranslationState.STAGED;
+			}
+			if (partial.contains(lang)) {
+				return TranslationState.PARTIAL_STAGED;
+			}
+			return TranslationState.MISSING;
 		}
-		return present.contains(lang) ? TranslationState.PRESENT : TranslationState.MISSING;
+		if (full.contains(lang)) {
+			return TranslationState.PRESENT;
+		}
+		return partial.contains(lang) ? TranslationState.PARTIAL : TranslationState.MISSING;
 	}
 }

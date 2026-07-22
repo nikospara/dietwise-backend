@@ -596,10 +596,10 @@ class SuggestionTemplateDaoImplTest {
 		var before = factory.withoutTransaction(em -> sut.findFieldTranslationLangsByRule(em, CHIP_RULE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var chips = before.get(CHIP_TEMPLATE_ID);
-		assertThat(chips.restriction().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(chips.restriction().full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
 		assertThat(chips.restriction().staged()).isEmpty();
-		assertThat(chips.equivalence().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
-		assertThat(chips.techniqueNotes().present()).isEmpty();
+		assertThat(chips.equivalence().full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(chips.techniqueNotes().full()).isEmpty();
 		assertThat(chips.techniqueNotes().staged()).isEmpty();
 
 		factory.withTransaction(tx -> sut.stageFieldTranslation(tx, CHIP_TEMPLATE_ID, RecipeLanguage.EL, SuggestionTemplateField.TECHNIQUE_NOTES, "Greek technique notes", 0L))
@@ -609,8 +609,8 @@ class SuggestionTemplateDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var afterChips = after.get(CHIP_TEMPLATE_ID);
 		assertThat(afterChips.techniqueNotes().staged()).containsExactly(RecipeLanguage.EL);
-		assertThat(afterChips.techniqueNotes().present()).isEmpty();
-		assertThat(afterChips.restriction().present()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(afterChips.techniqueNotes().full()).containsExactly(RecipeLanguage.EL);
+		assertThat(afterChips.restriction().full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
 		assertThat(afterChips.restriction().staged()).isEmpty();
 	}
 
@@ -630,7 +630,7 @@ class SuggestionTemplateDaoImplTest {
 		var chips = langs.get(newTemplateId);
 		assertThat(chips).isNotNull();
 		assertThat(chips.restriction().staged()).containsExactly(RecipeLanguage.EL);
-		assertThat(chips.restriction().present()).isEmpty();
+		assertThat(chips.restriction().full()).containsExactly(RecipeLanguage.EL);
 		assertThat(chips.equivalence().staged()).isEmpty();
 		assertThat(chips.techniqueNotes().staged()).isEmpty();
 	}

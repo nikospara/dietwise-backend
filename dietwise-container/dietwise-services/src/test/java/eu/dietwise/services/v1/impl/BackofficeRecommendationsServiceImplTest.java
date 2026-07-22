@@ -56,7 +56,7 @@ class BackofficeRecommendationsServiceImplTest {
 				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Cured and smoked.", "Cured and smoked meats."))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.noneOf(RecipeLanguage.class)))));
+				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.noneOf(RecipeLanguage.class)))));
 
 		List<StagedRecommendation> result = newService().listRecommendations(adminUser()).await().atMost(AWAIT);
 
@@ -183,7 +183,7 @@ class BackofficeRecommendationsServiceImplTest {
 				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Cured and smoked.", "Cured and smoked meats."))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.NL)))));
+				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL, RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.of(RecipeLanguage.NL)))));
 
 		StagedRecommendation r = newService().listRecommendations(adminUser()).await().atMost(AWAIT).get(0);
 

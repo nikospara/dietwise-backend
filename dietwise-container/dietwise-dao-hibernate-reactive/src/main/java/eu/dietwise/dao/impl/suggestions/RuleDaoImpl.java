@@ -7,7 +7,6 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -56,6 +55,7 @@ import eu.dietwise.dao.jpa.suggestions.TriggerIngredientEntity_;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity;
 import eu.dietwise.dao.jpa.suggestions.TriggerIngredientWcEntity_;
 import eu.dietwise.dao.suggestions.RuleDao;
+import eu.dietwise.dao.impl.translations.GridTranslations;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.model.suggestions.RuleBusinessKey;
 import eu.dietwise.services.model.suggestions.RuleReferences;
@@ -330,45 +330,29 @@ public class RuleDaoImpl implements RuleDao {
 
 	@Override
 	public Uni<Map<UUID, TranslationLangs>> findRationaleTranslationLangs(ReactivePersistenceContext em) {
-		return masterTranslationLangs(em).flatMap(master -> stagedTranslationLangs(em).map(staged -> mergeTranslationLangs(master, staged)));
+		return masterTranslationRows(em).flatMap(master -> stagedTranslationRows(em).map(wc -> GridTranslations.classify(master, wc, 1)));
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> masterTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> masterTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<RuleTranslationEntity> t = q.from(RuleTranslationEntity.class);
-		q.select(cb.tuple(t.get(RuleTranslationEntity_.rule).get(RuleEntity_.id), t.get(RuleTranslationEntity_.lang)))
-				.where(cb.isNotNull(t.get(RuleTranslationEntity_.rationale)));
-		return em.createQuery(q).getResultList().map(RuleDaoImpl::toLangsByRuleId);
+		q.select(cb.tuple(
+				t.get(RuleTranslationEntity_.rule).get(RuleEntity_.id),
+				t.get(RuleTranslationEntity_.lang),
+				t.get(RuleTranslationEntity_.rationale)));
+		return em.createQuery(q).getResultList();
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> stagedTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> stagedTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<RuleTranslationWcEntity> t = q.from(RuleTranslationWcEntity.class);
-		q.select(cb.tuple(t.get(RuleTranslationWcEntity_.ruleId), t.get(RuleTranslationWcEntity_.lang)));
-		return em.createQuery(q).getResultList().map(RuleDaoImpl::toLangsByRuleId);
-	}
-
-	private static Map<UUID, Set<RecipeLanguage>> toLangsByRuleId(List<Tuple> rows) {
-		Map<UUID, Set<RecipeLanguage>> byRuleId = new HashMap<>();
-		for (Tuple row : rows) {
-			byRuleId.computeIfAbsent(row.get(0, UUID.class), _ -> EnumSet.noneOf(RecipeLanguage.class))
-					.add(row.get(1, RecipeLanguage.class));
-		}
-		return byRuleId;
-	}
-
-	private static Map<UUID, TranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
-		Set<UUID> ruleIds = new HashSet<>(master.keySet());
-		ruleIds.addAll(staged.keySet());
-		Map<UUID, TranslationLangs> result = new HashMap<>();
-		for (UUID ruleId : ruleIds) {
-			result.put(ruleId, new TranslationLangs(
-					master.getOrDefault(ruleId, EnumSet.noneOf(RecipeLanguage.class)),
-					staged.getOrDefault(ruleId, EnumSet.noneOf(RecipeLanguage.class))));
-		}
-		return result;
+		q.select(cb.tuple(
+				t.get(RuleTranslationWcEntity_.ruleId),
+				t.get(RuleTranslationWcEntity_.lang),
+				t.get(RuleTranslationWcEntity_.rationale)));
+		return em.createQuery(q).getResultList();
 	}
 
 	@Override

@@ -5,7 +5,6 @@ import static eu.dietwise.common.utils.UniComprehensions.forc;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -51,6 +50,7 @@ import eu.dietwise.dao.suggestions.AlternativeIngredientDao;
 import eu.dietwise.services.model.suggestions.AlternativeIngredient;
 import eu.dietwise.services.model.suggestions.BackofficeAlternativeIngredient;
 import eu.dietwise.services.model.suggestions.ImmutableAlternativeIngredient;
+import eu.dietwise.dao.impl.translations.GridTranslations;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.Country;
 import eu.dietwise.v1.types.ImmutableSeasonality;
@@ -184,45 +184,31 @@ public class AlternativeIngredientDaoImpl implements AlternativeIngredientDao {
 
 	@Override
 	public Uni<Map<UUID, TranslationLangs>> findTranslationLangs(ReactivePersistenceContext em) {
-		return masterTranslationLangs(em).flatMap(master -> stagedTranslationLangs(em).map(staged -> mergeTranslationLangs(master, staged)));
+		return masterTranslationRows(em).flatMap(master -> stagedTranslationRows(em).map(wc -> GridTranslations.classify(master, wc, 2)));
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> masterTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> masterTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<AlternativeIngredientTranslationEntity> t = q.from(AlternativeIngredientTranslationEntity.class);
-		q.select(cb.tuple(t.get(AlternativeIngredientTranslationEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id), t.get(AlternativeIngredientTranslationEntity_.lang)))
-				.where(cb.isNotNull(t.get(AlternativeIngredientTranslationEntity_.name)));
-		return em.createQuery(q).getResultList().map(AlternativeIngredientDaoImpl::toLangsById);
+		q.select(cb.tuple(
+				t.get(AlternativeIngredientTranslationEntity_.alternativeIngredient).get(AlternativeIngredientEntity_.id),
+				t.get(AlternativeIngredientTranslationEntity_.lang),
+				t.get(AlternativeIngredientTranslationEntity_.name),
+				t.get(AlternativeIngredientTranslationEntity_.explanationForLlm)));
+		return em.createQuery(q).getResultList();
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> stagedTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> stagedTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<AlternativeIngredientTranslationWcEntity> t = q.from(AlternativeIngredientTranslationWcEntity.class);
-		q.select(cb.tuple(t.get(AlternativeIngredientTranslationWcEntity_.alternativeIngredientId), t.get(AlternativeIngredientTranslationWcEntity_.lang)));
-		return em.createQuery(q).getResultList().map(AlternativeIngredientDaoImpl::toLangsById);
-	}
-
-	private static Map<UUID, Set<RecipeLanguage>> toLangsById(List<Tuple> rows) {
-		Map<UUID, Set<RecipeLanguage>> byId = new HashMap<>();
-		for (Tuple row : rows) {
-			byId.computeIfAbsent(row.get(0, UUID.class), _ -> EnumSet.noneOf(RecipeLanguage.class))
-					.add(row.get(1, RecipeLanguage.class));
-		}
-		return byId;
-	}
-
-	private static Map<UUID, TranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
-		Set<UUID> ids = new HashSet<>(master.keySet());
-		ids.addAll(staged.keySet());
-		Map<UUID, TranslationLangs> result = new HashMap<>();
-		for (UUID id : ids) {
-			result.put(id, new TranslationLangs(
-					master.getOrDefault(id, EnumSet.noneOf(RecipeLanguage.class)),
-					staged.getOrDefault(id, EnumSet.noneOf(RecipeLanguage.class))));
-		}
-		return result;
+		q.select(cb.tuple(
+				t.get(AlternativeIngredientTranslationWcEntity_.alternativeIngredientId),
+				t.get(AlternativeIngredientTranslationWcEntity_.lang),
+				t.get(AlternativeIngredientTranslationWcEntity_.name),
+				t.get(AlternativeIngredientTranslationWcEntity_.explanationForLlm)));
+		return em.createQuery(q).getResultList();
 	}
 
 	@Override

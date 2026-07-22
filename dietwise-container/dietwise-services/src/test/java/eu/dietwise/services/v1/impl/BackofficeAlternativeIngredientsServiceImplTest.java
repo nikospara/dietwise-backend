@@ -76,7 +76,7 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 				new BackofficeAlternativeIngredient(AI_LENTILS_ID, "Lentils", true, 0L),
 				new BackofficeAlternativeIngredient(AI_TOFU_ID, "Tofu", false, 2L))));
 		when(alternativeIngredientDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
-				AI_LENTILS_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.of(RecipeLanguage.NL)))));
+				AI_LENTILS_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL, RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.of(RecipeLanguage.NL)))));
 		when(alternativeIngredientDao.findMasterRecommendationLinks(any())).thenReturn(Uni.createFrom().item(Map.of(
 				AI_LENTILS_ID, Set.of(REC_LEGUMES_ID, REC_PROCESSED_MEAT_ID))));
 		when(alternativeIngredientDao.findStagedRecommendationLinks(any())).thenReturn(Uni.createFrom().item(Map.of(

@@ -3,15 +3,11 @@ package eu.dietwise.dao.impl.suggestions;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Tuple;
@@ -41,6 +37,7 @@ import eu.dietwise.dao.jpa.suggestions.RoleOrTechniqueWcEntity_;
 import eu.dietwise.dao.suggestions.RoleOrTechniqueDao;
 import eu.dietwise.services.model.suggestions.ImmutableRoleOrTechnique;
 import eu.dietwise.services.model.suggestions.RoleOrTechnique;
+import eu.dietwise.dao.impl.translations.GridTranslations;
 import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.RecipeLanguage;
 import io.smallrye.mutiny.Uni;
@@ -117,45 +114,31 @@ public class RoleOrTechniqueDaoImpl implements RoleOrTechniqueDao {
 
 	@Override
 	public Uni<Map<UUID, TranslationLangs>> findTranslationLangs(ReactivePersistenceContext em) {
-		return masterTranslationLangs(em).flatMap(master -> stagedTranslationLangs(em).map(staged -> mergeTranslationLangs(master, staged)));
+		return masterTranslationRows(em).flatMap(master -> stagedTranslationRows(em).map(wc -> GridTranslations.classify(master, wc, 2)));
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> masterTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> masterTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<RoleOrTechniqueTranslationEntity> t = q.from(RoleOrTechniqueTranslationEntity.class);
-		q.select(cb.tuple(t.get(RoleOrTechniqueTranslationEntity_.roleOrTechnique).get(RoleOrTechniqueEntity_.id), t.get(RoleOrTechniqueTranslationEntity_.lang)))
-				.where(cb.isNotNull(t.get(RoleOrTechniqueTranslationEntity_.name)));
-		return em.createQuery(q).getResultList().map(RoleOrTechniqueDaoImpl::toLangsById);
+		q.select(cb.tuple(
+				t.get(RoleOrTechniqueTranslationEntity_.roleOrTechnique).get(RoleOrTechniqueEntity_.id),
+				t.get(RoleOrTechniqueTranslationEntity_.lang),
+				t.get(RoleOrTechniqueTranslationEntity_.name),
+				t.get(RoleOrTechniqueTranslationEntity_.explanationForLlm)));
+		return em.createQuery(q).getResultList();
 	}
 
-	private Uni<Map<UUID, Set<RecipeLanguage>>> stagedTranslationLangs(ReactivePersistenceContext em) {
+	private Uni<List<Tuple>> stagedTranslationRows(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> q = cb.createTupleQuery();
 		Root<RoleOrTechniqueTranslationWcEntity> t = q.from(RoleOrTechniqueTranslationWcEntity.class);
-		q.select(cb.tuple(t.get(RoleOrTechniqueTranslationWcEntity_.roleOrTechniqueId), t.get(RoleOrTechniqueTranslationWcEntity_.lang)));
-		return em.createQuery(q).getResultList().map(RoleOrTechniqueDaoImpl::toLangsById);
-	}
-
-	private static Map<UUID, Set<RecipeLanguage>> toLangsById(List<Tuple> rows) {
-		Map<UUID, Set<RecipeLanguage>> byId = new HashMap<>();
-		for (Tuple row : rows) {
-			byId.computeIfAbsent(row.get(0, UUID.class), _ -> EnumSet.noneOf(RecipeLanguage.class))
-					.add(row.get(1, RecipeLanguage.class));
-		}
-		return byId;
-	}
-
-	private static Map<UUID, TranslationLangs> mergeTranslationLangs(Map<UUID, Set<RecipeLanguage>> master, Map<UUID, Set<RecipeLanguage>> staged) {
-		Set<UUID> ids = new HashSet<>(master.keySet());
-		ids.addAll(staged.keySet());
-		Map<UUID, TranslationLangs> result = new HashMap<>();
-		for (UUID id : ids) {
-			result.put(id, new TranslationLangs(
-					master.getOrDefault(id, EnumSet.noneOf(RecipeLanguage.class)),
-					staged.getOrDefault(id, EnumSet.noneOf(RecipeLanguage.class))));
-		}
-		return result;
+		q.select(cb.tuple(
+				t.get(RoleOrTechniqueTranslationWcEntity_.roleOrTechniqueId),
+				t.get(RoleOrTechniqueTranslationWcEntity_.lang),
+				t.get(RoleOrTechniqueTranslationWcEntity_.name),
+				t.get(RoleOrTechniqueTranslationWcEntity_.explanationForLlm)));
+		return em.createQuery(q).getResultList();
 	}
 
 	@Override
