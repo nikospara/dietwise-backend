@@ -23,6 +23,7 @@ class PublishPlannerTest {
 	private static final String REC_ID = "33333333-3333-3333-3333-333333333333";
 	private static final String ALT_ID = "44444444-4444-4444-4444-444444444444";
 	private static final String TEMPLATE_ID = "55555555-5555-5555-5555-555555555555";
+	private static final String LANG = "el";
 
 	private final PublishPlanner sut = new PublishPlanner();
 
@@ -275,6 +276,84 @@ class PublishPlannerTest {
 	}
 
 	@Test
+	void aSuggestionTemplateWhoseRuleIsMissingIsDroppedNotPublished() {
+		Map<String, List<Row>> wc = Map.of("DW_SUGGESTION_TEMPLATE_WC", List.of(templateWc()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).isEmpty();
+		assertThat(plan.updates()).isEmpty();
+		// the orphan is not restored on rollback (empty snapshot rows) but the table is still cleared and fingerprinted
+		assertThat(plan.workingCopy()).containsExactly(new TableSnapshot("DW_SUGGESTION_TEMPLATE_WC", List.of()));
+		assertThat(plan.workingCopyFingerprint()).isEqualTo(2L);
+	}
+
+	@Test
+	void aSuggestionTemplateWhoseRuleIsStagedInTheSamePublishIsPublished() {
+		Map<String, List<Row>> wc = Map.of(
+				"DW_RULE_WC", List.of(ruleWc("rationale", "true")),
+				"DW_SUGGESTION_TEMPLATE_WC", List.of(templateWc()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).extracting(InsertRow::table).contains("DW_SUGGESTION_TEMPLATE");
+	}
+
+	@Test
+	void aSuggestionTemplateWhoseRuleExistsInMasterIsPublished() {
+		Map<String, List<Row>> master = Map.of("DW_RULE", List.of(rule("rationale", "true")));
+		Map<String, List<Row>> wc = Map.of("DW_SUGGESTION_TEMPLATE_WC", List.of(templateWc()));
+
+		PublishPlan plan = sut.plan(master, wc);
+
+		assertThat(plan.inserts()).extracting(InsertRow::table).contains("DW_SUGGESTION_TEMPLATE");
+	}
+
+	@Test
+	void aRuleTranslationWhoseRuleIsMissingIsDroppedNotPublished() {
+		Map<String, List<Row>> wc = Map.of("DW_RULE_TRANSLATION_WC", List.of(ruleTranslationWc()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).isEmpty();
+		assertThat(plan.workingCopy()).containsExactly(new TableSnapshot("DW_RULE_TRANSLATION_WC", List.of()));
+	}
+
+	@Test
+	void aSuggestionTemplateTranslationWhoseTemplateIsMissingIsDroppedNotPublished() {
+		Map<String, List<Row>> wc = Map.of(
+				"DW_SUGGESTION_TEMPLATE_TRANSLATION_WC", List.of(templateTranslationWc()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).isEmpty();
+	}
+
+	@Test
+	void aSuggestionTemplateTranslationWhoseTemplateIsItselfAnOrphanIsDropped() {
+		// the template is staged but its rule is missing, so the template is dropped; its translation must be dropped too
+		Map<String, List<Row>> wc = Map.of(
+				"DW_SUGGESTION_TEMPLATE_WC", List.of(templateWc()),
+				"DW_SUGGESTION_TEMPLATE_TRANSLATION_WC", List.of(templateTranslationWc()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).isEmpty();
+	}
+
+	@Test
+	void aSuggestionTemplateTranslationWhoseTemplateIsPublishedInTheSamePublishIsPublished() {
+		Map<String, List<Row>> wc = Map.of(
+				"DW_RULE_WC", List.of(ruleWc("rationale", "true")),
+				"DW_SUGGESTION_TEMPLATE_WC", List.of(templateWc()),
+				"DW_SUGGESTION_TEMPLATE_TRANSLATION_WC", List.of(templateTranslationWc()));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).extracting(InsertRow::table).contains("DW_SUGGESTION_TEMPLATE_TRANSLATION");
+	}
+
+	@Test
 	void fingerprintSumsRowCountsAndVersions() {
 		Map<String, List<Row>> wc = Map.of(
 				"DW_TRIGGER_INGREDIENT_WC", List.of(
@@ -306,6 +385,16 @@ class PublishPlannerTest {
 		return Row.builder().set("id", TEMPLATE_ID).set("rule_id", RULE_ID).set("alternative_ingredient_id", ALT_ID)
 				.set("alternative_order", "0").set("restriction", null).set("equivalence", null)
 				.set("technique_notes", null).set("active", "true").set("version", "1").build();
+	}
+
+	private static Row ruleTranslationWc() {
+		return Row.builder().set("rule_id", RULE_ID).set("lang", LANG).set("rationale", "translated rationale")
+				.set("version", "1").build();
+	}
+
+	private static Row templateTranslationWc() {
+		return Row.builder().set("suggestion_template_id", TEMPLATE_ID).set("lang", LANG).set("restriction", null)
+				.set("equivalence", null).set("technique_notes", null).set("version", "1").build();
 	}
 
 	private static Row component(String altId, String recId, String present) {

@@ -125,14 +125,14 @@ public final class Tables {
 							uuid("id"), uuid("rule_id"), uuid("alternative_ingredient_id"), integer("alternative_order"),
 							text("restriction"), text("equivalence"), text("technique_notes"), bool("active"),
 							bigint("version")), List.of("id")),
-					PublishKind.SNAPSHOT, 2),
+					PublishKind.SNAPSHOT, 2, List.of(new ParentRef("rule_id", "DW_RULE"))),
 			new MirrorSpec(
 					new TableSpec("DW_RULE_TRANSLATION", List.of(
 							uuid("rule_id"), text("lang"), text("rationale")), List.of("rule_id", "lang")),
 					new TableSpec("DW_RULE_TRANSLATION_WC", List.of(
 							uuid("rule_id"), text("lang"), text("rationale"), bigint("version")),
 							List.of("rule_id", "lang")),
-					PublishKind.SNAPSHOT, 2),
+					PublishKind.SNAPSHOT, 2, List.of(new ParentRef("rule_id", "DW_RULE"))),
 
 			// order 3: rows referencing order-2 rows
 			new MirrorSpec(
@@ -142,7 +142,7 @@ public final class Tables {
 					new TableSpec("DW_SUGGESTION_TEMPLATE_TRANSLATION_WC", List.of(
 							uuid("suggestion_template_id"), text("lang"), text("restriction"), text("equivalence"),
 							text("technique_notes"), bigint("version")), List.of("suggestion_template_id", "lang")),
-					PublishKind.SNAPSHOT, 3)
+					PublishKind.SNAPSHOT, 3, List.of(new ParentRef("suggestion_template_id", "DW_SUGGESTION_TEMPLATE")))
 	);
 
 	private Tables() {

@@ -3,10 +3,12 @@ package eu.dietwise.tools.publish;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 import eu.dietwise.tools.publish.model.Cell;
@@ -20,6 +22,7 @@ import eu.dietwise.tools.publish.model.UpdateRow;
 import eu.dietwise.tools.publish.schema.ColumnSpec;
 import eu.dietwise.tools.publish.schema.ColumnType;
 import eu.dietwise.tools.publish.schema.MirrorSpec;
+import eu.dietwise.tools.publish.schema.ParentRef;
 import eu.dietwise.tools.publish.schema.TableSpec;
 import eu.dietwise.tools.publish.schema.Tables;
 
@@ -41,12 +44,24 @@ public final class PublishPlanner {
 		List<TableSnapshot> workingCopy = new ArrayList<>();
 		long fingerprint = 0L;
 
+		// The primary keys that will exist in each master table after the publish, built as we walk the mirrors in
+		// foreign-key rank order (parents before children), so a child's parents are already resolved when we reach it.
+		Map<String, Set<String>> presentParentKeys = new HashMap<>();
+
 		for (MirrorSpec mirror : Tables.all()) {
 			List<Row> wcRows = workingCopyRows.getOrDefault(mirror.wc().name(), List.of());
-			Map<List<String>, Row> masterByKey = indexByPrimaryKey(
-					mirror.master(), master.getOrDefault(mirror.master().name(), List.of()));
+			List<Row> masterRows = master.getOrDefault(mirror.master().name(), List.of());
+			Map<List<String>, Row> masterByKey = indexByPrimaryKey(mirror.master(), masterRows);
 
+			// Drop and forget rows whose parent will not exist in master: they are neither published nor restored.
+			List<Row> publishable = new ArrayList<>();
 			for (Row wcRow : wcRows) {
+				if (parentsPresent(mirror, wcRow, presentParentKeys)) {
+					publishable.add(wcRow);
+				}
+			}
+
+			for (Row wcRow : publishable) {
 				switch (mirror.kind()) {
 					case SNAPSHOT -> planSnapshot(mirror, wcRow, masterByKey, inserts, updates);
 					case LINK_DELTA -> planLinkDelta(mirror, wcRow, masterByKey, inserts, deletes);
@@ -54,8 +69,10 @@ public final class PublishPlanner {
 				}
 			}
 
+			recordPresentKeys(mirror, masterRows, publishable, presentParentKeys);
+
 			if (!wcRows.isEmpty()) {
-				workingCopy.add(snapshotOf(mirror.wc(), wcRows));
+				workingCopy.add(snapshotOf(mirror.wc(), publishable));
 				fingerprint += fingerprintOf(mirror, wcRows);
 			}
 		}
@@ -93,6 +110,40 @@ public final class PublishPlanner {
 			builder.set(column.name(), column.type() == ColumnType.STRING ? StringCleanup.clean(value) : value);
 		}
 		return builder.build();
+	}
+
+	/** Whether every foreign-key parent of this Working Copy row will exist in master after the publish. */
+	private boolean parentsPresent(MirrorSpec mirror, Row wcRow, Map<String, Set<String>> presentParentKeys) {
+		for (ParentRef ref : mirror.parentRefs()) {
+			if (!presentParentKeys.getOrDefault(ref.parentMaster(), Set.of()).contains(wcRow.get(ref.column()))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Records the primary keys that will exist in this master table after the publish (its current rows plus the rows
+	 * this publish adds), so later mirrors can resolve foreign keys against it. Only single-column primary keys are
+	 * recorded, which is all a {@link ParentRef} can point at.
+	 */
+	private void recordPresentKeys(MirrorSpec mirror, List<Row> masterRows, List<Row> publishable,
+	                               Map<String, Set<String>> presentParentKeys) {
+		if (mirror.master().primaryKey().size() != 1) {
+			return;
+		}
+		Set<String> keys = new HashSet<>();
+		for (Row row : masterRows) {
+			keys.add(singleKey(mirror.master(), row));
+		}
+		for (Row row : publishable) {
+			keys.add(singleKey(mirror.wc(), row));
+		}
+		presentParentKeys.put(mirror.master().name(), keys);
+	}
+
+	private String singleKey(TableSpec spec, Row row) {
+		return row.get(spec.primaryKey().get(0));
 	}
 
 	private void planSnapshot(MirrorSpec mirror, Row wcRow, Map<List<String>, Row> masterByKey,

@@ -5,11 +5,16 @@ import java.util.List;
 /**
  * Pairs a master table with its Working Copy mirror and describes how the mirror is published. {@link #order} is the
  * foreign-key rank: rows of a lower order are inserted before rows of a higher order (and deleted in the reverse
- * order), so that a parent always exists before its children.
+ * order), so that a parent always exists before its children. {@link #parentRefs} lists the foreign keys whose parent
+ * existence the planner enforces (empty for most mirrors).
  */
-public record MirrorSpec(TableSpec master, TableSpec wc, PublishKind kind, int order) {
+public record MirrorSpec(TableSpec master, TableSpec wc, PublishKind kind, int order, List<ParentRef> parentRefs) {
 
 	private static final String VERSION = "version";
+
+	public MirrorSpec(TableSpec master, TableSpec wc, PublishKind kind, int order) {
+		this(master, wc, kind, order, List.of());
+	}
 
 	/**
 	 * The Working Copy columns carrying the proposed values: every mirror column that is neither part of the primary
