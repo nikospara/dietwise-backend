@@ -85,6 +85,17 @@ Treat them as any other code using the database with Hibernate Reactive.
   `eu.dietwise.tools.publish.schema.Tables`). It is the tool's hand-maintained source of schema truth for generating
   the Working-Copy-to-master publish changeset; it does not auto-discover the schema. Its round-trip test on a real
   database will fail if the registry drifts from the actual columns.
+- The registry also records, per master column, whether the column is nullable (mark a non-nullable master column with
+  `.notNull()`). The publish tool drops a Working Copy row whose published value would be null in a non-nullable master
+  column, so the generated changeset never violates a NOT NULL constraint. Keep these flags in sync when a column's NOT
+  NULL constraint changes: `RegistryNullabilityTest` verifies every master column's nullability against a real database
+  and fails on drift.
+- Each mirror also carries a foreign-key rank (`order`) and its foreign-key parent references (`parentRefs`). The rank
+  orders inserts parents-before-children (and deletes in reverse); the parent references let the planner drop a Working
+  Copy row whose parent will not exist in master after the publish (a parent already in master, or one staged in the
+  same publish), so the generated changeset never violates a foreign key. When adding a mirror or a foreign key between
+  mirrored tables, set the rank so parents sort before children and add a `ParentRef` for each foreign key whose parent
+  existence must be enforced.
 
 ## Configuration Expectations
 - DB properties are expected from environment/profile and default to invalid placeholders in source.

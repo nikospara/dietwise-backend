@@ -101,6 +101,11 @@ class PublishWorkingCopyRoundTripTest {
 		exec(connection, "INSERT INTO dw_suggestion_template_wc(id,rule_id,alternative_ingredient_id,alternative_order,"
 				+ "restriction,equivalence,technique_notes,version) VALUES ('" + TEMPLATE_ORPHAN + "','" + MISSING_RULE
 				+ "','" + ALT1 + "',0,NULL,NULL,NULL,1)");
+
+		// staged: a translation whose backoffice user forgot the required name; publishing it would insert null into
+		// the NOT NULL master column, so it must be dropped - never published to master and never restored on rollback
+		exec(connection, "INSERT INTO dw_trigger_ingredient_translation_wc(trigger_ingredient_id,lang,name,"
+				+ "explanation_for_llm,version) VALUES ('" + TI1 + "','EL',NULL,'red meat EL',1)");
 	}
 
 	private void assertPublished(Connection connection) throws Exception {
@@ -114,6 +119,9 @@ class PublishWorkingCopyRoundTripTest {
 		// the orphan template was dropped: not published to master
 		assertThat(count(connection, "SELECT count(*) FROM dw_suggestion_template WHERE id='" + TEMPLATE_ORPHAN + "'"))
 				.isZero();
+		// the translation missing its required name was dropped: not published to master
+		assertThat(count(connection, "SELECT count(*) FROM dw_trigger_ingredient_translation WHERE "
+				+ "trigger_ingredient_id='" + TI1 + "' AND lang='EL'")).isZero();
 		assertThat(totalWorkingCopyRows(connection)).isZero();
 	}
 
@@ -125,13 +133,15 @@ class PublishWorkingCopyRoundTripTest {
 				+ "alternative_ingredient_id='" + ALT1 + "' AND recommendation_id='" + REC1 + "'")).isEqualTo(0);
 		assertThat(scalar(connection, "SELECT month_from FROM dw_alternative_ingredient_seasonality WHERE "
 				+ "alternative_ingredient_id='" + ALT1 + "' AND country='GR'")).isEqualTo("3");
-		// the Working Copy is restored to its four publishable staged rows; the orphan is not brought back
+		// the Working Copy is restored to its four publishable staged rows; the dropped rows are not brought back
 		assertThat(totalWorkingCopyRows(connection)).isEqualTo(4);
 		assertThat(count(connection, "SELECT count(*) FROM dw_trigger_ingredient_wc WHERE id='" + TI2 + "'")).isEqualTo(1);
 		assertThat(scalar(connection, "SELECT month_from FROM dw_alternative_ingredient_seasonality_wc WHERE "
 				+ "alternative_ingredient_id='" + ALT1 + "' AND country='GR'")).isNull();
 		assertThat(count(connection, "SELECT count(*) FROM dw_suggestion_template_wc WHERE id='" + TEMPLATE_ORPHAN + "'"))
 				.isZero();
+		assertThat(count(connection, "SELECT count(*) FROM dw_trigger_ingredient_translation_wc WHERE "
+				+ "trigger_ingredient_id='" + TI1 + "' AND lang='EL'")).isZero();
 	}
 
 	private long totalWorkingCopyRows(Connection connection) throws Exception {

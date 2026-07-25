@@ -5944,32 +5944,27 @@
 		<insert tableName="DW_RULE_TRANSLATION">
 			<column name="rule_id" value="344b46a1-627c-4780-b7aa-d6fecffb05e2"/>
 			<column name="lang" value="NL"/>
-			<column name="rationale" value="Verhoogt de inname van EPA/DHA-omega-3 en evenaart tegelijkertijd de stevigere textuur van kalkoen in geroosterde, gemalen of gebakken bereidingen.
-"/>
+			<column name="rationale" value="Verhoogt de inname van EPA/DHA-omega-3 en evenaart tegelijkertijd de stevigere textuur van kalkoen in geroosterde, gemalen of gebakken bereidingen."/>
 		</insert>
 		<insert tableName="DW_RULE_TRANSLATION">
 			<column name="rule_id" value="455d7520-2be7-444c-9492-fdcbde005949"/>
 			<column name="lang" value="NL"/>
-			<column name="rationale" value="Verhoogt de inname van EPA/DHA-omega-3 en sluit tegelijkertijd goed aan bij de milde smaak en de hartige structuur van kip.
-"/>
+			<column name="rationale" value="Verhoogt de inname van EPA/DHA-omega-3 en sluit tegelijkertijd goed aan bij de milde smaak en de hartige structuur van kip."/>
 		</insert>
 		<insert tableName="DW_RULE_TRANSLATION">
 			<column name="rule_id" value="66630f9b-6d60-46a1-ac3b-01f6c6e1e829"/>
 			<column name="lang" value="NL"/>
-			<column name="rationale" value="Verminder de inname van verzadigd vet
-"/>
+			<column name="rationale" value="Verminder de inname van verzadigd vet"/>
 		</insert>
 		<insert tableName="DW_RULE_TRANSLATION">
 			<column name="rule_id" value="df9d7a5d-8ead-4eca-aa0d-2f711407adb5"/>
 			<column name="lang" value="NL"/>
-			<column name="rationale" value="Verminder de inname van verzadigd vet
-"/>
+			<column name="rationale" value="Verminder de inname van verzadigd vet"/>
 		</insert>
 		<insert tableName="DW_RULE_TRANSLATION">
 			<column name="rule_id" value="d122bbd3-942b-441d-82e6-d1e598393806"/>
 			<column name="lang" value="NL"/>
-			<column name="rationale" value="Verminder de inname van verzadigd vet
-"/>
+			<column name="rationale" value="Verminder de inname van verzadigd vet"/>
 		</insert>
 		<insert tableName="DW_RULE_TRANSLATION">
 			<column name="rule_id" value="01b55308-698e-4681-b573-216207115259"/>
@@ -9832,8 +9827,7 @@
 				<column name="role_or_technique_id" value="f56b72c0-4af0-4e4b-99a8-83bd31c6f7d8"/>
 				<column name="lang" value="LT"/>
 				<column name="name" value="Pagrindinė kepsnio dalis"/>
-				<column name="explanation_for_llm" value="Pagrindinis patiekalo ingredientas, suteikiantis tekstūrą ir atliekantis pagrindinį vaidmenį lėkštėje.
-"/>
+				<column name="explanation_for_llm" value="Pagrindinis patiekalo ingredientas, suteikiantis tekstūrą ir atliekantis pagrindinį vaidmenį lėkštėje."/>
 				<column name="version" valueNumeric="2"/>
 			</insert>
 			<insert tableName="DW_ROLE_OR_TECHNIQUE_TRANSLATION_WC">

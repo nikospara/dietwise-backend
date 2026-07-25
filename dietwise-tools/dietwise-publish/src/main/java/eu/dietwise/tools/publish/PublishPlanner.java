@@ -33,6 +33,7 @@ import eu.dietwise.tools.publish.schema.Tables;
 public final class PublishPlanner {
 
 	private static final String VERSION = "version";
+	private static final String PRESENT = "present";
 
 	public PublishPlan plan(Map<String, List<Row>> masterRowsByTable, Map<String, List<Row>> workingCopyRowsByTable) {
 		Map<String, List<Row>> master = cleanStrings(masterRowsByTable, MirrorSpec::master);
@@ -53,10 +54,12 @@ public final class PublishPlanner {
 			List<Row> masterRows = master.getOrDefault(mirror.master().name(), List.of());
 			Map<List<String>, Row> masterByKey = indexByPrimaryKey(mirror.master(), masterRows);
 
-			// Drop and forget rows whose parent will not exist in master: they are neither published nor restored.
+			// Drop and forget rows that cannot be published - because their parent will not exist in master, or
+			// because they would write a null into a non-nullable master column: they are neither published nor
+			// restored, but are still cleared and fingerprinted like every other Working Copy row.
 			List<Row> publishable = new ArrayList<>();
 			for (Row wcRow : wcRows) {
-				if (parentsPresent(mirror, wcRow, presentParentKeys)) {
+				if (parentsPresent(mirror, wcRow, presentParentKeys) && !writesNullToNonNullableColumn(mirror, wcRow)) {
 					publishable.add(wcRow);
 				}
 			}
@@ -123,6 +126,38 @@ public final class PublishPlanner {
 	}
 
 	/**
+	 * Whether publishing this row would write a null into a non-nullable master column, which the database would
+	 * reject. Only an insert or update writes values from the Working Copy row; a delete or no-op cannot violate a NOT
+	 * NULL constraint. For an update this holds for a column that is non-nullable in master because master then already
+	 * carries a non-null value, so a null in the Working Copy is a change to null that the update would write.
+	 */
+	private boolean writesNullToNonNullableColumn(MirrorSpec mirror, Row wcRow) {
+		if (!isWrite(mirror, wcRow)) {
+			return false;
+		}
+		for (ColumnSpec column : mirror.master().columns()) {
+			if (!column.nullable() && mirror.wc().hasColumn(column.name()) && wcRow.get(column.name()) == null) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Whether the planned publish of this row writes values (an insert or update) rather than a delete or a no-op. */
+	private boolean isWrite(MirrorSpec mirror, Row wcRow) {
+		return switch (mirror.kind()) {
+			case SNAPSHOT -> true;
+			case LINK_DELTA -> Boolean.parseBoolean(wcRow.get(PRESENT));
+			case NULLABLE_PAYLOAD -> !stagedEmpty(mirror, wcRow);
+		};
+	}
+
+	/** Whether every payload column of this row is null, which a nullable-payload mirror publishes as a delete. */
+	private boolean stagedEmpty(MirrorSpec mirror, Row wcRow) {
+		return mirror.payloadColumns().stream().allMatch(column -> wcRow.get(column) == null);
+	}
+
+	/**
 	 * Records the primary keys that will exist in this master table after the publish (its current rows plus the rows
 	 * this publish adds), so later mirrors can resolve foreign keys against it. Only single-column primary keys are
 	 * recorded, which is all a {@link ParentRef} can point at.
@@ -158,7 +193,7 @@ public final class PublishPlanner {
 
 	private void planLinkDelta(MirrorSpec mirror, Row wcRow, Map<List<String>, Row> masterByKey,
 	                           List<InsertRow> inserts, List<DeleteRow> deletes) {
-		boolean present = Boolean.parseBoolean(wcRow.get("present"));
+		boolean present = Boolean.parseBoolean(wcRow.get(PRESENT));
 		Row masterRow = masterByKey.get(keyOf(mirror.master(), wcRow));
 		if (present && masterRow == null) {
 			inserts.add(insertFrom(mirror, wcRow));
@@ -170,8 +205,7 @@ public final class PublishPlanner {
 	private void planNullablePayload(MirrorSpec mirror, Row wcRow, Map<List<String>, Row> masterByKey,
 	                                 List<InsertRow> inserts, List<UpdateRow> updates, List<DeleteRow> deletes) {
 		Row masterRow = masterByKey.get(keyOf(mirror.master(), wcRow));
-		boolean stagedEmpty = mirror.payloadColumns().stream().allMatch(column -> wcRow.get(column) == null);
-		if (stagedEmpty) {
+		if (stagedEmpty(mirror, wcRow)) {
 			if (masterRow != null) {
 				deletes.add(deleteFrom(mirror, masterRow));
 			}

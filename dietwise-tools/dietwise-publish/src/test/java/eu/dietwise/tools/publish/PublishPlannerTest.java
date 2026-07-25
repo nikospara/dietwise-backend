@@ -354,6 +354,59 @@ class PublishPlannerTest {
 	}
 
 	@Test
+	void aNewTranslationMissingItsRequiredNameIsDroppedNotPublished() {
+		Map<String, List<Row>> wc = Map.of("DW_TRIGGER_INGREDIENT_TRANSLATION_WC", List.of(
+				triggerIngredientTranslationWc(null)));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).isEmpty();
+		assertThat(plan.updates()).isEmpty();
+		// drop and forget: excluded from the rollback snapshot, but still counted in the fingerprint and cleared
+		assertThat(plan.workingCopy())
+				.containsExactly(new TableSnapshot("DW_TRIGGER_INGREDIENT_TRANSLATION_WC", List.of()));
+		assertThat(plan.workingCopyFingerprint()).isEqualTo(2L);
+	}
+
+	@Test
+	void anUpdateThatWouldBlankARequiredColumnIsDroppedNotPublished() {
+		Map<String, List<Row>> master = Map.of("DW_TRIGGER_INGREDIENT_TRANSLATION", List.of(
+				triggerIngredientTranslation("Beef")));
+		Map<String, List<Row>> wc = Map.of("DW_TRIGGER_INGREDIENT_TRANSLATION_WC", List.of(
+				triggerIngredientTranslationWc(null)));
+
+		PublishPlan plan = sut.plan(master, wc);
+
+		assertThat(plan.inserts()).isEmpty();
+		assertThat(plan.updates()).isEmpty();
+		assertThat(plan.workingCopy())
+				.containsExactly(new TableSnapshot("DW_TRIGGER_INGREDIENT_TRANSLATION_WC", List.of()));
+	}
+
+	@Test
+	void aTranslationCarryingItsRequiredNameIsPublished() {
+		Map<String, List<Row>> wc = Map.of("DW_TRIGGER_INGREDIENT_TRANSLATION_WC", List.of(
+				triggerIngredientTranslationWc("Rind")));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).extracting(InsertRow::table).contains("DW_TRIGGER_INGREDIENT_TRANSLATION");
+	}
+
+	@Test
+	void aPartialSeasonalityMissingARequiredColumnIsDroppedNotPublished() {
+		Map<String, List<Row>> wc = Map.of("DW_ALTERNATIVE_INGREDIENT_SEASONALITY_WC", List.of(
+				seasonalityWc(null, "8")));
+
+		PublishPlan plan = sut.plan(Map.of(), wc);
+
+		assertThat(plan.inserts()).isEmpty();
+		assertThat(plan.updates()).isEmpty();
+		assertThat(plan.workingCopy())
+				.containsExactly(new TableSnapshot("DW_ALTERNATIVE_INGREDIENT_SEASONALITY_WC", List.of()));
+	}
+
+	@Test
 	void fingerprintSumsRowCountsAndVersions() {
 		Map<String, List<Row>> wc = Map.of(
 				"DW_TRIGGER_INGREDIENT_WC", List.of(
@@ -395,6 +448,16 @@ class PublishPlannerTest {
 	private static Row templateTranslationWc() {
 		return Row.builder().set("suggestion_template_id", TEMPLATE_ID).set("lang", LANG).set("restriction", null)
 				.set("equivalence", null).set("technique_notes", null).set("version", "1").build();
+	}
+
+	private static Row triggerIngredientTranslation(String name) {
+		return Row.builder().set("trigger_ingredient_id", TI_ID).set("lang", LANG).set("name", name)
+				.set("explanation_for_llm", null).build();
+	}
+
+	private static Row triggerIngredientTranslationWc(String name) {
+		return Row.builder().set("trigger_ingredient_id", TI_ID).set("lang", LANG).set("name", name)
+				.set("explanation_for_llm", null).set("version", "1").build();
 	}
 
 	private static Row component(String altId, String recId, String present) {
