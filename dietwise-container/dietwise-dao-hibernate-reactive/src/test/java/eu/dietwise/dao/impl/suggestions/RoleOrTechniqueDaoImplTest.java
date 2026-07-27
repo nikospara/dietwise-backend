@@ -39,6 +39,8 @@ class RoleOrTechniqueDaoImplTest {
 	private static final String MASTER_NAME = "steak centerpiece";
 	private static final String EDITED_NAME = "centrepiece protein";
 	private static final String EDITED_EXPLANATION = "The dish's main, defining ingredient.";
+	/** As long as DW_ROLE_OR_TECHNIQUE.explanation_for_llm holds, which its Working Copy mirror must match. */
+	private static final String LONGEST_EXPLANATION = "e".repeat(300);
 
 	private static final UUID TRANSLATION_ROLE_ID = UUID.fromString("c1d2e3f4-0001-4a5b-8c9d-0e1f2a3b0001");
 	private static final UUID TRANSLATION_COLLAPSE_ROLE_ID = UUID.fromString("c1d2e3f4-0002-4a5b-8c9d-0e1f2a3b0002");
@@ -437,6 +439,22 @@ class RoleOrTechniqueDaoImplTest {
 		assertThat(details.name()).isEqualTo("Stabiliser");
 		assertThat(details.version()).isEqualTo(1L);
 		assertThat(details.published()).isFalse();
+	}
+
+	@Test
+	@Order(19)
+	void testEditRoleOrTechniqueAcceptsAnExplanationAsLongAsTheMasterColumnHolds(Mutiny.SessionFactory sessionFactory) {
+		var sut = new RoleOrTechniqueDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createRoleOrTechnique(tx, "Clarifier"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editRoleOrTechnique(tx, newId, "Clarifier", LONGEST_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.explanationForLlm()).isEqualTo(LONGEST_EXPLANATION);
 	}
 
 	private static Uni<Void> persistRoleOrTechnique(ReactivePersistenceTxContext tx, UUID id, String name) {

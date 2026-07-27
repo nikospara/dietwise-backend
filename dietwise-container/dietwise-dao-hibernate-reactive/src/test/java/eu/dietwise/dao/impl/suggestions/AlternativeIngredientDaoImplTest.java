@@ -50,6 +50,8 @@ class AlternativeIngredientDaoImplTest {
 	private static final UUID ALTERNATIVE_INGREDIENT_ID = UUID.fromString("70000000-0000-0000-0000-00000000001f");
 	private static final String NEW_ALTERNATIVE_INGREDIENT_NAME = "Aquafaba";
 	private static final String OVERLAID_NAME = "Brown lentils (revised)";
+	/** As long as DW_ALTERNATIVE_INGREDIENT.explanation_for_llm holds, which its Working Copy mirrors must match. */
+	private static final String LONGEST_EXPLANATION = "e".repeat(300);
 
 	private static final UUID EDIT_UNCHANGED_AI_ID = UUID.fromString("a1c2d3e4-0001-4f5a-8b9c-0d1e2f3a0001");
 	private static final UUID EDIT_SEED_AI_ID = UUID.fromString("a1c2d3e4-0002-4f5a-8b9c-0d1e2f3a0002");
@@ -672,6 +674,27 @@ class AlternativeIngredientDaoImplTest {
 		assertThat(langs).doesNotContainKey(wcOnlyId);
 		var wcRow = factory.withoutTransaction(em -> em.find(AlternativeIngredientWcEntity.class, wcOnlyId)).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(wcRow).isNull();
+	}
+
+	@Test
+	@Order(25)
+	void editAndTranslationAcceptAnExplanationAsLongAsTheMasterColumnHolds(Mutiny.SessionFactory sessionFactory) {
+		var sut = new AlternativeIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createAlternativeIngredient(tx, "Sunflower seed cream"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editAlternativeIngredient(tx, newId, "Sunflower seed cream", LONGEST_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.stageTranslation(tx, newId, RecipeLanguage.NL, "Zonnebloempittencrème", LONGEST_EXPLANATION, 0L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.explanationForLlm()).isEqualTo(LONGEST_EXPLANATION);
+		var forEdit = factory.withoutTransaction(em -> sut.findTranslationsForEdit(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(forEdit.get(RecipeLanguage.NL).explanationForLlm()).isEqualTo(LONGEST_EXPLANATION);
 	}
 
 	private static Uni<Void> persistAlternativeIngredient(ReactivePersistenceTxContext tx, UUID id, String name) {

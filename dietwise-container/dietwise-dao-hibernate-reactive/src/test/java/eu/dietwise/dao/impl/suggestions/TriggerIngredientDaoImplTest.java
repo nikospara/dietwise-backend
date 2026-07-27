@@ -41,6 +41,8 @@ class TriggerIngredientDaoImplTest {
 	private static final String MASTER_NAME = "Beef";
 	private static final String EDITED_NAME = "Bovine";
 	private static final String EDITED_EXPLANATION = "Red meat; the centrepiece protein.";
+	/** As long as DW_TRIGGER_INGREDIENT.explanation_for_llm holds, which its Working Copy mirror must match. */
+	private static final String LONGEST_EXPLANATION = "e".repeat(300);
 
 	private static final UUID TRANSLATION_TI_ID = UUID.fromString("b1c2d3e4-0001-4f5a-8b9c-0d1e2f3a0001");
 	private static final UUID TRANSLATION_COLLAPSE_TI_ID = UUID.fromString("b1c2d3e4-0002-4f5a-8b9c-0d1e2f3a0002");
@@ -489,6 +491,22 @@ class TriggerIngredientDaoImplTest {
 		assertThat(details.name()).isEqualTo("Mung beans");
 		assertThat(details.version()).isEqualTo(1L);
 		assertThat(details.published()).isFalse();
+	}
+
+	@Test
+	@Order(21)
+	void testEditTriggerIngredientAcceptsAnExplanationAsLongAsTheMasterColumnHolds(Mutiny.SessionFactory sessionFactory) {
+		var sut = new TriggerIngredientDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+
+		var newId = factory.withTransaction(tx -> sut.createTriggerIngredient(tx, "Chickpea flour"))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		factory.withTransaction(tx -> sut.editTriggerIngredient(tx, newId, "Chickpea flour", LONGEST_EXPLANATION, 1L))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		var details = factory.withoutTransaction(em -> sut.findEditableById(em, newId))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+		assertThat(details.explanationForLlm()).isEqualTo(LONGEST_EXPLANATION);
 	}
 
 	private static Uni<Void> persistTriggerIngredient(ReactivePersistenceTxContext tx, UUID id, String name) {

@@ -321,4 +321,12 @@
 			</column>
 		</createTable>
 	</changeSet>
+
+	<changeSet id="working_copy_explanation_for_llm_increase_size_to_300" author="nikospara">
+		<comment>Match the 300 characters the corresponding master and translation tables allow, so a staged explanation is never narrower than a published one.</comment>
+		<modifyDataType tableName="DW_TRIGGER_INGREDIENT_WC" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ROLE_OR_TECHNIQUE_WC" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ALTERNATIVE_INGREDIENT_WC" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+		<modifyDataType tableName="DW_ALTERNATIVE_INGREDIENT_TRANSLATION_WC" columnName="explanation_for_llm" newDataType="VARCHAR(300)" />
+	</changeSet>
 </databaseChangeLog>
