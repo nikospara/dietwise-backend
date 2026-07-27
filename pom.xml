@@ -28,18 +28,18 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<version.quarkus.platform>3.37.1</version.quarkus.platform>
+		<version.quarkus.platform>3.37.4</version.quarkus.platform>
 
 		<!-- REVISE PROPERTIES FROM HERE, AND SORT THEM ALPHABETICALLY IN THEIR GROUPS -->
 		<version.assertj>3.27.7</version.assertj>
 		<version.h2>2.1.210</version.h2>
-		<version.hibernate-validator-cdi>9.1.1.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
+		<version.hibernate-validator-cdi>9.1.2.Final</version.hibernate-validator-cdi><!-- TODO: Check if needed; for tests maybe? - Anyway, it relates to quarkus-bom hibernate-validator -->
 		<version.jakarta-el>4.0.2</version.jakarta-el>
 		<version.keycloak>26.6.1</version.keycloak>
 		<version.liquibase>5.0.3</version.liquibase>
 		<version.org.immutables>2.12.2</version.org.immutables>
 		<version.postgres>42.7.11</version.postgres><!-- Defined in quarkus-bom, search for org.postgresql; keep here, needed by the build scripts -->
-		<version.quarkus-langchain4j>1.11.2</version.quarkus-langchain4j>
+		<version.quarkus-langchain4j>1.12.0</version.quarkus-langchain4j>
 		<version.slf4j>2.0.18</version.slf4j><!-- Defined in quarkus-bom, search for slf4j-api - needed because quarkus-bom only uses slf4j-api, we use other artifacts too -->
 		<version.swagger-annotations>1.6.5</version.swagger-annotations>
 		<version.weld-junit5>5.0.3.Final</version.weld-junit5>
