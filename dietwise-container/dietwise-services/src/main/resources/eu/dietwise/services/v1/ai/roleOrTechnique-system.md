@@ -32,33 +32,43 @@ Here are a few examples:
 
 ## User message
 Allowed RoleOrTechnique values:
-- minced in sauce 
-- cubes stew 
-- steak centerpiece 
-- flavoring 
-- sandwich fill 
-- dough 
-- pasta 
-- protein add-in in preservation processing 
-- sauce 
-- sauce base as dish binder 
-- burger patty base 
-- sauté fat 
-- baking fat 
-- finish oil 
-- sauce enricher (creamy element)
-- staple 
-- bread 
-- topping 
-- main protein centerpiece 
-- beverage 
-- breakfast liquid base 
-- stirfry protein 
-- starchy base 
-- broth base 
-- meat base 
-- sauce enricher 
+- Salad topping
+- Sandwich spread
+- baking fat (savory)
+- baking fat (sweet)
+- baking/binding (sweet)
+- baking/binding protein (savory)
+- baking/binding protein (sweet)
+- beverage
+- bread
+- broth base
+- burger patty base
+- condiment
+- cubes stew
+- dough (savory)
+- finish oil
+- flavoring
+- meat base
+- minced in sauce
+- pasta
+- protein
+- protein add-in in preservation processing
 - roux binder
+- roux-based sauce
+- sandwich fill
+- sauce
+- sauce base as dish binder
+- sauce enricher
+- sauce enricher (creamy element)
+- sauté fat
+- savory main protein centerpiece
+- seasoning
+- staple
+- starchy base
+- steak centerpiece
+- stirfry protein
+- sweetener, bulk ingredient
+- topping
 
 ingredient: butter
 
@@ -77,33 +87,43 @@ sauté fat
 
 ## User message
 Allowed RoleOrTechnique values:
-- minced in sauce
+- Salad topping
+- Sandwich spread
+- baking fat (savory)
+- baking fat (sweet)
+- baking/binding (sweet)
+- baking/binding protein (savory)
+- baking/binding protein (sweet)
+- beverage
+- bread
+- broth base
+- burger patty base
+- condiment
 - cubes stew
-- steak centerpiece
+- dough (savory)
+- finish oil
 - flavoring
-- sandwich fill
-- dough
+- meat base
+- minced in sauce
 - pasta
+- protein
 - protein add-in in preservation processing
+- roux binder
+- roux-based sauce
+- sandwich fill
 - sauce
 - sauce base as dish binder
-- burger patty base
-- sauté fat
-- baking fat
-- finish oil
-- sauce enricher (creamy element)
-- staple
-- bread
-- topping
-- main protein centerpiece
-- beverage
-- breakfast liquid base
-- stirfry protein
-- starchy base
-- broth base
-- meat base
 - sauce enricher
-- roux binder
+- sauce enricher (creamy element)
+- sauté fat
+- savory main protein centerpiece
+- seasoning
+- staple
+- starchy base
+- steak centerpiece
+- stirfry protein
+- sweetener, bulk ingredient
+- topping
 
 ingredient: olive oil
 
@@ -122,33 +142,43 @@ finish oil
 
 ## User message
 Allowed RoleOrTechnique values:
-- minced in sauce
+- Salad topping
+- Sandwich spread
+- baking fat (savory)
+- baking fat (sweet)
+- baking/binding (sweet)
+- baking/binding protein (savory)
+- baking/binding protein (sweet)
+- beverage
+- bread
+- broth base
+- burger patty base
+- condiment
 - cubes stew
-- steak centerpiece
+- dough (savory)
+- finish oil
 - flavoring
-- sandwich fill
-- dough
+- meat base
+- minced in sauce
 - pasta
+- protein
 - protein add-in in preservation processing
+- roux binder
+- roux-based sauce
+- sandwich fill
 - sauce
 - sauce base as dish binder
-- burger patty base
-- sauté fat
-- baking fat
-- finish oil
-- sauce enricher (creamy element)
-- staple
-- bread
-- topping
-- main protein centerpiece
-- beverage
-- breakfast liquid base
-- stirfry protein
-- starchy base
-- broth base
-- meat base
 - sauce enricher
-- roux binder
+- sauce enricher (creamy element)
+- sauté fat
+- savory main protein centerpiece
+- seasoning
+- staple
+- starchy base
+- steak centerpiece
+- stirfry protein
+- sweetener, bulk ingredient
+- topping
 
 ingredient: onion
 
@@ -167,33 +197,43 @@ flavoring
 
 ## User message
 Allowed RoleOrTechnique values:
-- minced in sauce
+- Salad topping
+- Sandwich spread
+- baking fat (savory)
+- baking fat (sweet)
+- baking/binding (sweet)
+- baking/binding protein (savory)
+- baking/binding protein (sweet)
+- beverage
+- bread
+- broth base
+- burger patty base
+- condiment
 - cubes stew
-- steak centerpiece
+- dough (savory)
+- finish oil
 - flavoring
-- sandwich fill
-- dough
+- meat base
+- minced in sauce
 - pasta
+- protein
 - protein add-in in preservation processing
+- roux binder
+- roux-based sauce
+- sandwich fill
 - sauce
 - sauce base as dish binder
-- burger patty base
-- sauté fat
-- baking fat
-- finish oil
-- sauce enricher (creamy element)
-- staple
-- bread
-- topping
-- main protein centerpiece
-- beverage
-- breakfast liquid base
-- stirfry protein
-- starchy base
-- broth base
-- meat base
 - sauce enricher
-- roux binder
+- sauce enricher (creamy element)
+- sauté fat
+- savory main protein centerpiece
+- seasoning
+- staple
+- starchy base
+- steak centerpiece
+- stirfry protein
+- sweetener, bulk ingredient
+- topping
 
 ingredient: feta cheese
 

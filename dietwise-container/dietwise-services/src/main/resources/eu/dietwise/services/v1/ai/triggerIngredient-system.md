@@ -31,32 +31,68 @@ Here are a few examples:
 
 ## User message
 Allowed trigger ingredient values:
-- Beef 
-- Pork 
-- Bacon/lardons 
-- Luncheon meat 
-- White flour 
-- White pasta 
-- Canned tuna 
-- Soy sauce 
-- meat-based sauce 
-- Mince meat (meat sauce)
-- Butter 
+- Aged hard seasoning cheese (parmesan, pecorino, grana padano)
+- Aioli
+- BBQ sauce
+- Bacon/lardons
+- Bechamel sauce
+- Beef
+- Brined cheese (e.g. Feta, salad cheese, halloumi)
+- Butter
+- Canned tuna
+- Cheddar
+- Cheese based sauces
+- Chicken
 - Cooking oil/fat (general)
-- Low-dairy sauce 
-- White rice 
-- Refined bread 
+- Cream
+- Cream based sauces
+- Cream cheese
+- Duck
+- Eggs
+- Fish sauce
+- Full-fat cream
+- Game meat (venison, rabbit, wild boar, pheasant)
+- Goose
+- Gouda
+- High-fat cream (e.g. Heavy cream, Mascarpone, Clotted cream)
+- Hot sauce
+- Ketchup
+- Lamb
+- Low-dairy breakfast
+- Low-dairy sauce
+- Luncheon meat
 - Margarine (non-HO)
-- Non-nut/seed topping/condiments (i.e. mayonnaise)
-- Protein choice (non-seafood)
-- SSB 
-- Low-dairy breakfast 
-- Stir-fry protein (non-legume)
+- Mascarpone
+- Mayonnaise
+- Minced meat
+- Parmesan
 - Pasta (starch base)
-- Stock cube 
-- Lamb 
-- Cream 
+- Pesto sauce
+- Pork
+- Processed cheese
+- Refined bread
+- SSB
+- Salad topping
+- Salt
+- Salty, crumbly cheese (e.g. Feta, salad, cheese)
+- Semi-hard sliced cheese (e.g. Gouda, Edam, Cheddar)
+- Soft ripened cheese (brie, camembert)
+- Soy sauce
+- Spreadable fresh cheese
+- Stir-fry protein (non-legume)
+- Stock cube
+- Sweet chili sauce
+- Teriyaki sauce
+- Turkey
 - White couscous
+- White flour
+- White pasta
+- White rice
+- Worcestershire
+- feta cheese
+- meat-based sauce
+- pecorino
+- sugar
 
 ingredient: beef mince
 
@@ -68,38 +104,74 @@ Output only the value.
 
 ## Assistant message
 
-Mince meat (meat sauce)
+Minced meat
 
 # Example 2
 
 ## User message
 Allowed trigger ingredient values:
-- Beef
-- Pork
+- Aged hard seasoning cheese (parmesan, pecorino, grana padano)
+- Aioli
+- BBQ sauce
 - Bacon/lardons
+- Bechamel sauce
+- Beef
+- Brined cheese (e.g. Feta, salad cheese, halloumi)
+- Butter
+- Canned tuna
+- Cheddar
+- Cheese based sauces
+- Chicken
+- Cooking oil/fat (general)
+- Cream
+- Cream based sauces
+- Cream cheese
+- Duck
+- Eggs
+- Fish sauce
+- Full-fat cream
+- Game meat (venison, rabbit, wild boar, pheasant)
+- Goose
+- Gouda
+- High-fat cream (e.g. Heavy cream, Mascarpone, Clotted cream)
+- Hot sauce
+- Ketchup
+- Lamb
+- Low-dairy breakfast
+- Low-dairy sauce
 - Luncheon meat
+- Margarine (non-HO)
+- Mascarpone
+- Mayonnaise
+- Minced meat
+- Parmesan
+- Pasta (starch base)
+- Pesto sauce
+- Pork
+- Processed cheese
+- Refined bread
+- SSB
+- Salad topping
+- Salt
+- Salty, crumbly cheese (e.g. Feta, salad, cheese)
+- Semi-hard sliced cheese (e.g. Gouda, Edam, Cheddar)
+- Soft ripened cheese (brie, camembert)
+- Soy sauce
+- Spreadable fresh cheese
+- Stir-fry protein (non-legume)
+- Stock cube
+- Sweet chili sauce
+- Teriyaki sauce
+- Turkey
+- White couscous
 - White flour
 - White pasta
-- Canned tuna
-- Soy sauce
-- meat-based sauce
-- Mince meat (meat sauce)
-- Butter
-- Cooking oil/fat (general)
-- Low-dairy sauce
 - White rice
-- Refined bread
-- Margarine (non-HO)
-- Non-nut/seed topping/condiments (i.e. mayonnaise)
-- Protein choice (non-seafood)
-- SSB
-- Low-dairy breakfast
-- Stir-fry protein (non-legume)
-- Pasta (starch base)
-- Stock cube
-- Lamb
-- Cream
-- White couscous
+- Worcestershire
+- feta cheese
+- meat-based sauce
+- pecorino
+- sugar
 
 ingredient: extra virgin olive oil
 
@@ -117,32 +189,68 @@ unknown
 
 ## User message
 Allowed trigger ingredient values:
-- Beef
-- Pork
+- Aged hard seasoning cheese (parmesan, pecorino, grana padano)
+- Aioli
+- BBQ sauce
 - Bacon/lardons
+- Bechamel sauce
+- Beef
+- Brined cheese (e.g. Feta, salad cheese, halloumi)
+- Butter
+- Canned tuna
+- Cheddar
+- Cheese based sauces
+- Chicken
+- Cooking oil/fat (general)
+- Cream
+- Cream based sauces
+- Cream cheese
+- Duck
+- Eggs
+- Fish sauce
+- Full-fat cream
+- Game meat (venison, rabbit, wild boar, pheasant)
+- Goose
+- Gouda
+- High-fat cream (e.g. Heavy cream, Mascarpone, Clotted cream)
+- Hot sauce
+- Ketchup
+- Lamb
+- Low-dairy breakfast
+- Low-dairy sauce
 - Luncheon meat
+- Margarine (non-HO)
+- Mascarpone
+- Mayonnaise
+- Minced meat
+- Parmesan
+- Pasta (starch base)
+- Pesto sauce
+- Pork
+- Processed cheese
+- Refined bread
+- SSB
+- Salad topping
+- Salt
+- Salty, crumbly cheese (e.g. Feta, salad, cheese)
+- Semi-hard sliced cheese (e.g. Gouda, Edam, Cheddar)
+- Soft ripened cheese (brie, camembert)
+- Soy sauce
+- Spreadable fresh cheese
+- Stir-fry protein (non-legume)
+- Stock cube
+- Sweet chili sauce
+- Teriyaki sauce
+- Turkey
+- White couscous
 - White flour
 - White pasta
-- Canned tuna
-- Soy sauce
-- meat-based sauce
-- Mince meat (meat sauce)
-- Butter
-- Cooking oil/fat (general)
-- Low-dairy sauce
 - White rice
-- Refined bread
-- Margarine (non-HO)
-- Non-nut/seed topping/condiments (i.e. mayonnaise)
-- Protein choice (non-seafood)
-- SSB
-- Low-dairy breakfast
-- Stir-fry protein (non-legume)
-- Pasta (starch base)
-- Stock cube
-- Lamb
-- Cream
-- White couscous
+- Worcestershire
+- feta cheese
+- meat-based sauce
+- pecorino
+- sugar
 
 ingredient: zucchini
 
@@ -156,32 +264,68 @@ unknown
 
 ## User message
 Allowed trigger ingredient values:
-- Beef
-- Pork
+- Aged hard seasoning cheese (parmesan, pecorino, grana padano)
+- Aioli
+- BBQ sauce
 - Bacon/lardons
+- Bechamel sauce
+- Beef
+- Brined cheese (e.g. Feta, salad cheese, halloumi)
+- Butter
+- Canned tuna
+- Cheddar
+- Cheese based sauces
+- Chicken
+- Cooking oil/fat (general)
+- Cream
+- Cream based sauces
+- Cream cheese
+- Duck
+- Eggs
+- Fish sauce
+- Full-fat cream
+- Game meat (venison, rabbit, wild boar, pheasant)
+- Goose
+- Gouda
+- High-fat cream (e.g. Heavy cream, Mascarpone, Clotted cream)
+- Hot sauce
+- Ketchup
+- Lamb
+- Low-dairy breakfast
+- Low-dairy sauce
 - Luncheon meat
+- Margarine (non-HO)
+- Mascarpone
+- Mayonnaise
+- Minced meat
+- Parmesan
+- Pasta (starch base)
+- Pesto sauce
+- Pork
+- Processed cheese
+- Refined bread
+- SSB
+- Salad topping
+- Salt
+- Salty, crumbly cheese (e.g. Feta, salad, cheese)
+- Semi-hard sliced cheese (e.g. Gouda, Edam, Cheddar)
+- Soft ripened cheese (brie, camembert)
+- Soy sauce
+- Spreadable fresh cheese
+- Stir-fry protein (non-legume)
+- Stock cube
+- Sweet chili sauce
+- Teriyaki sauce
+- Turkey
+- White couscous
 - White flour
 - White pasta
-- Canned tuna
-- Soy sauce
-- meat-based sauce
-- Mince meat (meat sauce)
-- Butter
-- Cooking oil/fat (general)
-- Low-dairy sauce
 - White rice
-- Refined bread
-- Margarine (non-HO)
-- Non-nut/seed topping/condiments (i.e. mayonnaise)
-- Protein choice (non-seafood)
-- SSB
-- Low-dairy breakfast
-- Stir-fry protein (non-legume)
-- Pasta (starch base)
-- Stock cube
-- Lamb
-- Cream
-- White couscous
+- Worcestershire
+- feta cheese
+- meat-based sauce
+- pecorino
+- sugar
 
 ingredient: smoked bacon strips
 
