@@ -252,9 +252,13 @@ Allowed trigger ingredient values:
 - pecorino
 - sugar
 
-ingredient: zucchini
+ingredient: 3 small zucchini
 
 roleOrTechnique: flavoring
+
+Select the trigger ingredient value.
+
+Output only the value.
 
 ## Assistant message
 
@@ -330,6 +334,10 @@ Allowed trigger ingredient values:
 ingredient: smoked bacon strips
 
 roleOrTechnique: sauté fat
+
+Select the trigger ingredient value.
+
+Output only the value.
 
 ## Assistant message
 
