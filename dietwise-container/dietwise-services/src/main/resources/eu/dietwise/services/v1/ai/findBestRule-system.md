@@ -31,45 +31,23 @@ Here are a few examples:
 # Example 1
 
 ## User message
-ingredient: 4 slices of bacon
-roleOrTechnique: sauté fat
-triggerIngredient: bacon/lardons
+ingredient: 2 lb. beef chuck stew meat, cut into 1" cubes
+roleOrTechnique: cubes stew
+triggerIngredient: Beef
 dietaryComponents:
-- processed meat
-- sodium
+- red meat
 
 Filtered db entries:
 - id: 1
-    - recommendation: Decrease processed meat
-    - role: flavoring
+    - recommendation: Decrease red meat
+    - role: minced in sauce
 - id: 2
-    - recommendation: 
-    - role: 
+    - recommendation: Decrease red meat
+    - role: cubes stew
+- id: 3
+  - recommendation: Decrease red meat
+  - role: steak centerpiece
 
-Select the id of the best fitting entry.
-Output only the id.
-
-## Assistant message
-
-1
-
-# Example 2
-
-## User message
-ingredient: butter
-roleOrTechnique: sauté fat
-triggerIngredient: Butter
-dietaryComponents:
-- omega-6 polyunsaturated fatty acids
-
-Filtered db entries:
-- id: 1
-  - recommendation: Decrease saturated fat
-  - role: baking fat
-- id: 2
-    - recommendation: Decrease saturated fat
-    - role: sauté fat
-  
 Select the id of the best fitting entry.
 Output only the id.
 
@@ -77,23 +55,58 @@ Output only the id.
 
 2
 
-# Example 3
+# Example 2
 
 ## User message
-ingredient: 2 baguettes
-roleOrTechnique: bread pizza
-triggerIngredient: refined bread
+ingredient: salted butter
+roleOrTechnique: Sandwich spread
+triggerIngredient: Butter
 dietaryComponents:
-- 
+- sodium 
+- trans fatty acids 
+- milk
 
 Filtered db entries:
 - id: 1
-  - recommendation: Increase fiber
-  - role: bread
-
+  - recommendation: Decrease trans fatty acids
+  - role: baking fat (savory)
+- id: 2
+  - recommendation: Decrease trans fatty acids
+  - role: baking fat (sweet)
+- id: 3
+    - recommendation: Decrease trans fatty acids
+    - role: sauté fat
+  
 Select the id of the best fitting entry.
 Output only the id.
 
 ## Assistant message
 
 1
+
+# Example 3
+
+## User message
+ingredient: 500 g strong white flour 
+roleOrTechnique: dough (savory)
+triggerIngredient: White flour
+dietaryComponents:
+- 
+
+Filtered db entries:
+- id: 1
+  - recommendation: Diet low in whole grains
+  - role: baking/binding (sweet)
+- id: 2
+  - recommendation: Diet low in whole grains
+  - role: roux binder
+- id: 3
+  - recommendation: Diet low in whole grains
+  - role: dough (savory)
+
+Select the id of the best fitting entry.
+Output only the id.
+
+## Assistant message
+
+3
