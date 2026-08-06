@@ -1,11 +1,11 @@
-Leistina "trigger" ingridientų reikšmė:
+Leistinos trigger ingredient reikšmės:
 {availableTriggerIngredientsAsMarkdownList}
 
-ingridientai: {ingredientNameInRecipe}
+ingredientas: {ingredientNameInRecipe}
 
 roleOrTechnique: {ingredientRoleOrTechnique}
 
-Pasirink "trigger" ingridientų reikšmę.
+Pasirinkite trigger ingredient reikšmę.
 
-Išvesk tik reikšmę.
+Pateikite tik reikšmę.
 

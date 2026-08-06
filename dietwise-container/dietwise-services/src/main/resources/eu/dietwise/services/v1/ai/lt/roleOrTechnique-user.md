@@ -1,12 +1,11 @@
-Leidžiamos RoleOrTechnique reikšmės:
+Leistinos RoleOrTechnique reikšmės:
 {availableRolesAsMarkdownList}
 
-ingridientai: {ingredientNameInRecipe}
+ingredientas: {ingredientNameInRecipe}
 
 instrukcijos:
 {instructionsAsMarkdownList}
 
-Pasirink RoleOrTechnique reikšmę.
+Pasirinkite RoleOrTechnique reikšmę.
 
-Išvesk tik reikšmę.
-
+Pateikite tik reikšmę.
