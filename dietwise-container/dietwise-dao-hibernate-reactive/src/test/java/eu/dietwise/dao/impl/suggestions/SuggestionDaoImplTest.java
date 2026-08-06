@@ -43,8 +43,16 @@ class SuggestionDaoImplTest {
 
 	private static final UUID RULE_ID = UUID.fromString("efd2ae9e-73af-494a-bced-5f276a8d3e6e");
 	private static final UUID INGREDIENT_ID = UUID.fromString("67c852ee-f6d9-459e-94ff-93df60449da8");
-	private static final UUID CHICKPEA_AUBERGINE_MIX_ID = UUID.fromString("70000000-0000-0000-0000-000000000019");
-	private static final UUID PANEER_ID = UUID.fromString("70000000-0000-0000-0000-000000000036");
+
+	// A rule whose two alternatives are owned by this test: one carries seasonality and cost rows, the other carries
+	// none, so the country filter is asserted against rows the seeded master data cannot reach.
+	private static final UUID COUNTRY_RULE_ID = UUID.fromString("c0000000-0000-4000-8000-000000000001");
+	private static final UUID COUNTRY_DATA_ALTERNATIVE_ID = UUID.fromString("c0000000-0000-4000-8000-0000000000a1");
+	private static final UUID NO_COUNTRY_DATA_ALTERNATIVE_ID = UUID.fromString("c0000000-0000-4000-8000-0000000000a2");
+	private static final UUID COUNTRY_DATA_TEMPLATE_ID = UUID.fromString("c0000000-0000-4000-8000-0000000000b1");
+	private static final UUID NO_COUNTRY_DATA_TEMPLATE_ID = UUID.fromString("c0000000-0000-4000-8000-0000000000b2");
+	private static final int GREEK_MONTH_FROM = 8;
+	private static final int GREEK_MONTH_TO = 10;
 
 	// A rule with one active and one deactivated master template; assessment must skip the deactivated one.
 	private static final UUID PARTIAL_ACTIVE_RULE_ID = UUID.fromString("14000000-0000-4000-8000-000000000002");
@@ -79,16 +87,53 @@ class SuggestionDaoImplTest {
 	@BeforeAll
 	static void seedActiveFilterFixtures(Mutiny.SessionFactory sessionFactory) {
 		sessionFactory.withTransaction(session -> SuggestionTemplateFixtures.insertRuleWithTemplates(
-						session, PARTIAL_ACTIVE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 14 partial-filter role",
-						List.of(
-								new SuggestionTemplateFixtures.Template(PARTIAL_ACTIVE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, ACTIVE_ALTERNATIVE_RESTRICTION, true),
-								new SuggestionTemplateFixtures.Template(PARTIAL_DEACTIVATED_TEMPLATE_ID, SECOND_ALTERNATIVE_ID, 1, DEACTIVATED_ALTERNATIVE_RESTRICTION, false)
-						))
+								session, PARTIAL_ACTIVE_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 14 partial-filter role",
+								List.of(
+										new SuggestionTemplateFixtures.Template(PARTIAL_ACTIVE_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, ACTIVE_ALTERNATIVE_RESTRICTION, true),
+										new SuggestionTemplateFixtures.Template(PARTIAL_DEACTIVATED_TEMPLATE_ID, SECOND_ALTERNATIVE_ID, 1, DEACTIVATED_ALTERNATIVE_RESTRICTION, false)
+								))
 						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
 								session, ALL_DEACTIVATED_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 14 all-off role",
 								List.of(
 										new SuggestionTemplateFixtures.Template(ALL_DEACTIVATED_TEMPLATE_ID, THIRD_ALTERNATIVE_ID, 0, "Issue 14 sole deactivated alternative", false)
 								))))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	@BeforeAll
+	static void seedCountryFixtures(Mutiny.SessionFactory sessionFactory) {
+		sessionFactory.withTransaction(session -> SuggestionTemplateFixtures.insertAlternativeIngredient(
+								session, COUNTRY_DATA_ALTERNATIVE_ID, "Country-filter alternative with seasonality and cost")
+						.chain(() -> SuggestionTemplateFixtures.insertAlternativeIngredient(
+								session, NO_COUNTRY_DATA_ALTERNATIVE_ID, "Country-filter alternative with neither"))
+						.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
+								session, COUNTRY_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Country-filter role",
+								List.of(
+										new SuggestionTemplateFixtures.Template(COUNTRY_DATA_TEMPLATE_ID, COUNTRY_DATA_ALTERNATIVE_ID, 0, "With country data", true),
+										new SuggestionTemplateFixtures.Template(NO_COUNTRY_DATA_TEMPLATE_ID, NO_COUNTRY_DATA_ALTERNATIVE_ID, 1, "Without country data", true)))))
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// Greece gets both a seasonality and a cost, Belgium only a cost: resolving one country must not leak the other.
+		sessionFactory.withTransaction(session -> session.find(AlternativeIngredientEntity.class, COUNTRY_DATA_ALTERNATIVE_ID)
+						.flatMap(alternative -> {
+							var greeceSeasonality = new AlternativeIngredientSeasonalityEntity();
+							greeceSeasonality.setAlternativeIngredient(alternative);
+							greeceSeasonality.setCountry(GREECE);
+							greeceSeasonality.setMonthFrom(GREEK_MONTH_FROM);
+							greeceSeasonality.setMonthTo(GREEK_MONTH_TO);
+
+							var greeceCost = new AlternativeIngredientCostEntity();
+							greeceCost.setAlternativeIngredient(alternative);
+							greeceCost.setCountry(GREECE);
+							greeceCost.setCost(LO);
+
+							var belgiumCost = new AlternativeIngredientCostEntity();
+							belgiumCost.setAlternativeIngredient(alternative);
+							belgiumCost.setCountry(BELGIUM);
+							belgiumCost.setCost(HI);
+
+							return session.persistAll(greeceSeasonality, greeceCost, belgiumCost);
+						}))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
@@ -102,38 +147,6 @@ class SuggestionDaoImplTest {
 				.nameInRecipe("beef mince")
 				.build();
 
-		factory.withTransaction(tx ->
-				tx.find(AlternativeIngredientEntity.class, CHICKPEA_AUBERGINE_MIX_ID)
-						.flatMap(chickpeaAubergineMix ->
-								tx.find(AlternativeIngredientEntity.class, PANEER_ID)
-										.flatMap(paneer -> {
-											var greeceSeasonality = new AlternativeIngredientSeasonalityEntity();
-											greeceSeasonality.setAlternativeIngredient(chickpeaAubergineMix);
-											greeceSeasonality.setCountry(GREECE);
-											greeceSeasonality.setMonthFrom(8);
-											greeceSeasonality.setMonthTo(10);
-
-											var belgiumSeasonality = new AlternativeIngredientSeasonalityEntity();
-											belgiumSeasonality.setAlternativeIngredient(paneer);
-											belgiumSeasonality.setCountry(BELGIUM);
-											belgiumSeasonality.setMonthFrom(8);
-											belgiumSeasonality.setMonthTo(9);
-
-											var greeceCost = new AlternativeIngredientCostEntity();
-											greeceCost.setAlternativeIngredient(chickpeaAubergineMix);
-											greeceCost.setCountry(GREECE);
-											greeceCost.setCost(LO);
-
-											var belgiumCost = new AlternativeIngredientCostEntity();
-											belgiumCost.setAlternativeIngredient(paneer);
-											belgiumCost.setCountry(BELGIUM);
-											belgiumCost.setCost(HI);
-
-											return tx.persistAll(greeceSeasonality, belgiumSeasonality, greeceCost, belgiumCost);
-										})
-						)
-		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
 		var suggestionsWithoutCountry = factory.withoutTransaction(em ->
 				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), null, ingredient, RecipeLanguage.EN)
 		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -143,6 +156,7 @@ class SuggestionDaoImplTest {
 			assertThat(suggestion.getTarget()).isEqualTo(new AppliesTo.AppliesToIngredient(ingredient.getId()));
 			assertThat(suggestion.getRuleId()).isEqualTo(new GenericRuleId(RULE_ID.toString()));
 			assertThat(suggestion.getRecommendation()).isEqualTo(new RecommendationImpl("Decrease red meat"));
+			// no country was asked for, so nothing is resolved however many countries the alternatives are listed for
 			assertThat(suggestion.getSeasonality()).isEmpty();
 			assertThat(suggestion.getCost()).isEmpty();
 		});
@@ -172,33 +186,6 @@ class SuggestionDaoImplTest {
 			assertThat(suggestion.getEquivalence()).contains("1:1 by volume");
 			assertThat(suggestion.getTechniqueNotes()).contains("Roast aubergine first");
 		});
-
-		var suggestionsForGreece = factory.withoutTransaction(em ->
-				sut.retrieveByRule(em, new GenericRuleId(RULE_ID.toString()), GREECE, ingredient, RecipeLanguage.EN)
-		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
-		assertThat(suggestionsForGreece).hasSize(3);
-		assertThat(suggestionsForGreece).allSatisfy(suggestion -> {
-			assertThat(suggestion.getTarget()).isEqualTo(new AppliesTo.AppliesToIngredient(ingredient.getId()));
-			assertThat(suggestion.getRuleId()).isEqualTo(new GenericRuleId(RULE_ID.toString()));
-			assertThat(suggestion.getRecommendation()).isEqualTo(new RecommendationImpl("Decrease red meat"));
-		});
-		assertThat(suggestionsForGreece).anySatisfy(suggestion -> {
-			assertThat(suggestion.getId().asString()).isEqualTo("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c");
-			assertThat(suggestion.getAlternative().asString()).isEqualTo("Chickpea + aubergine mix");
-			assertThat(suggestion.getSeasonality()).contains(ImmutableSeasonality.builder().monthFrom(8).monthTo(10).build());
-			assertThat(suggestion.getCost()).contains(LO);
-			assertThat(suggestion.getAlternativeComponentNames()).containsExactlyInAnyOrder(
-					new RecommendationComponentNameImpl("legumes"),
-					new RecommendationComponentNameImpl("fiber"),
-					new RecommendationComponentNameImpl("vegetables")
-			);
-		});
-		assertThat(suggestionsForGreece).filteredOn(suggestion -> !suggestion.getId().asString().equals("b4cba823-e8aa-4e4f-a81a-0e3c3dd6816c"))
-				.allSatisfy(suggestion -> {
-					assertThat(suggestion.getSeasonality()).isEmpty();
-					assertThat(suggestion.getCost()).isEmpty();
-				});
 	}
 
 	@Test
@@ -287,15 +274,53 @@ class SuggestionDaoImplTest {
 				assertThat(suggestion.getHumanFriendlyRecommendationDisplay()).contains("Eet minder rood vlees"));
 	}
 
+	@Test
+	@Order(6)
+	void retrieveByRuleResolvesSeasonalityAndCostOfTheRequestedCountryOnly(Mutiny.SessionFactory sessionFactory) {
+		var sut = new SuggestionDaoImpl();
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var ingredient = ImmutableIngredient.builder()
+				.id(new GenericIngredientId(INGREDIENT_ID.toString()))
+				.nameInRecipe("beef mince")
+				.build();
+
+		var forGreece = factory.withoutTransaction(em ->
+				sut.retrieveByRule(em, new GenericRuleId(COUNTRY_RULE_ID.toString()), GREECE, ingredient, RecipeLanguage.EN)
+		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(forGreece).hasSize(2);
+		assertThat(forGreece).anySatisfy(suggestion -> {
+			assertThat(suggestion.getId().asString()).isEqualTo(COUNTRY_DATA_TEMPLATE_ID.toString());
+			assertThat(suggestion.getSeasonality()).contains(ImmutableSeasonality.builder().monthFrom(GREEK_MONTH_FROM).monthTo(GREEK_MONTH_TO).build());
+			assertThat(suggestion.getCost()).contains(LO);
+		});
+		assertThat(forGreece).anySatisfy(suggestion -> {
+			assertThat(suggestion.getId().asString()).isEqualTo(NO_COUNTRY_DATA_TEMPLATE_ID.toString());
+			assertThat(suggestion.getSeasonality()).isEmpty();
+			assertThat(suggestion.getCost()).isEmpty();
+		});
+
+		var forBelgium = factory.withoutTransaction(em ->
+				sut.retrieveByRule(em, new GenericRuleId(COUNTRY_RULE_ID.toString()), BELGIUM, ingredient, RecipeLanguage.EN)
+		).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		// Belgium has a cost but no seasonality: the Greek seasonality must not stand in for the missing Belgian one
+		assertThat(forBelgium).anySatisfy(suggestion -> {
+			assertThat(suggestion.getId().asString()).isEqualTo(COUNTRY_DATA_TEMPLATE_ID.toString());
+			assertThat(suggestion.getSeasonality()).isEmpty();
+			assertThat(suggestion.getCost()).contains(HI);
+		});
+	}
+
 	private static void setMasterHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID recommendationId, String value) {
 		sessionFactory.withTransaction(session -> session.createNativeQuery("update DW_RECOMMENDATION set human_friendly_display = :value where id = :id")
-				.setParameter("value", value).setParameter("id", recommendationId).executeUpdate())
+						.setParameter("value", value).setParameter("id", recommendationId).executeUpdate())
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
 	private static void setTranslationHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID recommendationId, RecipeLanguage lang, String value) {
 		sessionFactory.withTransaction(session -> session.createNativeQuery("update DW_RECOMMENDATION_TRANSLATION set human_friendly_display = :value where recommendation_id = :id and lang = :lang")
-				.setParameter("value", value).setParameter("id", recommendationId).setParameter("lang", lang.name()).executeUpdate())
+						.setParameter("value", value).setParameter("id", recommendationId).setParameter("lang", lang.name()).executeUpdate())
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 }

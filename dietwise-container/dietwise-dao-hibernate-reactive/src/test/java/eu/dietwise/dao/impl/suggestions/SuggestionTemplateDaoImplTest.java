@@ -91,9 +91,12 @@ class SuggestionTemplateDaoImplTest {
 	private static final UUID KEEP_TRANSLATE_TEMPLATE_ID = UUID.fromString("5e0b5d4b-6c7d-462d-b380-c299fb3fb2ff");
 	private static final UUID STALE_REVERT_TRANSLATE_TEMPLATE_ID = UUID.fromString("5446a40f-b0f7-4942-99d5-da7fe9f632eb");
 
-	// Restriction and equivalence translated in EL/LT/NL; technique_notes translated in none.
-	private static final UUID CHIP_RULE_ID = UUID.fromString("95fcf98d-fc75-4773-9034-22ad58584a1a");
-	private static final UUID CHIP_TEMPLATE_ID = UUID.fromString("2b7fe2ce-0ad3-4999-b3ba-618bd10e56fc");
+	// A rule whose only template is owned by this test: restriction and equivalence translated in EL/LT/NL,
+	// technique_notes translated in none, so the per-field chips are asserted against rows the seeded master data
+	// cannot reach.
+	private static final UUID CHIP_RULE_ID = UUID.fromString("d0000000-0000-4000-8000-000000000001");
+	private static final UUID CHIP_TEMPLATE_ID = UUID.fromString("d0000000-0000-4000-8000-0000000000a1");
+	private static final List<RecipeLanguage> CHIP_TRANSLATED_LANGS = List.of(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
 
 	private static final UUID TRANSLATION_FLAG_RULE_ID = UUID.fromString("a256697c-5499-4092-a396-9f92846c5a96");
 	private static final UUID TRANSLATION_FLAG_TEMPLATE_ID = UUID.fromString("12e06b1e-ef4e-4faf-ac3f-6b7a475e9798");
@@ -193,11 +196,25 @@ class SuggestionTemplateDaoImplTest {
 	}
 
 	@BeforeAll
+	static void seedChipFixtures(Mutiny.SessionFactory sessionFactory) {
+		sessionFactory.withTransaction(session -> {
+			var chain = SuggestionTemplateFixtures.insertRuleWithTemplates(
+					session, CHIP_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Chip role",
+					List.of(new SuggestionTemplateFixtures.Template(CHIP_TEMPLATE_ID, FIRST_ALTERNATIVE_ID, 0, "Chip fixture", true)));
+			for (var lang : CHIP_TRANSLATED_LANGS) {
+				chain = chain.chain(() -> SuggestionTemplateFixtures.insertTemplateTranslation(
+						session, CHIP_TEMPLATE_ID, lang, "Chip restriction in " + lang, "Chip equivalence in " + lang, null));
+			}
+			return chain;
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	@BeforeAll
 	static void seedAlternativeIngredientEditFixtures(Mutiny.SessionFactory sessionFactory) {
 		sessionFactory.withTransaction(session ->
-						insertAlternativeIngredient(session, BLAST_ALTERNATIVE_ID, "Issue 17 blast tofu")
-								.chain(() -> insertAlternativeIngredient(session, FLAG_ALTERNATIVE_ID, "Issue 17 flag tofu"))
-								.chain(() -> insertAlternativeIngredient(session, FLAG_TR_ALTERNATIVE_ID, "Issue 17 flag-tr tempeh"))
+						SuggestionTemplateFixtures.insertAlternativeIngredient(session, BLAST_ALTERNATIVE_ID, "Issue 17 blast tofu")
+								.chain(() -> SuggestionTemplateFixtures.insertAlternativeIngredient(session, FLAG_ALTERNATIVE_ID, "Issue 17 flag tofu"))
+								.chain(() -> SuggestionTemplateFixtures.insertAlternativeIngredient(session, FLAG_TR_ALTERNATIVE_ID, "Issue 17 flag-tr tempeh"))
 								.chain(() -> SuggestionTemplateFixtures.insertRuleWithTemplates(
 										session, ALT_IDS_RULE_ID, DECREASE_RED_MEAT_RECOMMENDATION_ID, BEEF_ID, "Issue 17 alt-ids role",
 										List.of(
@@ -596,9 +613,9 @@ class SuggestionTemplateDaoImplTest {
 		var before = factory.withoutTransaction(em -> sut.findFieldTranslationLangsByRule(em, CHIP_RULE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		var chips = before.get(CHIP_TEMPLATE_ID);
-		assertThat(chips.restriction().full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(chips.restriction().full()).containsExactlyInAnyOrderElementsOf(CHIP_TRANSLATED_LANGS);
 		assertThat(chips.restriction().staged()).isEmpty();
-		assertThat(chips.equivalence().full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(chips.equivalence().full()).containsExactlyInAnyOrderElementsOf(CHIP_TRANSLATED_LANGS);
 		assertThat(chips.techniqueNotes().full()).isEmpty();
 		assertThat(chips.techniqueNotes().staged()).isEmpty();
 
@@ -610,7 +627,7 @@ class SuggestionTemplateDaoImplTest {
 		var afterChips = after.get(CHIP_TEMPLATE_ID);
 		assertThat(afterChips.techniqueNotes().staged()).containsExactly(RecipeLanguage.EL);
 		assertThat(afterChips.techniqueNotes().full()).containsExactly(RecipeLanguage.EL);
-		assertThat(afterChips.restriction().full()).containsExactlyInAnyOrder(RecipeLanguage.EL, RecipeLanguage.LT, RecipeLanguage.NL);
+		assertThat(afterChips.restriction().full()).containsExactlyInAnyOrderElementsOf(CHIP_TRANSLATED_LANGS);
 		assertThat(afterChips.restriction().staged()).isEmpty();
 	}
 
@@ -851,14 +868,6 @@ class SuggestionTemplateDaoImplTest {
 		var master = factory.withTransaction(tx -> tx.find(SuggestionTemplateEntity.class, REFUSE_TEMPLATE_ID))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 		assertThat(master).isNotNull();
-	}
-
-	private static Uni<Void> insertAlternativeIngredient(Mutiny.Session session, UUID id, String name) {
-		return session.createNativeQuery("insert into DW_ALTERNATIVE_INGREDIENT (id, name) values (:id, :name)")
-				.setParameter("id", id)
-				.setParameter("name", name)
-				.executeUpdate()
-				.replaceWithVoid();
 	}
 
 	private static Uni<Void> createRuleWithoutTemplates(ReactivePersistenceTxContext tx, UUID id) {

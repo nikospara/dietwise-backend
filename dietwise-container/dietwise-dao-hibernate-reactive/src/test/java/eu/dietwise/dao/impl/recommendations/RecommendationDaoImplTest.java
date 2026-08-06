@@ -465,6 +465,7 @@ public class RecommendationDaoImplTest {
 		UUID calciumId = lookupId(sessionFactory, "Diet low in calcium");
 		setMasterHumanFriendlyDisplay(sessionFactory, calciumId, "Watch your calcium");
 		setTranslationHumanFriendlyDisplay(sessionFactory, calciumId, RecipeLanguage.NL, "Let op je calcium");
+		clearMasterHumanFriendlyDisplay(sessionFactory, lookupId(sessionFactory, "Decrease processed meat"));
 
 		List<RecommendationComponent> english =
 				factory.withoutTransaction(em -> sut.listAllRecommendationsForScoring(em, RecipeLanguage.EN))
@@ -477,8 +478,51 @@ public class RecommendationDaoImplTest {
 		assertThat(componentForScoring(english, "calcium").getHumanFriendlyDisplay()).contains("Watch your calcium");
 		// the Dutch translation overrides the master value
 		assertThat(componentForScoring(dutch, "calcium").getHumanFriendlyDisplay()).contains("Let op je calcium");
-		// a recommendation with no human friendly display anywhere stays empty
+		// a recommendation with no human friendly display anywhere stays empty; English reads the master value, which
+		// this test cleared, and no English translation row exists to supply one
 		assertThat(componentForScoring(english, "processed meat").getHumanFriendlyDisplay()).isEmpty();
+	}
+
+	// KEEP THESE LAST! THEY MESS WITH THE DATA
+	@Test
+	@Order(23)
+	void testInsertions(Mutiny.SessionFactory sessionFactory) {
+		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
+		var sut = new RecommendationDaoImpl();
+
+		factory.withTransaction(tx -> {
+			var rec1 = new RecommendationEntity();
+			rec1.setId(RECOMMENDATION_1_ID);
+			rec1.setName("Increase healthy thing 1");
+			rec1.setComponentForScoring("healthy thing 1");
+			rec1.setWeight(RecommendationWeight.ENCOURAGED);
+			var rec2 = new RecommendationEntity();
+			rec2.setId(RECOMMENDATION_2_ID);
+			rec2.setName("Decrease unhealthy thing 2");
+			rec2.setComponentForScoring("unhealthy thing 2");
+			rec2.setWeight(RecommendationWeight.LIMITED);
+
+			var ageGroup1 = new AgeGroupEntity();
+			ageGroup1.setId(AGE_GROUP_1_ID);
+			ageGroup1.setMin(10);
+			ageGroup1.setMax(14);
+
+			var recValue1 = makeRecValue(UUID.fromString("b80f78a4-3246-4f96-baf3-a7f377f4f979"), rec1, ageGroup1, FEMALE, "1.11");
+			var recValue2 = makeRecValue(UUID.fromString("2cfc37cb-f955-4ca3-b380-c7a669922f95"), rec2, ageGroup1, FEMALE, "2.22");
+			var recValue3 = makeRecValue(UUID.fromString("6cadf706-f507-4f08-ac95-b681af070fda"), rec1, ageGroup1, MALE, "3.33");
+			var recValue4 = makeRecValue(UUID.fromString("fe136125-a444-4bc2-b83f-b4302c14d029"), rec2, ageGroup1, MALE, "4.44");
+
+			return tx.persistAll(rec1, rec2, ageGroup1)
+					.flatMap(ignored -> tx.persistAll(recValue1, recValue2, recValue3, recValue4));
+		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		Map<Recommendation, BigDecimal> recommendations =
+				factory.withoutTransaction(em -> sut.findRecommendations(em, 12, FEMALE))
+						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+
+		assertThat(recommendations).hasSize(2);
+		assertThat(recommendations.get(new RecommendationImpl("Increase healthy thing 1"))).isEqualByComparingTo("1.11");
+		assertThat(recommendations.get(new RecommendationImpl("Decrease unhealthy thing 2"))).isEqualByComparingTo("2.22");
 	}
 
 	@Test
@@ -508,6 +552,14 @@ public class RecommendationDaoImplTest {
 		sessionFactory.withTransaction(session ->
 						session.createNativeQuery("update DW_RECOMMENDATION set human_friendly_display = :value where id = :id")
 								.setParameter("value", value)
+								.setParameter("id", id)
+								.executeUpdate())
+				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
+	}
+
+	private static void clearMasterHumanFriendlyDisplay(Mutiny.SessionFactory sessionFactory, UUID id) {
+		sessionFactory.withTransaction(session ->
+						session.createNativeQuery("update DW_RECOMMENDATION set human_friendly_display = null where id = :id")
 								.setParameter("id", id)
 								.executeUpdate())
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
@@ -582,48 +634,6 @@ public class RecommendationDaoImplTest {
 		var sut = new RecommendationDaoImpl();
 		factory.withTransaction(tx -> sut.revertTranslation(tx, id, lang, baseVersion))
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-	}
-
-	// KEEP THIS LAST! IT MESSES WITH THE DATA
-	@Test
-	@Order(23)
-	void testInsertions(Mutiny.SessionFactory sessionFactory) {
-		var factory = new ReactivePersistenceContextFactoryImpl(sessionFactory);
-		var sut = new RecommendationDaoImpl();
-
-		factory.withTransaction(tx -> {
-			var rec1 = new RecommendationEntity();
-			rec1.setId(RECOMMENDATION_1_ID);
-			rec1.setName("Increase healthy thing 1");
-			rec1.setComponentForScoring("healthy thing 1");
-			rec1.setWeight(RecommendationWeight.ENCOURAGED);
-			var rec2 = new RecommendationEntity();
-			rec2.setId(RECOMMENDATION_2_ID);
-			rec2.setName("Decrease unhealthy thing 2");
-			rec2.setComponentForScoring("unhealthy thing 2");
-			rec2.setWeight(RecommendationWeight.LIMITED);
-
-			var ageGroup1 = new AgeGroupEntity();
-			ageGroup1.setId(AGE_GROUP_1_ID);
-			ageGroup1.setMin(10);
-			ageGroup1.setMax(14);
-
-			var recValue1 = makeRecValue(UUID.fromString("b80f78a4-3246-4f96-baf3-a7f377f4f979"), rec1, ageGroup1, FEMALE, "1.11");
-			var recValue2 = makeRecValue(UUID.fromString("2cfc37cb-f955-4ca3-b380-c7a669922f95"), rec2, ageGroup1, FEMALE, "2.22");
-			var recValue3 = makeRecValue(UUID.fromString("6cadf706-f507-4f08-ac95-b681af070fda"), rec1, ageGroup1, MALE, "3.33");
-			var recValue4 = makeRecValue(UUID.fromString("fe136125-a444-4bc2-b83f-b4302c14d029"), rec2, ageGroup1, MALE, "4.44");
-
-			return tx.persistAll(rec1, rec2, ageGroup1)
-					.flatMap(ignored -> tx.persistAll(recValue1, recValue2, recValue3, recValue4));
-		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
-		Map<Recommendation, BigDecimal> recommendations =
-				factory.withoutTransaction(em -> sut.findRecommendations(em, 12, FEMALE))
-						.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
-
-		assertThat(recommendations).hasSize(2);
-		assertThat(recommendations.get(new RecommendationImpl("Increase healthy thing 1"))).isEqualByComparingTo("1.11");
-		assertThat(recommendations.get(new RecommendationImpl("Decrease unhealthy thing 2"))).isEqualByComparingTo("2.22");
 	}
 
 	private RecommendationValueEntity makeRecValue(UUID id, RecommendationEntity recommendation, AgeGroupEntity ageGroup, BiologicalGender gender, String value) {
