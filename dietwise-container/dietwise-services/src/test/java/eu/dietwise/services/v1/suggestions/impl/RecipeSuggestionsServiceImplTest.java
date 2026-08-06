@@ -178,7 +178,7 @@ class RecipeSuggestionsServiceImplTest {
 		when(ruleDao.findByTriggerIngredient(any(), any(), eq(RecipeLanguage.EN))).thenAnswer(_ -> Uni.createFrom().item(List.of(RULE1)));
 		when(suggestionsAiFacade.matchIngredientsWithRecommendations(eq(RecipeLanguage.EN), any(), any())).thenAnswer(_ -> Uni.createFrom().item(Set.of("fiber")));
 		when(suggestionsAiFacade.findBestRule(eq(RecipeLanguage.EN), any(), any(), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item(RULE1.getId().asString()));
-		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item("alternative-first"));
+		when(suggestionsAiFacade.suggestAlternatives(eq(RecipeLanguage.EN), any(), any(), any(), any())).thenAnswer(_ -> Uni.createFrom().item("alternative-first"));
 		when(suggestionDao.retrieveByRule(any(), argThat(hasRuleId(RULE1_ID)), eq(GREECE), eq(RECIPE.getRecipeIngredients().getFirst()), eq(RecipeLanguage.EN)))
 				.thenReturn(Uni.createFrom().item(List.of(FIRST_SUGGESTION)));
 

@@ -17,6 +17,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class AlternativeSuggestionAiSelectorImplTest {
+	private static final String RECIPE_NAME = "Recipe name";
+	private static final String INGREDIENT = "ingredient";
+	private static final String ROLE = "role";
+	private static final String ALTERNATIVES = "alternatives";
+	private static final String ANSWER = "answer";
+
 	@Mock
 	private AlternativeSuggestionAiService aiServiceEn;
 	@Mock
@@ -29,12 +35,12 @@ class AlternativeSuggestionAiSelectorImplTest {
 	@Test
 	void selectsGreekService() {
 		var sut = new AlternativeSuggestionAiSelectorImpl(aiServiceEn, aiServiceNl, aiServiceEl, aiServiceLt);
-		when(aiServiceEl.suggestAlternatives("ingredient", "role", "alternatives")).thenReturn("answer");
+		when(aiServiceEl.suggestAlternatives(RECIPE_NAME, INGREDIENT, ROLE, ALTERNATIVES)).thenReturn(ANSWER);
 
-		String result = sut.suggestAlternatives(RecipeLanguage.EL, "ingredient", "role", "alternatives");
+		String result = sut.suggestAlternatives(RecipeLanguage.EL, RECIPE_NAME, INGREDIENT, ROLE, ALTERNATIVES);
 
-		assertThat(result).isEqualTo("answer");
-		verify(aiServiceEl).suggestAlternatives("ingredient", "role", "alternatives");
+		assertThat(result).isEqualTo(ANSWER);
+		verify(aiServiceEl).suggestAlternatives(RECIPE_NAME, INGREDIENT, ROLE, ALTERNATIVES);
 		verifyNoInteractions(aiServiceEn, aiServiceNl, aiServiceLt);
 	}
 }

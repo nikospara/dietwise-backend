@@ -14,5 +14,5 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 public interface AlternativeSuggestionLtAiService {
 	@SystemMessage(fromResource = "eu/dietwise/services/v1/ai/lt/suggestAlternatives-system.md")
 	@UserMessage(fromResource = "eu/dietwise/services/v1/ai/lt/suggestAlternatives-user.md")
-	String suggestAlternatives(String ingredientNameInRecipe, String ingredientRoleOrTechnique, String alternativesAsMarkdownList);
+	String suggestAlternatives(String recipeName, String ingredientNameInRecipe, String ingredientRoleOrTechnique, String alternativesAsMarkdownList);
 }

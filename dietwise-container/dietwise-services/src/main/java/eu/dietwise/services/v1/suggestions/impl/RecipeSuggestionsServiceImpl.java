@@ -154,7 +154,7 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				determineTriggerIngredient(correlationId, lang, data, ingredient),
 				loadMatchingRulesAndDetermineComposition(tx, correlationId, lang, data, availableRecommendationsAsMarkdownList, ingredient),
 				identifyBestFittingRule(lang, ingredient),
-				loadAlternativesFromDbAndSelectBest(tx, correlationId, lang, data, ingredient),
+				loadAlternativesFromDbAndSelectBest(tx, correlationId, lang, recipe.getName().orElse("-"), data, ingredient),
 				postProcessAlternatives(recipe, data, ingredient, lang)
 		).onFailure(NonFatalIngredientProcessingException.class).recoverWithItem(t -> {
 			LOG.warn("Failed to process ingredient <{}>: {} -> {}", correlationId, ingredient.getNameInRecipe(), t.getMessage());
@@ -253,12 +253,13 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 			ReactivePersistenceTxContext tx,
 			UUID correlationId,
 			RecipeLanguage lang,
+			String recipeName,
 			RecipeSuggestionNecessaryData data,
 			Ingredient ingredient
 	) {
 		return (role, _, _, rule) -> forc(
 				suggestionDao.retrieveByRule(tx, rule, country(data.personalInfo()), ingredient, lang),
-				suggestions -> suggestionsAiFacade.suggestAlternatives(lang, ingredient.getNameInRecipe(), role, suggestions),
+				suggestions -> suggestionsAiFacade.suggestAlternatives(lang, recipeName, ingredient.getNameInRecipe(), role, suggestions),
 				(suggestions, responseFromAi) -> {
 					if (LOG.isDebugEnabled()) {
 						var suggestionsStr = suggestions.stream().map(Suggestion::getAlternative).map(RepresentableAsString::asString).collect(Collectors.joining(","));
