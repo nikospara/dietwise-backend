@@ -47,5 +47,5 @@ public interface SuggestionsAiFacade {
 
 	Uni<String> findBestRule(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, TriggerIngredient triggerIngredient, Collection<RecommendationComponent> dietaryComponents, Collection<Rule> filteredRules);
 
-	Uni<String> suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives);
+	Uni<String> suggestAlternatives(RecipeLanguage lang, String recipeName, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives);
 }

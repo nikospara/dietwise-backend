@@ -261,11 +261,12 @@ public class SuggestionsAiFacadeImpl implements SuggestionsAiFacade {
 	}
 
 	@Override
-	public Uni<String> suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
+	public Uni<String> suggestAlternatives(RecipeLanguage lang, String recipeName, String ingredientNameInRecipe, RoleOrTechnique role, List<Suggestion> alternatives) {
 		String alternativesAsMarkdownList = convertSuggestionsToMarkdownList(lang, alternatives);
 		Context callerContext = Vertx.currentContext();
 		Uni<String> resultUni = Uni.createFrom().item(() -> aiCircuitBreaker.guard(() -> alternativeSuggestionAiSelector.suggestAlternatives(
 						lang,
+						recipeName,
 						ingredientNameInRecipe,
 						role == null ? "-" : role.getName(),
 						alternativesAsMarkdownList

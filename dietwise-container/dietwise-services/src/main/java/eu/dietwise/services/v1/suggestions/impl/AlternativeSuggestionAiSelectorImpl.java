@@ -31,13 +31,13 @@ public class AlternativeSuggestionAiSelectorImpl implements AlternativeSuggestio
 	}
 
 	@Override
-	public String suggestAlternatives(RecipeLanguage lang, String ingredientNameInRecipe, String ingredientRoleOrTechnique, String alternativesAsMarkdownList) {
+	public String suggestAlternatives(RecipeLanguage lang, String recipeName, String ingredientNameInRecipe, String ingredientRoleOrTechnique, String alternativesAsMarkdownList) {
 		requireNonNull(lang, "lang must not be null");
 		return switch (lang) {
-			case EN -> aiServiceEn.suggestAlternatives(ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
-			case NL -> aiServiceNl.suggestAlternatives(ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
-			case EL -> aiServiceEl.suggestAlternatives(ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
-			case LT -> aiServiceLt.suggestAlternatives(ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
+			case EN -> aiServiceEn.suggestAlternatives(recipeName, ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
+			case NL -> aiServiceNl.suggestAlternatives(recipeName, ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
+			case EL -> aiServiceEl.suggestAlternatives(recipeName, ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
+			case LT -> aiServiceLt.suggestAlternatives(recipeName, ingredientNameInRecipe, ingredientRoleOrTechnique, alternativesAsMarkdownList);
 		};
 	}
 }
