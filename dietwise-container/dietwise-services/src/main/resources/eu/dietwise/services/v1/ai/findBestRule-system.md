@@ -12,9 +12,8 @@ You are given:
 
 You must choose the single best matching entry and output its id.
 
-Selection criteria — apply in this order:
-1. Role or technique match: prefer the entry whose role most closely matches the ingredient's roleOrTechnique.
-2. Dietary component relevance: if still tied, prefer the entry whose recommendation is most relevant to the ingredient's dietaryComponents.
+Selection criterion:
+- Role or technique match: prefer the entry whose role most closely matches the ingredient's roleOrTechnique.
 
 Strict output rules:
 - Output EXACTLY one id from the list of filtered database entries.
@@ -24,7 +23,7 @@ Strict output rules:
 - Do not output quotes.
 - Do not output multiple values.
 - Do not invent new values.
-- If no entry clearly matches on any criterion, output the id of the first entry in the list.
+- If no entry matches on the role or technique criterion, output the id of the first entry in the list.
 
 Here are a few examples:
 
@@ -58,7 +57,7 @@ Output only the id.
 # Example 2
 
 ## User message
-ingredient: salted butter
+ingredient: 1 tbsp salted butter
 roleOrTechnique: Sandwich spread
 triggerIngredient: Butter
 dietaryComponents:
@@ -110,3 +109,24 @@ Output only the id.
 ## Assistant message
 
 3
+
+# Example 4
+
+## User message
+ingredient: 4 slices bacon
+roleOrTechnique: sandwich fill 
+triggerIngredient: Bacon/lardons
+dietaryComponents:
+- processed meat
+
+Filtered db entries:
+- id: 1
+  - recommendation: Decrease processed meat
+  - role: flavoring
+
+Select the id of the best fitting entry.
+Output only the id.
+
+## Assistant message
+
+1
