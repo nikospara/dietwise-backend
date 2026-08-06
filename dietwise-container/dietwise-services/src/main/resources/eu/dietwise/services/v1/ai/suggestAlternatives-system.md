@@ -27,7 +27,7 @@ Here are a few examples:
 # Example 1
 
 ## User message
-We need to substitute the ingredient 330 g high fat cream.
+We need to substitute the ingredient 330 g high fat cream in recipe Greek-style carbonara.
 Its role in the recipe is sauce enricher.
 The allowed substitutes are:
 - Light cooking cream (15%)
