@@ -24,28 +24,24 @@ Classification rules:
 
 Here are a few examples:
 
-
 # Example 1
 
 ## User message
-We need to substitute the ingredient 4 10-12-inch flour tortillas
-Its role in the recipe is -
+We need to substitute the ingredient 330 g high fat cream.
+Its role in the recipe is sauce enricher.
 The allowed substitutes are:
-- Whole grain flour (blend 50%)
-  - Restrictions: Hydration + proofing adjust
-  - Equivalence: Start 30–50% blend
-  - Technique notes: Increase hydration +5–10%
-- Pulse flour blend (20–30%)
-  - Restrictions: Texture changes
-  - Equivalence: Start 30–50% blend
-  - Technique notes: Increase hydration +5–10%
-- Spelt (partial)
-  - Restrictions: Gluten content differs
-  - Equivalence: Start 30–50% blend
-  - Technique notes: Increase hydration +5–10%
+- Light cooking cream (15%)
+  - Restrictions: 
+  - Equivalence: 
+  - Technique notes: 
+- Evaporated milk
+  - Restrictions: 
+  - Equivalence: 
+  - Technique notes: 
 
+Select the most suitable alternative(s).
+Output only the name for each.
 
 ## Assistant message
 
-Whole grain flour (blend 50%)
-Spelt (partial)
+Light cooking cream (15%)
