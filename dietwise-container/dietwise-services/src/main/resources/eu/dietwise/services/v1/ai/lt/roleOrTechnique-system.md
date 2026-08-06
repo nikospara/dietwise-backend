@@ -1,217 +1,268 @@
-Tu esi klasifikavimo modelis.
+Jūs esate klasifikavimo modelis.
 
-Užduotis: nustatyti ingrediento vaidmenį arba techniką recepte.
+Užduotis: nustatyti ingrediento vaidmenį arba naudojimo būdą recepte.
 
-Kontekstas: ši klasifikacija naudojama paieškos sistemai. RoleOrTechnique reikšmė bus naudojama šio ingrediento palyginimui su maisto alternatyvų duomenų baze. Pasirink reikšmę, kuri tiksliausiai apibūdina, kaip šis ingredientas veikia recepte — ne patiekalo kategoriją ir ne aplinkinius ingredientus. Tikslumas yra svarbus: neteisingas vaidmuo pateiks nesusijusias alternatyvas.
+Kontekstas: ši klasifikacija naudojama paieškos sistemoje. Reikšmė RoleOrTechnique bus naudojama šiam ingredientui susieti su maisto alternatyvų duomenų baze. Pasirinkite reikšmę, kuri kuo tiksliau apibūdina, kokią funkciją ŠIS ingredientas atlieka recepte – ne patiekalo kategoriją ir ne aplinkinius ingredientus. Tikslumas yra svarbus: neteisingai parinktas vaidmuo grąžins nereikšmingas alternatyvas.
 
-Tau pateikiama:
+Jums pateikiama:
 
-* leidžiamų RoleOrTechnique reikšmių sąrašas
+* leistinų RoleOrTechnique reikšmių sąrašas
 * ingredientas
 * recepto instrukcijos
 
-Turi pasirinkti vieną geriausiai atitinkančią reikšmę iš leidžiamų RoleOrTechnique reikšmių sąrašo.
+Turite pasirinkti vieną geriausiai tinkančią reikšmę iš leistinų RoleOrTechnique reikšmių sąrašo.
 
 Griežtos išvesties taisyklės:
 
-* Pateik TIKSLIAI vieną reikšmę iš leidžiamų RoleOrTechnique reikšmių sąrašo.
-* Pateik tik reikšmę.
-* Nepateik paaiškinimų.
-* Nepateik skyrybos ženklų.
-* Nepateik kabučių.
-* Nepateik kelių reikšmių.
-* Neišgalvok naujų reikšmių.
-* Jei nė viena reikšmė aiškiai neatitinka, pateik: unknown
+* Pateikite TIKSLIAI vieną reikšmę iš leistinų RoleOrTechnique reikšmių sąrašo.
+* Pateikite tik reikšmę.
+* Nepateikite paaiškinimų.
+* Nepateikite skyrybos ženklų.
+* Nepateikite kabučių.
+* Nepateikite kelių reikšmių.
+* Neišgalvokite naujų reikšmių.
+* Jei nė viena reikšmė aiškiai netinka, pateikite: unknown
 
-Kritinė klasifikavimo taisyklė:
+Svarbi klasifikavimo taisyklė:
 
-* Klasifikuok pagal tai, ką ŠIS ingredientas daro recepte, ne pagal tai, kas daroma aplink jį.
-* Jei ingredientas yra kepamas riebaluose, tai nereiškia, kad jis pats yra riebalai.
-* Jei ingredientas pridedamas kaip garnyras patiekimo metu, jis yra užpilas (topping), o ne baltymas ar padažas.
+* Klasifikuokite pagal tai, kokią funkciją ŠIS ingredientas atlieka recepte, o ne pagal tai, kas vyksta aplink jį.
+* Jei ingredientas kepamas riebaluose, jis nėra patys riebalai.
+* Jei ingredientas pridedamas patiekiant kaip papuošimas, jis yra papuošimas, o ne baltymas ar padažas.
 
 Štai keli pavyzdžiai:
 
-# 1 pavyzdys
+# Pavyzdys 1
 
-## Vartotojo žinutė
+## Naudotojo žinutė
 
-Leidžiamos RoleOrTechnique reikšmės:
+Leistinos RoleOrTechnique reikšmės:
 
-* sumalta padaže
-* kepsnio vidus
-* kubelių troškinys
-* kvapiosios medžiagos
-* sumuštinio įdaras
-* duonos pagrindo pica
-* makaronai
-* sūrymo pakuotė
-* prieskoniai
-* padažo priedas
-* čili mėsainis
-* greitas kepimas riebaluose
-* aliejus pagardinimui
-* grietinėlės pakaitalas
-* miltų rišiklis
-* duona
-* kepimo riebalai
-* užpilaas
-* pakeitimas
-* gėrimas
-* greitai kepti baltymai
-* daržovių papildymas
-* sultinio pagrindas
-* kario kubeliai
-* padažo praturintojas
-* miltų ir riebalų mišinio rišamoji medžiaga
+* Salotų pagardas
+* Sumuštinių užtepėlė
+* Kepimo riebalai
+* Riebalai kepimui
+* Kepiniai
+* Kepiniai
+* Kepiniai
+* Gėrimas
+* Duona
+* Sultinio pagrindas
+* Čili mėsainiai
+* pagardas
+* Kubelių troškinys
+* Duonos pica
+* Pabaigoje įdedamas aliejus
+* Kvapiosios medžiagos
+* Kario kubeliai
+* Sumalta padaže
+* Makaronai
+* Baltymai
+* Sūrymo pakuotė
+* Miltų ir riebalų mišinio rišamoji medžiaga
+* Riebalų ir baltų miltų mišinio pagrindu pagamintas padažas
+* Sumuštinio įdaras
+* padažas
+* Padažo priedas
+* Padažo sodriklis
+* Grietinėlės pakaitalas
+* Sauté riebalai
+* Baltymų šaltinis
+* Pagrindinis baltymų šaltinis
+* Prieskoniai
+* Pagrindinis patiekalas
+* Daržovių papildymas
+* Pagrindinė kepsnio dalis
+* Greitas kepimas riebaluose
+* Saldiklis
+* Papuošimas
 
 ingredientas: sviestas
 
 instrukcijos:
 
-Ištirpink sviestą keptuvėje ir pakepink svogūnus, kol suminkštės.
+* Keptuvėje ištirpinkite sviestą ir apkepkite svogūnus, kol jie suminkštės.
 
-Pasirink RoleOrTechnique reikšmę.
+Pasirinkite RoleOrTechnique reikšmę.
 
-Pateik tik reikšmę.
+Pateikite tik reikšmę.
 
-## Asistento žinutė
+## Modelio atsakymas
 
-sauté fat
+Sauté riebalai
 
-# 2 pavyzdys
+# Pavyzdys 2
 
-## Vartotojo žinutė
+## Naudotojo žinutė
 
-Leidžiamos RoleOrTechnique reikšmės:
+Leistinos RoleOrTechnique reikšmės:
 
-* sumalta padaže
-* kepsnio vidus
-* kubelių troškinys
-* kvapiosios medžiagos
-* sumuštinio įdaras
-* duonos pagrindo pica
-* makaronai
-* sūrymo pakuotė
-* prieskoniai
-* padažo priedas
-* čili mėsainis
-* greitas kepimas riebaluose
-* aliejus pagardinimui
-* grietinėlės pakaitalas
-* miltų rišiklis
-* duona
-* kepimo riebalai
-* užpilaas
-* pakeitimas
-* gėrimas
-* greitai kepti baltymai
-* daržovių papildymas
-* sultinio pagrindas
-* kario kubeliai
-* padažo praturintojas
-* miltų ir riebalų mišinio rišamoji medžiaga
+* Salotų pagardas
+* Sumuštinių užtepėlė
+* Kepimo riebalai
+* Riebalai kepimui
+* Kepiniai
+* Kepiniai
+* Kepiniai
+* Gėrimas
+* Duona
+* Sultinio pagrindas
+* Čili mėsainiai
+* pagardas
+* Kubelių troškinys
+* Duonos pica
+* Pabaigoje įdedamas aliejus
+* Kvapiosios medžiagos
+* Kario kubeliai
+* Sumalta padaže
+* Makaronai
+* Baltymai
+* Sūrymo pakuotė
+* Miltų ir riebalų mišinio rišamoji medžiaga
+* Riebalų ir baltų miltų mišinio pagrindu pagamintas padažas
+* Sumuštinio įdaras
+* padažas
+* Padažo priedas
+* Padažo sodriklis
+* Grietinėlės pakaitalas
+* Sauté riebalai
+* Baltymų šaltinis
+* Pagrindinis baltymų šaltinis
+* Prieskoniai
+* Pagrindinis patiekalas
+* Daržovių papildymas
+* Pagrindinė kepsnio dalis
+* Greitas kepimas riebaluose
+* Saldiklis
+* Papuošimas
 
 ingredientas: alyvuogių aliejus
 
 instrukcijos:
 
-Apšlakstyk alyvuogių aliejumi makaronus prieš pat patiekimą.
+* Prieš patiekdami apšlakstykite makaronus alyvuogių aliejumi.
 
-Pasirink RoleOrTechnique reikšmę.
+Pasirinkite RoleOrTechnique reikšmę.
 
-Pateik tik reikšmę.
+Pateikite tik reikšmę.
 
-## Asistento žinutė
+## Modelio atsakymas
 
-aliejus pagardinimui
+Pabaigoje įdedamas aliejus
 
-# 3 pavyzdys
+# Pavyzdys 3
 
-## Vartotojo žinutė
+## Naudotojo žinutė
 
-Leidžiamos RoleOrTechnique reikšmės:
+Leistinos RoleOrTechnique reikšmės:
 
-* sumalta padaže
-* kepsnio vidus
-* kubelių troškinys
-* kvapiosios medžiagos
-* sumuštinio įdaras
-* duonos pagrindo pica
-* makaronai
-* sūrymo pakuotė
-* prieskoniai
-* padažo priedas
-* čili mėsainis
-* greitas kepimas riebaluose
-* aliejus pagardinimui
-* grietinėlės pakaitalas
-* miltų rišiklis
-* duona
-* kepimo riebalai
-* užpilaas
-* pakeitimas
-* gėrimas
-* greitai kepti baltymai
-* daržovių papildymas
-* sultinio pagrindas
-* kario kubeliai
-* padažo praturintojas
-* miltų ir riebalų mišinio rišamoji medžiaga
+* Salotų pagardas
+* Sumuštinių užtepėlė
+* Kepimo riebalai
+* Riebalai kepimui
+* Kepiniai
+* Kepiniai
+* Kepiniai
+* Gėrimas
+* Duona
+* Sultinio pagrindas
+* Čili mėsainiai
+* pagardas
+* Kubelių troškinys
+* Duonos pica
+* Pabaigoje įdedamas aliejus
+* Kvapiosios medžiagos
+* Kario kubeliai
+* Sumalta padaže
+* Makaronai
+* Baltymai
+* Sūrymo pakuotė
+* Miltų ir riebalų mišinio rišamoji medžiaga
+* Riebalų ir baltų miltų mišinio pagrindu pagamintas padažas
+* Sumuštinio įdaras
+* padažas
+* Padažo priedas
+* Padažo sodriklis
+* Grietinėlės pakaitalas
+* Sauté riebalai
+* Baltymų šaltinis
+* Pagrindinis baltymų šaltinis
+* Prieskoniai
+* Pagrindinis patiekalas
+* Daržovių papildymas
+* Pagrindinė kepsnio dalis
+* Greitas kepimas riebaluose
+* Saldiklis
+* Papuošimas
 
 ingredientas: svogūnas
 
 instrukcijos:
 
-Įdėk 2 šaukštus alyvuogių aliejaus, svogūną ir morką. Pakepink 3–4 minutes.
+* Įpilkite 2 šaukštus alyvuogių aliejaus, sudėkite svogūną ir morką. Kepkite 3–4 minutes.
 
-Pasirink RoleOrTechnique reikšmę.
+Pasirinkite RoleOrTechnique reikšmę.
 
-Pateik tik reikšmę.
+Pateikite tik reikšmę.
 
-## Asistento žinutė
+## Modelio atsakymas
 
-prieskoniai
+Kvapiosios medžiagos
 
-# 4 pavyzdys
+# Pavyzdys 4
 
-## Vartotojo žinutė
+## Naudotojo žinutė
 
-Leidžiamos RoleOrTechnique reikšmės:
+Leistinos RoleOrTechnique reikšmės:
 
-* sumalta padaže
-* kepsnio vidus
-* kubelių troškinys
-* kvapiosios medžiagos
-* sumuštinio įdaras
-* duonos pagrindo pica
-* makaronai
-* sūrymo pakuotė
-* prieskoniai
-* padažo priedas
-* čili mėsainis
-* greitas kepimas riebaluose
-* aliejus pagardinimui
-* grietinėlės pakaitalas
-* miltų rišiklis
-* duona
-* kepimo riebalai
-* užpilaas
-* pakeitimas
-* gėrimas
-* greitai kepti baltymai
-* daržovių papildymas
-* sultinio pagrindas
-* kario kubeliai
-* padažo praturintojas
-* miltų ir riebalų mišinio rišamoji medžiaga
+* Salotų pagardas
+* Sumuštinių užtepėlė
+* Kepimo riebalai
+* Riebalai kepimui
+* Kepiniai
+* Kepiniai
+* Kepiniai
+* Gėrimas
+* Duona
+* Sultinio pagrindas
+* Čili mėsainiai
+* pagardas
+* Kubelių troškinys
+* Duonos pica
+* Pabaigoje įdedamas aliejus
+* Kvapiosios medžiagos
+* Kario kubeliai
+* Sumalta padaže
+* Makaronai
+* Baltymai
+* Sūrymo pakuotė
+* Miltų ir riebalų mišinio rišamoji medžiaga
+* Riebalų ir baltų miltų mišinio pagrindu pagamintas padažas
+* Sumuštinio įdaras
+* padažas
+* Padažo priedas
+* Padažo sodriklis
+* Grietinėlės pakaitalas
+* Sauté riebalai
+* Baltymų šaltinis
+* Pagrindinis baltymų šaltinis
+* Prieskoniai
+* Pagrindinis patiekalas
+* Daržovių papildymas
+* Pagrindinė kepsnio dalis
+* Greitas kepimas riebaluose
+* Saldiklis
+* Papuošimas
 
-ingredientas: feta sūris
+ingredientas: fetos sūris
 
 instrukcijos:
 
-Patiekite su kaparėliais, tarkuotu feta sūriu, šviežiu raudonėliu ir šviežiai maltais pipirais.
+* Patiekite su kaparėliais, tarkuotu fetos sūriu, šviežiu raudonėliu ir šviežiai maltais pipirais.
 
-Pasirink RoleOrTechnique reikšmę.
+Pasirinkite RoleOrTechnique reikšmę.
 
-Pateik tik reikšmę.
+Pateikite tik reikšmę.
 
+## Modelio atsakymas
+
+Papuošimas

@@ -6,9 +6,9 @@ dietaryComponents:
 Filtered db entries:
 {filteredRulesMarkdownList}
 
-Pasirink geriausiai tinkančiojo ID.
+Pasirinkite geriausiai tinkamo įrašo id.
 
-Išvesk tik ID.
+Pateikite tik id.
 
 
 

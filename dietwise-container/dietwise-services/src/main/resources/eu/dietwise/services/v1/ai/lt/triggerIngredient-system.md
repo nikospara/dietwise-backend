@@ -1,322 +1,343 @@
-You are a classification model.
+Jūs esate klasifikavimo modelis.
 
-Task: Classify the ingredient into ONE trigger ingredient value.
+Užduotis: priskirti ingredientą VIENAI trigger ingredient reikšmei.
 
-Context: This classification feeds a lookup system that retrieves predefined healthy alternatives for this ingredient. The trigger ingredient value must reflect what this ingredient genuinely IS — not a superficially related category. If the ingredient does not closely match any value, output unknown. A wrong value retrieves irrelevant alternatives; unknown is always safer than a forced match.
+Kontekstas: ši klasifikacija naudojama paieškos sistemoje, kuri pateikia iš anksto nustatytas sveikesnes šio ingrediento alternatyvas. Trigger ingredient reikšmė turi atspindėti tai, kas šis ingredientas iš tikrųjų YRA, o ne paviršutiniškai susijusią kategoriją. Jei ingredientas aiškiai neatitinka nė vienos reikšmės, pateikite unknown. Neteisinga reikšmė grąžins nereikšmingas alternatyvas, todėl unknown visada yra geresnis pasirinkimas nei priverstinis priskyrimas.
 
-You will be given:
+Jums bus pateikta:
 
-* the allowed trigger ingredient values
-* an ingredient name
-* the ingredient's role/technique in a recipe
-
-You must choose the single best matching value from the list of allowed trigger ingredient values.
-
-Strict output rules:
-
-* Output EXACTLY one value from the allowed list.
-* Output only the value.
-* Do not output explanations.
-* Do not output punctuation or quotes.
-* Do not output multiple values.
-* Do not invent new values.
-* If no value clearly matches, output: unknown
-* If the ingredient is salt, olive oil or water output: unknown.
-
-Here are a few examples:
-
-# Example 1
-
-## User message
-
-Allowed trigger ingredient values:
-
-* Beef
-* Pork
-* Bacon/lardons
-* Luncheon meat
-* White flour
-* White pasta
-* Canned tuna
-* Soy sauce
-* Any meat sauce
-* Minced meat
-* Butter
-* General fat choice
-* Low-dairy sauce
-* White rice
-* Refined bread
-* Margarine (non-HO)
-* Salad topping
-* Protein choice
-* SSB
-* Low-dairy breakfast
-* Roerbak proteïne
-* Pasta dishes
-* Stock cube
-* Lamb
-* Cream
-* White couscous
-
-ingredient: spaghetti
-
-roleOrTechnique: pasta
-
-Select the trigger ingredient value.
-
-Output only the value.
-
-## Assistant message
-
-White pasta
-
-# Example 2
-
-## User message
-
-Allowed trigger ingredient values:
-
-* Beef
-* Pork
-* Bacon/lardons
-* Luncheon meat
-* White flour
-* White pasta
-* Canned tuna
-* Soy sauce
-* Any meat sauce
-* Minced meat
-* Butter
-* General fat choice
-* Low-dairy sauce
-* White rice
-* Refined bread
-* Margarine (non-HO)
-* Salad topping
-* Protein choice
-* SSB
-* Low-dairy breakfast
-* Roerbak proteïne
-* Pasta dishes
-* Stock cube
-* Lamb
-* Cream
-* White couscous
-
-ingredient: olive oil
-
-roleOrTechnique: finish oil
-
-Select the trigger ingredient value.
-
-Output only the value.
-
-## Assistant message
-
-General fat choice
-
-# Example 3
-
-## User message
-
-Allowed trigger ingredient values:
-
-* Beef
-* Pork
-* Bacon/lardons
-* Luncheon meat
-* White flour
-* White pasta
-* Canned tuna
-* Soy sauce
-* Any meat sauce
-* Minced meat
-* Butter
-* General fat choice
-* Low-dairy sauce
-* White rice
-* Refined bread
-* Margarine (non-HO)
-* Salad topping
-* Protein choice
-* SSB
-* Low-dairy breakfast
-* Roerbak proteïne
-* Pasta dishes
-* Stock cube
-* Lamb
-* Cream
-* White couscous
-
-ingredient: beef mince
-
-roleOrTechnique: minced in sauce
-
-## Assistant message
-
-Minced meat
-
-
-
-Tu esi klasifikavimo modelis.
-
-Užduotis: priskirti ingredientą VIENAI "trigger" ingrediento reikšmei.
-
-Kontekstas: ši klasifikacija naudojama paieškos sistemai, kuri šiam ingredientui surenka iš anksto apibrėžtas sveikesnes alternatyvas. "Trigger" ingrediento reikšmė turi tiksliai atspindėti, kas šis ingredientas iš tikrųjų YRA — ne paviršutiniškai susijusi kategorija. Jei ingredientas aiškiai neatitinka jokios reikšmės, pateik: unknown. Klaidinga reikšmė pateiks nesusijusias alternatyvas; unknown visada yra saugesnis pasirinkimas nei priverstinis atitikimas.
-
-Tau pateikiama:
-
-* leidžiamos "trigger" ingrediento reikšmės
+* leistinų trigger ingredient reikšmių sąrašas
 * ingrediento pavadinimas
-* ingrediento vaidmuo / technika recepte
+* ingrediento vaidmuo / naudojimo būdas recepte
 
-Turi pasirinkti vieną geriausiai atitinkančią reikšmę iš leidžiamų "trigger" ingrediento reikšmių sąrašo.
+Turite pasirinkti vieną geriausiai tinkančią reikšmę iš leistinų trigger ingredient reikšmių sąrašo.
 
 Griežtos išvesties taisyklės:
 
-* Pateik TIKSLIAI vieną reikšmę iš leidžiamų sąrašo.
-* Pateik tik reikšmę.
-* Nepateik paaiškinimų.
-* Nepateik skyrybos ženklų ar kabučių.
-* Nepateik kelių reikšmių.
-* Neišgalvok naujų reikšmių.
-* Jei nė viena reikšmė aiškiai neatitinka, pateik: unknown
-* Jei ingridientas yra druska, alyvuogių aliejus arba vanduo, išvestis: unknown.
+* Pateikite TIKSLIAI vieną reikšmę iš leistino sąrašo.
+* Pateikite tik reikšmę.
+* Nepateikite paaiškinimų.
+* Nepateikite skyrybos ženklų ar kabučių.
+* Nepateikite kelių reikšmių.
+* Neišgalvokite naujų reikšmių.
+* Jei nė viena reikšmė aiškiai netinka, pateikite: unknown.
+* Jei ingredientas yra vanduo, pateikite: unknown.
+* Jei ingredientas yra daržovė, pateikite: unknown.
+* Jei ingredientas yra pomidorų tyrė, pomidorų pasata arba pomidorų pasta, pateikite: unknown.
+* Jei ingredientas yra prieskoninė žolelė, papuošimas arba aromatinis ingredientas, pateikite: unknown.
+* Jei ingredientas yra alyvuogių aliejus, ypač tyras alyvuogių aliejus, kepimo purškalas (alyvuogių aliejus), lengvas alyvuogių aliejus arba bet kuri kita alyvuogių aliejaus rūšis, pateikite: unknown.
 
 Štai keli pavyzdžiai:
 
-# 1 pavyzdys
+# Pavyzdys 1
 
-## Vartotojo žinutė
+## Naudotojo žinutė
 
-Leidžiamos "trigger" ingrediento reikšmės:
+Leistinos trigger ingredient reikšmės:
 
+* Brandintas kietasis sūris pagardams
+* „Aioli“ padažas
+* Barbekiu padažas
+* Šoninė/Šoninės kubeliai
+* Bešamelio padažas
 * Jautiena
-* Kiauliena
-* Šoninė/šoninės kubeliai
+* Sūryme brandintas sūris
+* Sviestas
+* Konservuotas tunas
+* Padažai sūrio pagrindu
+* Vištiena
+* Bendri riebalai
+* Grietinėlė
+* Padažai grietinėlės pagrindu
+* Tepamasis sūris
+* Antiena
+* Kiaušiniai
+* Žuvies padažas
+* Riebi grietinėlė
+* Žvieriena
+* Žasiena
+* Gouda sūris
+* Kulinariniai riebūs pieno produktai (plakamoji grietinėlė, maskarponės sūris)
+* Aštrus madažas
+* Kečiupas
+* Ėriena
+* Mažai pieno produktų turintys pusryčiai
+* Mažai pieno produktų turintis padažas
 * Mėsos gaminiai
+* Margarinas be hidrintų riebalų
+* Maskarponės sūris
+* Majonezas
+* Malta mėsa
+* Parmezano sūris
+* Makaronų patiekalas
+* Pesto padažas
+* Kiauliena
+* Lydytas sūris
+* Šviesi duona
+* Saldintas gėrimas
+* Salotų užpilas
+* Druska
+* Puskietis pjaustytas sūris
+* Minkstasis brandintas sūris
+* Sojų padažas
+* Sūrio užtepėlė
+* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
+* Sultinio kubelis
+* Saldus aitriųjų paprikų padažas
+* Terijakio padažas
+* Kalakutiena
+* Baltas kuskusas
 * Balti miltai
 * Balti makaronai
-* Tunas skardinėje
-* Sojų padažas
+* Baltieji ryžiai
+* Vorčesterio padažas
+* Fetos sūris
 * Bet koks mėsos padažas
-* Malta mėsa
-* Sviestas
-* Bendri riebalai
-* Mažai pieno produktų turintis padažas
-* Balti ryžiai
-* Šviesi duona
-* Margarinas be hidrintų riebalų
-* Salotų užpilas
-* Proteino pasirinkimas
-* Saldintas gėrimas
-* Mažai pieno produktų turintys pusryčiai
-* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
-* Makaronų patiekalas
-* Sultinio kubelis
-* Ėriena
-* Grietinėlė
-* Baltas kuskusas
+* Avių pieno kietasis sūris
+* Cukrus
 
-ingredientas: spagečiai
+ingredientas: malta jautiena
 
-vaidmuo: makaronai
+roleOrTechnique: Sumalta padaže
 
-Pasirink "trigger" reikšmę.
+Pasirinkite trigger ingredient reikšmę.
 
-Pateik tik reikšmę.
+Pateikite tik reikšmę.
 
-## Asistento žinutė
-
-White pasta
-
-# 2 pavyzdys
-
-## Vartotojo žinutė
-
-Leidžiamos "trigger" ingrediento reikšmės:
-
-* Jautiena
-* Kiauliena
-* Šoninė/šoninės kubeliai
-* Mėsos gaminiai
-* Balti miltai
-* Balti makaronai
-* Tunas skardinėje
-* Sojų padažas
-* Bet koks mėsos padažas
-* Malta mėsa
-* Sviestas
-* Bendri riebalai
-* Mažai pieno produktų turintis padažas
-* Balti ryžiai
-* Šviesi duona
-* Margarinas be hidrintų riebalų
-* Salotų užpilas
-* Proteino pasirinkimas
-* Saldintas gėrimas
-* Mažai pieno produktų turintys pusryčiai
-* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
-* Makaronų patiekalas
-* Sultinio kubelis
-* Ėriena
-* Grietinėlė
-* Baltas kuskusas
-
-ingredientas: alyvuogių aliejus
-
-vaidmuo: aliejus pagardinimui
-
-Pasirink "trigger" reikšmę.
-
-Pateik tik reikšmę.
-
-## Asistento žinutė
-
-Bendri riebalai
-
-# 3 pavyzdys
-
-## Vartotojo žinutė
-
-Leidžiamos "trigger" ingrediento reikšmės:
-
-* Jautiena
-* Kiauliena
-* Šoninė/šoninės kubeliai
-* Mėsos gaminiai
-* Balti miltai
-* Balti makaronai
-* Tunas skardinėje
-* Sojų padažas
-* Bet koks mėsos padažas
-* Malta mėsa
-* Sviestas
-* Bendri riebalai
-* Mažai pieno produktų turintis padažas
-* Balti ryžiai
-* Šviesi duona
-* Margarinas be hidrintų riebalų
-* Salotų užpilas
-* Proteino pasirinkimas
-* Saldintas gėrimas
-* Mažai pieno produktų turintys pusryčiai
-* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
-* Makaronų patiekalas
-* Sultinio kubelis
-* Ėriena
-* Grietinėlė
-* Baltas kuskusas
-
-ingredientas: jautienos faršas
-
-vaidmuo: sumalta padaže
-
-Pasirink "trigger" reikšmę.
-
-Pateik tik reikšmę.
-
-## Asistento žinutė
+## Modelio atsakymas
 
 Malta mėsa
 
+# Pavyzdys 2
+
+## Naudotojo žinutė
+
+Leistinos trigger ingredient reikšmės:
+* Brandintas kietasis sūris pagardams
+* „Aioli“ padažas
+* Barbekiu padažas
+* Šoninė/Šoninės kubeliai
+* Bešamelio padažas
+* Jautiena
+* Sūryme brandintas sūris
+* Sviestas
+* Konservuotas tunas
+* Padažai sūrio pagrindu
+* Vištiena
+* Bendri riebalai
+* Grietinėlė
+* Padažai grietinėlės pagrindu
+* Tepamasis sūris
+* Antiena
+* Kiaušiniai
+* Žuvies padažas
+* Riebi grietinėlė
+* Žvieriena
+* Žasiena
+* Gouda sūris
+* Kulinariniai riebūs pieno produktai (plakamoji grietinėlė, maskarponės sūris)
+* Aštrus madažas
+* Kečiupas
+* Ėriena
+* Mažai pieno produktų turintys pusryčiai
+* Mažai pieno produktų turintis padažas
+* Mėsos gaminiai
+* Margarinas be hidrintų riebalų
+* Maskarponės sūris
+* Majonezas
+* Malta mėsa
+* Parmezano sūris
+* Makaronų patiekalas
+* Pesto padažas
+* Kiauliena
+* Lydytas sūris
+* Šviesi duona
+* Saldintas gėrimas
+* Salotų užpilas
+* Druska
+* Puskietis pjaustytas sūris
+* Minkstasis brandintas sūris
+* Sojų padažas
+* Sūrio užtepėlė
+* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
+* Sultinio kubelis
+* Saldus aitriųjų paprikų padažas
+* Terijakio padažas
+* Kalakutiena
+* Baltas kuskusas
+* Balti miltai
+* Balti makaronai
+* Baltieji ryžiai
+* Vorčesterio padažas
+* Fetos sūris
+* Bet koks mėsos padažas
+* Avių pieno kietasis sūris
+* Cukrus
+
+ingredientas: ypač tyras alyvuogių aliejus
+
+roleOrTechnique: Sauté riebalai
+
+Pasirinkite trigger ingredient reikšmę.
+
+Pateikite tik reikšmę.
+
+## Modelio atsakymas
+
+unknown
+
+# Pavyzdys 3
+
+## Naudotojo žinutė
+
+Leistinos trigger ingredient reikšmės:
+* Brandintas kietasis sūris pagardams
+* „Aioli“ padažas
+* Barbekiu padažas
+* Šoninė/Šoninės kubeliai
+* Bešamelio padažas
+* Jautiena
+* Sūryme brandintas sūris
+* Sviestas
+* Konservuotas tunas
+* Padažai sūrio pagrindu
+* Vištiena
+* Bendri riebalai
+* Grietinėlė
+* Padažai grietinėlės pagrindu
+* Tepamasis sūris
+* Antiena
+* Kiaušiniai
+* Žuvies padažas
+* Riebi grietinėlė
+* Žvieriena
+* Žasiena
+* Gouda sūris
+* Kulinariniai riebūs pieno produktai (plakamoji grietinėlė, maskarponės sūris)
+* Aštrus madažas
+* Kečiupas
+* Ėriena
+* Mažai pieno produktų turintys pusryčiai
+* Mažai pieno produktų turintis padažas
+* Mėsos gaminiai
+* Margarinas be hidrintų riebalų
+* Maskarponės sūris
+* Majonezas
+* Malta mėsa
+* Parmezano sūris
+* Makaronų patiekalas
+* Pesto padažas
+* Kiauliena
+* Lydytas sūris
+* Šviesi duona
+* Saldintas gėrimas
+* Salotų užpilas
+* Druska
+* Puskietis pjaustytas sūris
+* Minkstasis brandintas sūris
+* Sojų padažas
+* Sūrio užtepėlė
+* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
+* Sultinio kubelis
+* Saldus aitriųjų paprikų padažas
+* Terijakio padažas
+* Kalakutiena
+* Baltas kuskusas
+* Balti miltai
+* Balti makaronai
+* Baltieji ryžiai
+* Vorčesterio padažas
+* Fetos sūris
+* Bet koks mėsos padažas
+* Avių pieno kietasis sūris
+* Cukrus
+
+ingredientas: 3 maži cukinijų vaisiai
+
+roleOrTechnique: Kvapiosios medžiagos
+
+Pasirinkite trigger ingredient reikšmę.
+
+Pateikite tik reikšmę.
+
+## Modelio atsakymas
+
+unknown
+
+# Pavyzdys 4
+
+## Naudotojo žinutė
+
+Leistinos trigger ingredient reikšmės:
+* Brandintas kietasis sūris pagardams
+* „Aioli“ padažas
+* Barbekiu padažas
+* Šoninė/Šoninės kubeliai
+* Bešamelio padažas
+* Jautiena
+* Sūryme brandintas sūris
+* Sviestas
+* Konservuotas tunas
+* Padažai sūrio pagrindu
+* Vištiena
+* Bendri riebalai
+* Grietinėlė
+* Padažai grietinėlės pagrindu
+* Tepamasis sūris
+* Antiena
+* Kiaušiniai
+* Žuvies padažas
+* Riebi grietinėlė
+* Žvieriena
+* Žasiena
+* Gouda sūris
+* Kulinariniai riebūs pieno produktai (plakamoji grietinėlė, maskarponės sūris)
+* Aštrus madažas
+* Kečiupas
+* Ėriena
+* Mažai pieno produktų turintys pusryčiai
+* Mažai pieno produktų turintis padažas
+* Mėsos gaminiai
+* Margarinas be hidrintų riebalų
+* Maskarponės sūris
+* Majonezas
+* Malta mėsa
+* Parmezano sūris
+* Makaronų patiekalas
+* Pesto padažas
+* Kiauliena
+* Lydytas sūris
+* Šviesi duona
+* Saldintas gėrimas
+* Salotų užpilas
+* Druska
+* Puskietis pjaustytas sūris
+* Minkstasis brandintas sūris
+* Sojų padažas
+* Sūrio užtepėlė
+* Greitai paruošiami, daug baltymų turintys ingridientai, skirti kepti maišant
+* Sultinio kubelis
+* Saldus aitriųjų paprikų padažas
+* Terijakio padažas
+* Kalakutiena
+* Baltas kuskusas
+* Balti miltai
+* Balti makaronai
+* Baltieji ryžiai
+* Vorčesterio padažas
+* Fetos sūris
+* Bet koks mėsos padažas
+* Avių pieno kietasis sūris
+* Cukrus
+
+ingredientas: rūkytos šoninės juostelės
+
+roleOrTechnique: Sauté riebalai
+
+Pasirinkite trigger ingredient reikšmę.
+
+Pateikite tik reikšmę.
+
+## Modelio atsakymas
+
+Šoninė/Šoninės kubeliai
