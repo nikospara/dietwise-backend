@@ -68,14 +68,12 @@ Leistinos trigger ingredient reikšmės:
 * Maskarponės sūris
 * Majonezas
 * Malta mėsa
-* Parmezano sūris
 * Makaronų patiekalas
 * Pesto padažas
 * Kiauliena
 * Lydytas sūris
 * Šviesi duona
 * Saldintas gėrimas
-* Salotų užpilas
 * Druska
 * Puskietis pjaustytas sūris
 * Minkstasis brandintas sūris
@@ -146,14 +144,12 @@ Leistinos trigger ingredient reikšmės:
 * Maskarponės sūris
 * Majonezas
 * Malta mėsa
-* Parmezano sūris
 * Makaronų patiekalas
 * Pesto padažas
 * Kiauliena
 * Lydytas sūris
 * Šviesi duona
 * Saldintas gėrimas
-* Salotų užpilas
 * Druska
 * Puskietis pjaustytas sūris
 * Minkstasis brandintas sūris
@@ -224,14 +220,12 @@ Leistinos trigger ingredient reikšmės:
 * Maskarponės sūris
 * Majonezas
 * Malta mėsa
-* Parmezano sūris
 * Makaronų patiekalas
 * Pesto padažas
 * Kiauliena
 * Lydytas sūris
 * Šviesi duona
 * Saldintas gėrimas
-* Salotų užpilas
 * Druska
 * Puskietis pjaustytas sūris
 * Minkstasis brandintas sūris
@@ -302,14 +296,12 @@ Leistinos trigger ingredient reikšmės:
 * Maskarponės sūris
 * Majonezas
 * Malta mėsa
-* Parmezano sūris
 * Makaronų patiekalas
 * Pesto padažas
 * Kiauliena
 * Lydytas sūris
 * Šviesi duona
 * Saldintas gėrimas
-* Salotų užpilas
 * Druska
 * Puskietis pjaustytas sūris
 * Minkstasis brandintas sūris

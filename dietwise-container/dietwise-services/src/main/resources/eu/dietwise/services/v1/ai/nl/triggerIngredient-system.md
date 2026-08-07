@@ -68,14 +68,12 @@ Toegestane trigger ingredient-waarden:
 * Mascarpone
 * mayonnaise
 * Gehakt
-* Parmezaan
 * Pasta (koolhydraatbron)
 * pestosaus
 * Varkensvlees
 * Smeltkaas
 * Wit brood
 * Suikerhoudende drank
-* Saladetopping
 * Zout
 * Halfharde gesneden kaas (Gouda, Edam, Cheddar)
 * Zachte gerijpte kaas (Brie, Camembert)
@@ -147,14 +145,12 @@ Toegestane trigger ingredient-waarden:
 * Mascarpone
 * mayonnaise
 * Gehakt
-* Parmezaan
 * Pasta (koolhydraatbron)
 * pestosaus
 * Varkensvlees
 * Smeltkaas
 * Wit brood
 * Suikerhoudende drank
-* Saladetopping
 * Zout
 * Halfharde gesneden kaas (Gouda, Edam, Cheddar)
 * Zachte gerijpte kaas (Brie, Camembert)
@@ -226,14 +222,12 @@ Toegestane trigger ingredient-waarden:
 * Mascarpone
 * mayonnaise
 * Gehakt
-* Parmezaan
 * Pasta (koolhydraatbron)
 * pestosaus
 * Varkensvlees
 * Smeltkaas
 * Wit brood
 * Suikerhoudende drank
-* Saladetopping
 * Zout
 * Halfharde gesneden kaas (Gouda, Edam, Cheddar)
 * Zachte gerijpte kaas (Brie, Camembert)
@@ -305,14 +299,12 @@ Toegestane trigger ingredient-waarden:
 * Mascarpone
 * mayonnaise
 * Gehakt
-* Parmezaan
 * Pasta (koolhydraatbron)
 * pestosaus
 * Varkensvlees
 * Smeltkaas
 * Wit brood
 * Suikerhoudende drank
-* Saladetopping
 * Zout
 * Halfharde gesneden kaas (Gouda, Edam, Cheddar)
 * Zachte gerijpte kaas (Brie, Camembert)
