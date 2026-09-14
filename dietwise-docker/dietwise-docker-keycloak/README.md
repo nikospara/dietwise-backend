@@ -107,7 +107,16 @@ Create a new client in the Realm:
 	- Valid post logout redirect URIs:
 		- (empty)
 	- Web origins:
-		- (empty)
+		- **FOR DEVELOPMENT:** `*`
+
+			Firefox generates the moz-extension:// UUID randomly per profile/installation, deliberately, to prevent
+			fingerprinting. So there is no set of exact origins to can enumerate for Firefox. `*` isn't just a lazy dev
+			shortcut, it's the only thing that works for Firefox.
+
+			For a public PKCE client that's less alarming than it sounds — an attacker site still can't obtain an
+			authorization code, since `redirect_uri` is validated — but it does open the token and refresh endpoints to
+			cross-site calls from any page.
+		- **FOR PRODUCTION:** `*` *but revisit*
 - Save & finish the new client wizard
 
 ### Create two clients for the account deletion

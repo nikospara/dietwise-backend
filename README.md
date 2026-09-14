@@ -156,7 +156,7 @@ necessary peripheral services (e.g., the database), except for Ollama, which nee
 
 ```shell
 cd dietwise-docker/src/main/docker-compose/
-docker compose -f docker-compose-peripherals.yml -p dietwise up -d    # the first time
+docker compose -f docker-compose-peripherals.yml -p dietwise up -d    # the first time, or if the images have changed
 docker compose -f docker-compose-peripherals.yml -p dietwise start    # to start
 docker compose -f docker-compose-peripherals.yml -p dietwise stop     # to stop
 docker compose -f docker-compose-peripherals.yml -p dietwise down     # to remove the containers, without removing the persistent volumes
