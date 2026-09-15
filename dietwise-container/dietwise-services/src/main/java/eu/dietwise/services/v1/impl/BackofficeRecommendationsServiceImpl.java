@@ -101,7 +101,7 @@ public class BackofficeRecommendationsServiceImpl implements BackofficeRecommend
 				row.id(),
 				row.name(),
 				row.componentForScoring(),
-				row.weight(),
+				row.typeOfRecommendation(),
 				explanation,
 				explanationChanged,
 				humanFriendlyDisplay,

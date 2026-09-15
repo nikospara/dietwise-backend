@@ -4,11 +4,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import eu.dietwise.v1.types.RecipeLanguage;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 
 /**
  * A Recommendation as shown in the backoffice grid: its English name and component for scoring (immutable scoring
- * keys), its weight (informational), its effective English explanation for the LLM and human friendly display (published
+ * keys), its type of recommendation (informational), its effective English explanation for the LLM and human friendly display (published
  * master overlaid by any Staged Change), whether each of those two fields carries a pending change, the Working Copy
  * version a subsequent edit must be based on ({@code 0} when the master text has no Staged Change), and the completeness
  * of its translations for each non-English language. The explanation and human friendly display share the single
@@ -19,7 +19,7 @@ public record StagedRecommendation(
 		UUID id,
 		String name,
 		String componentForScoring,
-		RecommendationWeight weight,
+		TypeOfRecommendation typeOfRecommendation,
 		String explanationForLlm,
 		boolean explanationChanged,
 		String humanFriendlyDisplay,

@@ -29,7 +29,7 @@ import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Recommendation;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import eu.dietwise.v1.types.impl.RecommendationImpl;
 import org.assertj.core.data.Percentage;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -195,7 +195,7 @@ public class RecommendationDaoImplTest {
 		assertThat(recommendations).anyMatch(rc ->
 				rc.getRecommendation().asString().equals("Decrease processed meat")
 						&& rc.getComponentForScoring().asString().equals("processed meat")
-						&& rc.getWeight() == RecommendationWeight.LIMITED);
+						&& rc.getTypeOfRecommendation() == TypeOfRecommendation.LIMITED);
 	}
 
 	@Test
@@ -247,7 +247,7 @@ public class RecommendationDaoImplTest {
 		var processedMeat = rows.stream().filter(r -> r.name().equals("Decrease processed meat")).findFirst().orElseThrow();
 		assertThat(processedMeat.id()).isNotNull();
 		assertThat(processedMeat.componentForScoring()).isEqualTo("processed meat");
-		assertThat(processedMeat.weight()).isEqualTo(RecommendationWeight.LIMITED);
+		assertThat(processedMeat.typeOfRecommendation()).isEqualTo(TypeOfRecommendation.LIMITED);
 	}
 
 	@Test
@@ -495,12 +495,12 @@ public class RecommendationDaoImplTest {
 			rec1.setId(RECOMMENDATION_1_ID);
 			rec1.setName("Increase healthy thing 1");
 			rec1.setComponentForScoring("healthy thing 1");
-			rec1.setWeight(RecommendationWeight.ENCOURAGED);
+			rec1.setTypeOfRecommendation(TypeOfRecommendation.ENCOURAGED);
 			var rec2 = new RecommendationEntity();
 			rec2.setId(RECOMMENDATION_2_ID);
 			rec2.setName("Decrease unhealthy thing 2");
 			rec2.setComponentForScoring("unhealthy thing 2");
-			rec2.setWeight(RecommendationWeight.LIMITED);
+			rec2.setTypeOfRecommendation(TypeOfRecommendation.LIMITED);
 
 			var ageGroup1 = new AgeGroupEntity();
 			ageGroup1.setId(AGE_GROUP_1_ID);

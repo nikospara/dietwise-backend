@@ -27,13 +27,13 @@ import eu.dietwise.services.v1.BackofficeAlternativeIngredientsService;
 import eu.dietwise.services.v1.types.AlternativeIngredientRecommendationGrid;
 import eu.dietwise.services.v1.types.RecommendationColumn;
 import eu.dietwise.services.v1.types.StagedAlternativeIngredient;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class BackofficeAlternativeIngredientsServiceImpl implements BackofficeAlternativeIngredientsService {
 	/** The grid shows the ENCOURAGED columns first, then the LIMITED ones; each group keeps the order of the Recommendations. */
-	private static final List<RecommendationWeight> COLUMN_GROUP_ORDER = List.of(RecommendationWeight.ENCOURAGED, RecommendationWeight.LIMITED);
+	private static final List<TypeOfRecommendation> COLUMN_GROUP_ORDER = List.of(TypeOfRecommendation.ENCOURAGED, TypeOfRecommendation.LIMITED);
 
 	private final AlternativeIngredientDao alternativeIngredientDao;
 	private final RecommendationDao recommendationDao;
@@ -106,8 +106,8 @@ public class BackofficeAlternativeIngredientsServiceImpl implements BackofficeAl
 			Map<UUID, Map<UUID, Boolean>> stagedLinks
 	) {
 		List<RecommendationColumn> columns = recommendations.stream()
-				.map(recommendation -> new RecommendationColumn(recommendation.id(), recommendation.componentForScoring(), recommendation.weight()))
-				.sorted(Comparator.comparingInt(column -> COLUMN_GROUP_ORDER.indexOf(column.weight())))
+				.map(recommendation -> new RecommendationColumn(recommendation.id(), recommendation.componentForScoring(), recommendation.typeOfRecommendation()))
+				.sorted(Comparator.comparingInt(column -> COLUMN_GROUP_ORDER.indexOf(column.typeOfRecommendation())))
 				.toList();
 		Set<UUID> columnIds = columns.stream().map(RecommendationColumn::id).collect(Collectors.toSet());
 		List<StagedAlternativeIngredient> rows = ingredients.stream()

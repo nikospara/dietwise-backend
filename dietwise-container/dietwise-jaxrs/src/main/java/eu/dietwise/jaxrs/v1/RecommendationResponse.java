@@ -9,18 +9,18 @@ import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.types.RecipeLanguage;
 
 /**
- * A single Recommendation as shown in the backoffice grid: its English name and component for scoring, its weight
- * ({@code ENCOURAGED} or {@code LIMITED}), its effective English explanation for the LLM and human friendly display
- * (published master overlaid by any Staged Change, may be {@code null}), whether each of those two fields carries a
- * pending change, the Working Copy version a subsequent edit must be based on ({@code 0} when it has no Staged Change)
- * and, per non-English language, the completeness state of its translation (language name to state name). The explanation
- * and human friendly display share the single version.
+ * A single Recommendation as shown in the backoffice grid: its English name and component for scoring, its type of
+ * recommendation ({@code ENCOURAGED} or {@code LIMITED}), its effective English explanation for the LLM and human
+ * friendly display (published master overlaid by any Staged Change, may be {@code null}), whether each of those two
+ * fields carries a pending change, the Working Copy version a subsequent edit must be based on ({@code 0} when it has
+ * no Staged Change) and, per non-English language, the completeness state of its translation (language name to state
+ * name). The explanation and human friendly display share the single version.
  */
 public record RecommendationResponse(
 		String id,
 		String name,
 		String componentForScoring,
-		String weight,
+		String typeOfRecommendation,
 		String explanationForLlm,
 		boolean explanationChanged,
 		String humanFriendlyDisplay,
@@ -33,7 +33,7 @@ public record RecommendationResponse(
 				recommendation.id().toString(),
 				recommendation.name(),
 				recommendation.componentForScoring(),
-				recommendation.weight().name(),
+				recommendation.typeOfRecommendation().name(),
 				recommendation.explanationForLlm(),
 				recommendation.explanationChanged(),
 				recommendation.humanFriendlyDisplay(),

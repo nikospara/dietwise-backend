@@ -48,7 +48,7 @@ import eu.dietwise.v1.model.Rule;
 import eu.dietwise.v1.model.Suggestion;
 import eu.dietwise.v1.types.HasSuggestionTemplateIds;
 import eu.dietwise.v1.types.RecipeLanguage;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import eu.dietwise.v1.types.RuleId;
 import eu.dietwise.v1.types.SuggestionStats;
 import eu.dietwise.v1.types.SuggestionTemplateId;
@@ -89,8 +89,8 @@ class RecipeSuggestionsServiceImplTest {
 			.addRecipeInstructions("Mix ingredients")
 			.build();
 	private static final Map<String, RecommendationComponent> RECOMMENDATIONS = Map.of(
-			"fiber", recommendationComponent("Fiber", RecommendationWeight.ENCOURAGED, "explanation of Fiber"),
-			"sodium", recommendationComponent("Sodium", RecommendationWeight.LIMITED, null)
+			"fiber", recommendationComponent("Fiber", TypeOfRecommendation.ENCOURAGED, "explanation of Fiber"),
+			"sodium", recommendationComponent("Sodium", TypeOfRecommendation.LIMITED, null)
 	);
 	private static final RuleId RULE1_ID = new GenericRuleId("rule-1");
 	private static final Rule RULE1 = ImmutableRule.builder()
@@ -300,11 +300,11 @@ class RecipeSuggestionsServiceImplTest {
 	}
 
 	private static RecommendationComponent recommendationComponent(
-			String componentName, RecommendationWeight weight, String explanationForLlm) {
+			String componentName, TypeOfRecommendation typeOfRecommendation, String explanationForLlm) {
 		return ImmutableRecommendationComponent.builder()
 				.recommendation(new RecommendationImpl(componentName + "-recommendation"))
 				.componentForScoring(new RecommendationComponentNameImpl(componentName))
-				.weight(weight)
+				.typeOfRecommendation(typeOfRecommendation)
 				.explanationForLlm(Optional.ofNullable(explanationForLlm))
 				.build();
 	}

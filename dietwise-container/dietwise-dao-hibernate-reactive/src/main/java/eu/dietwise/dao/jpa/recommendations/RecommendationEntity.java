@@ -12,7 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 
 @Entity
 @Table(name = "DW_RECOMMENDATION")
@@ -28,8 +28,8 @@ public class RecommendationEntity {
 	private String componentForScoring;
 
 	@Enumerated(STRING)
-	@Column(name = "weight")
-	private RecommendationWeight weight;
+	@Column(name = "type_of_recommendation")
+	private TypeOfRecommendation typeOfRecommendation;
 
 	/**
 	 * The optional explanation that applies to the {@link #componentForScoring} to make the LLM understand.
@@ -70,12 +70,12 @@ public class RecommendationEntity {
 		this.componentForScoring = componentForScoring;
 	}
 
-	public RecommendationWeight getWeight() {
-		return weight;
+	public TypeOfRecommendation getTypeOfRecommendation() {
+		return typeOfRecommendation;
 	}
 
-	public void setWeight(RecommendationWeight weight) {
-		this.weight = weight;
+	public void setTypeOfRecommendation(TypeOfRecommendation typeOfRecommendation) {
+		this.typeOfRecommendation = typeOfRecommendation;
 	}
 
 	public String getExplanationForLlm() {

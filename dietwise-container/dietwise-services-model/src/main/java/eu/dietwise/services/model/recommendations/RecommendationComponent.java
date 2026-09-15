@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import eu.dietwise.v1.types.Recommendation;
 import eu.dietwise.v1.types.RecommendationComponentName;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -13,7 +13,7 @@ public interface RecommendationComponent {
 
 	RecommendationComponentName getComponentForScoring();
 
-	RecommendationWeight getWeight();
+	TypeOfRecommendation getTypeOfRecommendation();
 
 	Optional<String> getExplanationForLlm();
 

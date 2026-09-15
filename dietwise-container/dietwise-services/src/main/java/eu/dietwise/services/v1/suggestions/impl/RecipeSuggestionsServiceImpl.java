@@ -90,9 +90,10 @@ public class RecipeSuggestionsServiceImpl implements RecipeSuggestionsService {
 				readAllNecessaryData(tx, hasUserId, lang, countryOverride),
 				extractSuggestionsForRecipePerIngredient(tx, correlationId, lang, recipe),
 				prioritizeSuggestions(tx),
-				data -> new MakeSuggestionsResult(
+				(necessaryData, _, data) -> new MakeSuggestionsResult(
 						new SuggestionsRecipeAssessmentMessage(data.suggestions()),
-						data.recommendations()
+						data.recommendations(),
+						necessaryData.personalInfo()
 				)
 		);
 	}

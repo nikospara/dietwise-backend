@@ -74,7 +74,7 @@ class PublishWorkingCopyRoundTripTest {
 
 	private void seedMasterAndWorkingCopy(Connection connection) throws Exception {
 		// clearly-unique names so this test coexists with the production seed data loaded by changelog.xml
-		exec(connection, "INSERT INTO dw_recommendation(id,name,component_for_scoring,weight,explanation_for_llm,"
+		exec(connection, "INSERT INTO dw_recommendation(id,name,component_for_scoring,type_of_recommendation,explanation_for_llm,"
 				+ "human_friendly_display) VALUES ('" + REC1 + "','ZZ Test Reduce beef','zz-test-beef','LIMITED','expl','Beef')");
 		exec(connection, "INSERT INTO dw_trigger_ingredient(id,name,explanation_for_llm) VALUES ('" + TI1
 				+ "','ZZ Test Beef','red meat')");

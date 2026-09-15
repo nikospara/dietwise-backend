@@ -36,7 +36,7 @@ import eu.dietwise.services.v1.types.RecommendationColumn;
 import eu.dietwise.services.v1.types.StagedAlternativeIngredient;
 import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.types.RecipeLanguage;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,9 +69,9 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 	@Test
 	void recommendationGridHasAColumnPerRecommendationGroupedByTypeAndOverlaysLinksForAnAdmin() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(REC_LEGUMES_ID, "Increase legumes", "legumes", RecommendationWeight.ENCOURAGED, null, null),
-				new BackofficeRecommendation(REC_PROCESSED_MEAT_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, null, null),
-				new BackofficeRecommendation(REC_WHOLE_GRAINS_ID, "Increase whole grains", "whole grains", RecommendationWeight.ENCOURAGED, null, null))));
+				new BackofficeRecommendation(REC_LEGUMES_ID, "Increase legumes", "legumes", TypeOfRecommendation.ENCOURAGED, null, null),
+				new BackofficeRecommendation(REC_PROCESSED_MEAT_ID, "Decrease processed meat", "processed meat", TypeOfRecommendation.LIMITED, null, null),
+				new BackofficeRecommendation(REC_WHOLE_GRAINS_ID, "Increase whole grains", "whole grains", TypeOfRecommendation.ENCOURAGED, null, null))));
 		when(alternativeIngredientDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
 				new BackofficeAlternativeIngredient(AI_LENTILS_ID, "Lentils", true, 0L),
 				new BackofficeAlternativeIngredient(AI_TOFU_ID, "Tofu", false, 2L))));
@@ -86,9 +86,9 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 		AlternativeIngredientRecommendationGrid grid = newService().recommendationGrid(adminUser()).await().atMost(AWAIT);
 
 		assertThat(grid.columns()).containsExactly(
-				new RecommendationColumn(REC_LEGUMES_ID, "legumes", RecommendationWeight.ENCOURAGED),
-				new RecommendationColumn(REC_WHOLE_GRAINS_ID, "whole grains", RecommendationWeight.ENCOURAGED),
-				new RecommendationColumn(REC_PROCESSED_MEAT_ID, "processed meat", RecommendationWeight.LIMITED));
+				new RecommendationColumn(REC_LEGUMES_ID, "legumes", TypeOfRecommendation.ENCOURAGED),
+				new RecommendationColumn(REC_WHOLE_GRAINS_ID, "whole grains", TypeOfRecommendation.ENCOURAGED),
+				new RecommendationColumn(REC_PROCESSED_MEAT_ID, "processed meat", TypeOfRecommendation.LIMITED));
 		assertThat(grid.ingredients()).hasSize(2);
 
 		StagedAlternativeIngredient lentils = grid.ingredients().get(0);

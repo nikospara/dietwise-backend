@@ -424,7 +424,7 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	}
 
 	private static BackofficeRecommendation toBackofficeRecommendation(RecommendationEntity e) {
-		return new BackofficeRecommendation(e.getId(), e.getName(), e.getComponentForScoring(), e.getWeight(), e.getExplanationForLlm(), e.getHumanFriendlyDisplay());
+		return new BackofficeRecommendation(e.getId(), e.getName(), e.getComponentForScoring(), e.getTypeOfRecommendation(), e.getExplanationForLlm(), e.getHumanFriendlyDisplay());
 	}
 
 	private Uni<Map<UUID, RecommendationTranslationEntity>> loadTranslationsByRecommendationId(
@@ -454,7 +454,7 @@ public class RecommendationDaoImpl implements RecommendationDao {
 				.recommendation(new RecommendationImpl(t != null && t.getName() != null ? t.getName() : e.getName()))
 				.componentForScoring(new RecommendationComponentNameImpl(
 						t != null && t.getComponentForScoring() != null ? t.getComponentForScoring() : e.getComponentForScoring()))
-				.weight(e.getWeight())
+				.typeOfRecommendation(e.getTypeOfRecommendation())
 				.explanationForLlm(Optional.ofNullable(t != null && t.getExplanationForLlm() != null ? t.getExplanationForLlm() : e.getExplanationForLlm()))
 				.humanFriendlyDisplay(Optional.ofNullable(t != null && t.getHumanFriendlyDisplay() != null ? t.getHumanFriendlyDisplay() : e.getHumanFriendlyDisplay()))
 				.build();

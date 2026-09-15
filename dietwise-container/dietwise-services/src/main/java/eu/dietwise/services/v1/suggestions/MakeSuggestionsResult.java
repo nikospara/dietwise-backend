@@ -5,11 +5,13 @@ import java.util.Set;
 
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.SuggestionsRecipeAssessmentMessage;
+import eu.dietwise.v1.model.PersonalInfo;
 import eu.dietwise.v1.types.IngredientId;
 
 public record MakeSuggestionsResult(
 		SuggestionsRecipeAssessmentMessage message,
-		Map<IngredientId, Set<RecommendationComponent>> recommendations
+		Map<IngredientId, Set<RecommendationComponent>> recommendations,
+		PersonalInfo personalInfo
 ) {
 	public MakeSuggestionsResult {
 		recommendations = recommendations.entrySet().stream()

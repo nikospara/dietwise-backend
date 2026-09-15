@@ -31,7 +31,7 @@ import eu.dietwise.services.model.suggestions.TranslationLangs;
 import eu.dietwise.services.v1.types.StagedRecommendation;
 import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.types.RecipeLanguage;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +53,7 @@ class BackofficeRecommendationsServiceImplTest {
 	@Test
 	void listRecommendationsMapsMasterRowsAndPerLanguageStateForAnAdmin() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Cured and smoked.", "Cured and smoked meats."))));
+				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", TypeOfRecommendation.LIMITED, "Cured and smoked.", "Cured and smoked meats."))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
 				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.noneOf(RecipeLanguage.class)))));
@@ -65,7 +65,7 @@ class BackofficeRecommendationsServiceImplTest {
 		assertThat(r.id()).isEqualTo(RECOMMENDATION_ID);
 		assertThat(r.name()).isEqualTo("Decrease processed meat");
 		assertThat(r.componentForScoring()).isEqualTo("processed meat");
-		assertThat(r.weight()).isEqualTo(RecommendationWeight.LIMITED);
+		assertThat(r.typeOfRecommendation()).isEqualTo(TypeOfRecommendation.LIMITED);
 		assertThat(r.explanationForLlm()).isEqualTo("Cured and smoked.");
 		assertThat(r.explanationChanged()).isFalse();
 		assertThat(r.humanFriendlyDisplay()).isEqualTo("Cured and smoked meats.");
@@ -80,7 +80,7 @@ class BackofficeRecommendationsServiceImplTest {
 	@Test
 	void listRecommendationsOverlaysStagedMasterTextWithItsVersionAndPerFieldChangeFlags() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Master explanation.", "Master display."))));
+				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", TypeOfRecommendation.LIMITED, "Master explanation.", "Master display."))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of(
 				RECOMMENDATION_ID, new MasterOverride("Staged explanation.", "Master display.", 3L))));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
@@ -97,7 +97,7 @@ class BackofficeRecommendationsServiceImplTest {
 	@Test
 	void listRecommendationsMarksHumanFriendlyDisplayChangedWhenOnlyItDiffersFromMaster() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Master explanation.", "Master display."))));
+				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", TypeOfRecommendation.LIMITED, "Master explanation.", "Master display."))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of(
 				RECOMMENDATION_ID, new MasterOverride("Master explanation.", "Staged display.", 5L))));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
@@ -114,7 +114,7 @@ class BackofficeRecommendationsServiceImplTest {
 	@Test
 	void listRecommendationsMarksEveryLanguageMissingWhenNoTranslationsAreReported() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(RECOMMENDATION_ID, "Increase legumes", "legumes", RecommendationWeight.ENCOURAGED, null, null))));
+				new BackofficeRecommendation(RECOMMENDATION_ID, "Increase legumes", "legumes", TypeOfRecommendation.ENCOURAGED, null, null))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of()));
 
@@ -180,7 +180,7 @@ class BackofficeRecommendationsServiceImplTest {
 	@Test
 	void listRecommendationsReflectsStagedTranslationLanguages() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
-				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, "Cured and smoked.", "Cured and smoked meats."))));
+				new BackofficeRecommendation(RECOMMENDATION_ID, "Decrease processed meat", "processed meat", TypeOfRecommendation.LIMITED, "Cured and smoked.", "Cured and smoked meats."))));
 		when(recommendationDao.findMasterOverrides(any())).thenReturn(Uni.createFrom().item(Map.of()));
 		when(recommendationDao.findTranslationLangs(any())).thenReturn(Uni.createFrom().item(Map.of(
 				RECOMMENDATION_ID, new TranslationLangs(EnumSet.of(RecipeLanguage.EL, RecipeLanguage.NL), EnumSet.noneOf(RecipeLanguage.class), EnumSet.of(RecipeLanguage.NL)))));

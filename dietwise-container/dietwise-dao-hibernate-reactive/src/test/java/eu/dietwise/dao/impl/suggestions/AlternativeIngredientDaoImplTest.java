@@ -29,7 +29,7 @@ import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientTranslationEntity;
 import eu.dietwise.dao.jpa.suggestions.AlternativeIngredientWcEntity;
 import eu.dietwise.services.model.suggestions.BackofficeAlternativeIngredient;
 import eu.dietwise.v1.types.RecipeLanguage;
-import eu.dietwise.v1.types.RecommendationWeight;
+import eu.dietwise.v1.types.TypeOfRecommendation;
 import eu.dietwise.v1.types.Seasonality;
 import io.smallrye.mutiny.Uni;
 import org.hibernate.reactive.mutiny.Mutiny;
@@ -718,7 +718,7 @@ class AlternativeIngredientDaoImplTest {
 		rec.setId(id);
 		rec.setName(componentForScoring);
 		rec.setComponentForScoring(componentForScoring);
-		rec.setWeight(RecommendationWeight.ENCOURAGED);
+		rec.setTypeOfRecommendation(TypeOfRecommendation.ENCOURAGED);
 		return tx.persist(rec).replaceWithVoid();
 	}
 

@@ -23,12 +23,12 @@ public record AlternativeIngredientGridResponse(
 		List<Ingredient> ingredients
 ) {
 	/**
-	 * One grid column: a Recommendation's id, the component for scoring shown in its header and its weight
-	 * ({@code ENCOURAGED} or {@code LIMITED}).
+	 * One grid column: a Recommendation's id, the component for scoring shown in its header and its type of
+	 * recommendation ({@code ENCOURAGED} or {@code LIMITED}).
 	 */
-	public record Column(String id, String componentForScoring, String weight) {
+	public record Column(String id, String componentForScoring, String typeOfRecommendation) {
 		static Column from(RecommendationColumn column) {
-			return new Column(column.id().toString(), column.componentForScoring(), column.weight().name());
+			return new Column(column.id().toString(), column.componentForScoring(), column.typeOfRecommendation().name());
 		}
 	}
 

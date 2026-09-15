@@ -21,7 +21,7 @@ public final class Tables {
 			new MirrorSpec(
 					new TableSpec("DW_RECOMMENDATION", List.of(
 							uuid("id").notNull(), text("name").notNull(), text("component_for_scoring").notNull(),
-							text("weight").notNull(), text("explanation_for_llm"), text("human_friendly_display")),
+							text("type_of_recommendation").notNull(), text("explanation_for_llm"), text("human_friendly_display")),
 							List.of("id")),
 					new TableSpec("DW_RECOMMENDATION_WC", List.of(
 							uuid("id"), text("explanation_for_llm"), text("human_friendly_display"), bigint("version")),
