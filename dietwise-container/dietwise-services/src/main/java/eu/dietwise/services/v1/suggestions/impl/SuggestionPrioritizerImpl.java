@@ -4,47 +4,27 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
-import eu.dietwise.dao.recommendations.RecommendationDao;
-import eu.dietwise.services.nondomain.DateTimeService;
+import eu.dietwise.services.v1.recommendations.RecommendationService;
 import eu.dietwise.services.v1.suggestions.SuggestionPrioritizer;
 import eu.dietwise.v1.model.PersonalInfo;
 import eu.dietwise.v1.model.Suggestion;
-import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.Recommendation;
 import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class SuggestionPrioritizerImpl implements SuggestionPrioritizer {
-	private final DateTimeService dateTimeService;
-	private final RecommendationDao recommendationDao;
+	private final RecommendationService recommendationService;
 
-	public SuggestionPrioritizerImpl(DateTimeService dateTimeService, RecommendationDao recommendationDao) {
-		this.dateTimeService = dateTimeService;
-		this.recommendationDao = recommendationDao;
+	public SuggestionPrioritizerImpl(RecommendationService recommendationService) {
+		this.recommendationService = recommendationService;
 	}
 
 	@Override
 	public Uni<List<Suggestion>> prioritizeSuggestions(ReactivePersistenceContext em, PersonalInfo personalInfo, List<Suggestion> suggestions) {
-		return calculateWeights(em, personalInfo).map(weights -> orderSuggestionsAccordingToWeights(weights, suggestions));
-	}
-
-	private Uni<? extends Map<Recommendation, BigDecimal>> calculateWeights(ReactivePersistenceContext em, PersonalInfo personalInfo) {
-		Integer age = Optional.ofNullable(personalInfo).map(PersonalInfo::getYearOfBirth).map(yob -> dateTimeService.getNow().getYear() - yob).orElse(null);
-		BiologicalGender gender = Optional.ofNullable(personalInfo).map(PersonalInfo::getGender).orElse(null);
-		// TODO Introduce a RecommendationService that caches
-		if (age != null && gender != null) {
-			return recommendationDao.findRecommendations(em, age, gender);
-		} else if (age != null) {
-			return recommendationDao.findRecommendations(em, age);
-		} else if (gender != null) {
-			return recommendationDao.findRecommendations(em, gender);
-		} else {
-			return recommendationDao.findRecommendations(em);
-		}
+		return recommendationService.findRecommendationWeights(em, personalInfo).map(weights -> orderSuggestionsAccordingToWeights(weights, suggestions));
 	}
 
 	private List<Suggestion> orderSuggestionsAccordingToWeights(Map<Recommendation, BigDecimal> weights, List<Suggestion> suggestions) {

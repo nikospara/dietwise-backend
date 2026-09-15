@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+>
+	<changeSet id="recommendation_weight_not_null" author="nikospara">
+		<comment>
+			The column is created NOT NULL, but databases whose DW_RECOMMENDATION predates it received it nullable, outside
+			Liquibase. PostgreSQL names a NOT NULL constraint after the column it guards, so the constraint the renames below
+			look for exists only where the column is NOT NULL.
+		</comment>
+		<addNotNullConstraint tableName="DW_RECOMMENDATION" columnName="weight" columnDataType="VARCHAR(16)"/>
+		<rollback/>
+	</changeSet>
+
+	<changeSet id="recommendation_type_of_recommendation" author="nikospara">
+		<renameColumn
+			tableName="DW_RECOMMENDATION"
+			oldColumnName="weight"
+			newColumnName="type_of_recommendation"
+			columnDataType="VARCHAR(16)"
+			remarks="How does the existence of component_for_scoring affect the score"
+		/>
+	</changeSet>
+
+	<changeSet id="recommendation_weight" author="nikospara">
+		<renameTable oldTableName="DW_RECOMMENDATION_VALUE" newTableName="DW_RECOMMENDATION_WEIGHT"/>
+		<renameColumn
+			tableName="DW_RECOMMENDATION_WEIGHT"
+			oldColumnName="value"
+			newColumnName="weight"
+			columnDataType="DECIMAL"
+			remarks="How much this recommendation counts against the others, for this age group and biological gender"
+		/>
+	</changeSet>
+
+	<changeSet id="recommendation_weight_constraint_names" author="nikospara">
+		<comment>
+			A constraint keeps the name it was created with when its table or column is renamed, so these still carried the
+			name of the recommendation value they used to be. PostgreSQL names a NOT NULL constraint itself, ignoring the
+			name the changelog asks for, which is why these are not the NL_ names declared there.
+		</comment>
+		<sql splitStatements="true" endDelimiter=";">
+			ALTER TABLE dw_recommendation RENAME CONSTRAINT dw_recommendation_weight_not_null TO dw_recommendation_type_of_recommendation_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT pk_dw_recommendation_value TO pk_dw_recommendation_weight;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT fk_recommendation_value__recommendation_id__recommendation__id TO fk_recommendation_weight__recommendation_id__recommendation__id;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT fk_recommendation_value__age_group_id__age_group__id TO fk_recommendation_weight__age_group_id__age_group__id;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_value_id_not_null TO dw_recommendation_weight_id_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_value_recommendation_id_not_null TO dw_recommendation_weight_recommendation_id_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_value_age_group_id_not_null TO dw_recommendation_weight_age_group_id_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_value_gender_not_null TO dw_recommendation_weight_gender_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_value_value_not_null TO dw_recommendation_weight_weight_not_null;
+		</sql>
+		<rollback>
+			<sql splitStatements="true" endDelimiter=";">
+			ALTER TABLE dw_recommendation RENAME CONSTRAINT dw_recommendation_type_of_recommendation_not_null TO dw_recommendation_weight_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT pk_dw_recommendation_weight TO pk_dw_recommendation_value;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT fk_recommendation_weight__recommendation_id__recommendation__id TO fk_recommendation_value__recommendation_id__recommendation__id;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT fk_recommendation_weight__age_group_id__age_group__id TO fk_recommendation_value__age_group_id__age_group__id;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_weight_id_not_null TO dw_recommendation_value_id_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_weight_recommendation_id_not_null TO dw_recommendation_value_recommendation_id_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_weight_age_group_id_not_null TO dw_recommendation_value_age_group_id_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_weight_gender_not_null TO dw_recommendation_value_gender_not_null;
+			ALTER TABLE dw_recommendation_weight RENAME CONSTRAINT dw_recommendation_weight_weight_not_null TO dw_recommendation_value_value_not_null;
+			</sql>
+		</rollback>
+	</changeSet>
+
+	<changeSet id="recommendation_weight_remarks" author="nikospara">
+		<comment>The remarks travelled with the renamed table and column, still describing them as a recommendation value.</comment>
+		<setTableRemarks tableName="DW_RECOMMENDATION_WEIGHT" remarks="Recommendation weight by age group and biological gender"/>
+		<setColumnRemarks
+			tableName="DW_RECOMMENDATION_WEIGHT"
+			columnName="weight"
+			remarks="How much this recommendation counts against the others, for this age group and biological gender"
+		/>
+		<setTableRemarks tableName="DW_RECOMMENDATION_WC" remarks="Working Copy mirror of DW_RECOMMENDATION: staged edits to a Recommendation's explanation for the LLM; sparse, a row exists only while the explanation differs from published master. The name, component for scoring and type of recommendation are not editable and so are not mirrored."/>
+		<rollback>
+			<setTableRemarks tableName="DW_RECOMMENDATION_WEIGHT" remarks="Recommendation value by age group and biological gender"/>
+			<setColumnRemarks tableName="DW_RECOMMENDATION_WEIGHT" columnName="weight" remarks="The value for this recommendation profile"/>
+			<setTableRemarks tableName="DW_RECOMMENDATION_WC" remarks="Working Copy mirror of DW_RECOMMENDATION: staged edits to a Recommendation's explanation for the LLM; sparse, a row exists only while the explanation differs from published master. The name, component for scoring and weight are not editable and so are not mirrored."/>
+		</rollback>
+	</changeSet>
+
+	<changeSet id="missing_column_remarks" author="nikospara">
+		<comment>
+			The remarks are declared where the columns are created, but databases whose tables predate those columns received
+			the columns outside Liquibase, without them.
+		</comment>
+		<setColumnRemarks
+			tableName="DW_RECOMMENDATION"
+			columnName="component_for_scoring"
+			remarks="Name of the component/ingredient to use for scoring that corresponds to this recommendation, English"
+		/>
+		<setColumnRemarks
+			tableName="DW_RECOMMENDATION"
+			columnName="type_of_recommendation"
+			remarks="How does the existence of component_for_scoring affect the score"
+		/>
+		<setColumnRemarks
+			tableName="DW_RECOMMENDATION"
+			columnName="explanation_for_llm"
+			remarks="Explanation of this component/ingredient to use for scoring for the LLM, English"
+		/>
+		<setColumnRemarks
+			tableName="DW_ALTERNATIVE_INGREDIENT"
+			columnName="explanation_for_llm"
+			remarks="Explanation of this alternative ingredient for the LLM, English"
+		/>
+		<rollback/>
+	</changeSet>
+</databaseChangeLog>

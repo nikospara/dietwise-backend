@@ -1,14 +1,18 @@
-package eu.dietwise.services.v1.suggestions.impl;
+package eu.dietwise.services.nondomain;
 
 import java.util.function.Supplier;
 
 import io.smallrye.mutiny.Uni;
 
-final class CachedUniValue<T> {
+/**
+ * Holds one lazily loaded value, loading it at most once: concurrent callers share the load in flight and every caller
+ * after it completes gets the loaded value. A load that fails is not kept, so the next caller tries again.
+ */
+public final class CachedUniValue<T> {
 	private volatile T value;
 	private volatile Uni<T> inFlight;
 
-	Uni<T> getOrLoad(Supplier<Uni<T>> loader) {
+	public Uni<T> getOrLoad(Supplier<Uni<T>> loader) {
 		var cached = value;
 		if (cached != null) {
 			return Uni.createFrom().item(cached);

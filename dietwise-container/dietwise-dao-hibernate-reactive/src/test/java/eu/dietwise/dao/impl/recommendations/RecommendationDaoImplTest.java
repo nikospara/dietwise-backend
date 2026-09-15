@@ -21,7 +21,7 @@ import eu.dietwise.common.types.RecommendationTranslationDetails;
 import eu.dietwise.common.types.ReferenceOption;
 import eu.dietwise.dao.jpa.recommendations.AgeGroupEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationEntity;
-import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationWeightEntity;
 import eu.dietwise.services.model.recommendations.BackofficeRecommendation;
 import eu.dietwise.services.model.recommendations.MasterOverride;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
@@ -507,13 +507,13 @@ public class RecommendationDaoImplTest {
 			ageGroup1.setMin(10);
 			ageGroup1.setMax(14);
 
-			var recValue1 = makeRecValue(UUID.fromString("b80f78a4-3246-4f96-baf3-a7f377f4f979"), rec1, ageGroup1, FEMALE, "1.11");
-			var recValue2 = makeRecValue(UUID.fromString("2cfc37cb-f955-4ca3-b380-c7a669922f95"), rec2, ageGroup1, FEMALE, "2.22");
-			var recValue3 = makeRecValue(UUID.fromString("6cadf706-f507-4f08-ac95-b681af070fda"), rec1, ageGroup1, MALE, "3.33");
-			var recValue4 = makeRecValue(UUID.fromString("fe136125-a444-4bc2-b83f-b4302c14d029"), rec2, ageGroup1, MALE, "4.44");
+			var recWeight1 = makeRecWeight(UUID.fromString("b80f78a4-3246-4f96-baf3-a7f377f4f979"), rec1, ageGroup1, FEMALE, "1.11");
+			var recWeight2 = makeRecWeight(UUID.fromString("2cfc37cb-f955-4ca3-b380-c7a669922f95"), rec2, ageGroup1, FEMALE, "2.22");
+			var recWeight3 = makeRecWeight(UUID.fromString("6cadf706-f507-4f08-ac95-b681af070fda"), rec1, ageGroup1, MALE, "3.33");
+			var recWeight4 = makeRecWeight(UUID.fromString("fe136125-a444-4bc2-b83f-b4302c14d029"), rec2, ageGroup1, MALE, "4.44");
 
 			return tx.persistAll(rec1, rec2, ageGroup1)
-					.flatMap(ignored -> tx.persistAll(recValue1, recValue2, recValue3, recValue4));
+					.flatMap(ignored -> tx.persistAll(recWeight1, recWeight2, recWeight3, recWeight4));
 		}).await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 
 		Map<Recommendation, BigDecimal> recommendations =
@@ -636,13 +636,13 @@ public class RecommendationDaoImplTest {
 				.await().atMost(Duration.ofSeconds(ASYNC_WAIT_SECONDS));
 	}
 
-	private RecommendationValueEntity makeRecValue(UUID id, RecommendationEntity recommendation, AgeGroupEntity ageGroup, BiologicalGender gender, String value) {
-		var recommendationValue = new RecommendationValueEntity();
-		recommendationValue.setId(id);
-		recommendationValue.setRecommendation(recommendation);
-		recommendationValue.setAgeGroup(ageGroup);
-		recommendationValue.setGender(gender);
-		recommendationValue.setValue(new BigDecimal(value));
-		return recommendationValue;
+	private RecommendationWeightEntity makeRecWeight(UUID id, RecommendationEntity recommendation, AgeGroupEntity ageGroup, BiologicalGender gender, String weight) {
+		var recommendationWeight = new RecommendationWeightEntity();
+		recommendationWeight.setId(id);
+		recommendationWeight.setRecommendation(recommendation);
+		recommendationWeight.setAgeGroup(ageGroup);
+		recommendationWeight.setGender(gender);
+		recommendationWeight.setWeight(new BigDecimal(weight));
+		return recommendationWeight;
 	}
 }

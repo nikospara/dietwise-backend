@@ -38,8 +38,8 @@ import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationWcEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationWcEntityId;
 import eu.dietwise.dao.jpa.recommendations.RecommendationTranslationWcEntity_;
-import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity;
-import eu.dietwise.dao.jpa.recommendations.RecommendationValueEntity_;
+import eu.dietwise.dao.jpa.recommendations.RecommendationWeightEntity;
+import eu.dietwise.dao.jpa.recommendations.RecommendationWeightEntity_;
 import eu.dietwise.dao.jpa.recommendations.RecommendationWcEntity;
 import eu.dietwise.dao.jpa.recommendations.RecommendationWcEntity_;
 import eu.dietwise.dao.recommendations.RecommendationDao;
@@ -68,36 +68,36 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em, int age, BiologicalGender gender) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createTupleQuery();
-		var recommendationValue = q.from(RecommendationValueEntity.class);
-		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
-		var ageGroup = recommendationValue.join(RecommendationValueEntity_.ageGroup);
-		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
+		var recommendationWeight = q.from(RecommendationWeightEntity.class);
+		var recommendation = recommendationWeight.join(RecommendationWeightEntity_.recommendation);
+		var ageGroup = recommendationWeight.join(RecommendationWeightEntity_.ageGroup);
+		Path<BigDecimal> weight = recommendationWeight.get(RecommendationWeightEntity_.weight);
 
-		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), value));
+		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), weight));
 		q.where(
 				cb.and(
 						cb.lessThanOrEqualTo(ageGroup.get(AgeGroupEntity_.min), age),
 						cb.greaterThanOrEqualTo(ageGroup.get(AgeGroupEntity_.max), age),
-						cb.equal(recommendationValue.get(RecommendationValueEntity_.gender), gender)
+						cb.equal(recommendationWeight.get(RecommendationWeightEntity_.gender), gender)
 				)
 		);
 
 		return em.createQuery(q).getResultList()
 				.map(values -> values.stream()
-						.collect(Collectors.toMap(this::toRecommendation, tuple -> tuple.get(value))));
+						.collect(Collectors.toMap(this::toRecommendation, tuple -> tuple.get(weight))));
 	}
 
 	@Override
 	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em, BiologicalGender gender) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createTupleQuery();
-		var recommendationValue = q.from(RecommendationValueEntity.class);
-		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
-		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
-		Expression<Double> average = cb.avg(value);
+		var recommendationWeight = q.from(RecommendationWeightEntity.class);
+		var recommendation = recommendationWeight.join(RecommendationWeightEntity_.recommendation);
+		Path<BigDecimal> weight = recommendationWeight.get(RecommendationWeightEntity_.weight);
+		Expression<Double> average = cb.avg(weight);
 
 		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), average));
-		q.where(cb.equal(recommendationValue.get(RecommendationValueEntity_.gender), gender))
+		q.where(cb.equal(recommendationWeight.get(RecommendationWeightEntity_.gender), gender))
 				.groupBy(recommendation);
 
 		return em.createQuery(q).getResultList()
@@ -109,11 +109,11 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em, int age) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createTupleQuery();
-		var recommendationValue = q.from(RecommendationValueEntity.class);
-		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
-		var ageGroup = recommendationValue.join(RecommendationValueEntity_.ageGroup);
-		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
-		Expression<Double> average = cb.avg(value);
+		var recommendationWeight = q.from(RecommendationWeightEntity.class);
+		var recommendation = recommendationWeight.join(RecommendationWeightEntity_.recommendation);
+		var ageGroup = recommendationWeight.join(RecommendationWeightEntity_.ageGroup);
+		Path<BigDecimal> weight = recommendationWeight.get(RecommendationWeightEntity_.weight);
+		Expression<Double> average = cb.avg(weight);
 
 		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), average));
 		q.where(
@@ -133,10 +133,10 @@ public class RecommendationDaoImpl implements RecommendationDao {
 	public Uni<Map<Recommendation, BigDecimal>> findRecommendations(ReactivePersistenceContext em) {
 		var cb = em.getCriteriaBuilder();
 		var q = cb.createTupleQuery();
-		var recommendationValue = q.from(RecommendationValueEntity.class);
-		var recommendation = recommendationValue.join(RecommendationValueEntity_.recommendation);
-		Path<BigDecimal> value = recommendationValue.get(RecommendationValueEntity_.value);
-		Expression<Double> average = cb.avg(value);
+		var recommendationWeight = q.from(RecommendationWeightEntity.class);
+		var recommendation = recommendationWeight.join(RecommendationWeightEntity_.recommendation);
+		Path<BigDecimal> weight = recommendationWeight.get(RecommendationWeightEntity_.weight);
+		Expression<Double> average = cb.avg(weight);
 
 		q.select(cb.tuple(recommendation.get(RecommendationEntity_.name), average));
 		q.groupBy(recommendation);

@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,10 +15,9 @@ import java.util.function.Function;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
-import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.model.recommendations.ImmutableRecommendationComponent;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
-import eu.dietwise.services.nondomain.DateTimeService;
+import eu.dietwise.services.v1.recommendations.RecommendationService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutablePersonalInfo;
 import eu.dietwise.v1.model.PersonalInfo;
@@ -45,12 +43,10 @@ class RecipeScoringServiceImplTest {
 	private static final String INGREDIENT_1 = "ingredient-1";
 	private static final String FIBER = "Fiber";
 	private static final String SODIUM = "Sodium";
-	private static final BigDecimal FIBER_VALUE = new BigDecimal("0.42");
-	private static final BigDecimal SODIUM_VALUE = new BigDecimal("0.64");
+	private static final BigDecimal FIBER_WEIGHT = new BigDecimal("0.42");
+	private static final BigDecimal SODIUM_WEIGHT = new BigDecimal("0.64");
 
-	private static final int CURRENT_YEAR = 2026;
 	private static final int YEAR_OF_BIRTH = 1996;
-	private static final int AGE = CURRENT_YEAR - YEAR_OF_BIRTH;
 	private static final PersonalInfo PERSONAL_INFO = ImmutablePersonalInfo.builder()
 			.gender(BiologicalGender.FEMALE)
 			.yearOfBirth(YEAR_OF_BIRTH)
@@ -63,16 +59,13 @@ class RecipeScoringServiceImplTest {
 	private ReactivePersistenceContext persistenceContext;
 
 	@Mock
-	private RecommendationDao recommendationDao;
-
-	@Mock
-	private DateTimeService dateTimeService;
+	private RecommendationService recommendationService;
 
 	private RecipeScoringServiceImpl sut;
 
 	@BeforeEach
 	void beforeEach() {
-		sut = new RecipeScoringServiceImpl(persistenceContextFactory, recommendationDao, dateTimeService);
+		sut = new RecipeScoringServiceImpl(persistenceContextFactory, recommendationService);
 		when(persistenceContextFactory.withoutTransaction(any()))
 				.thenAnswer(invocation -> {
 					Function<ReactivePersistenceContext, Uni<ScoringRecipeAssessmentMessage>> work = invocation.getArgument(0);
@@ -83,11 +76,7 @@ class RecipeScoringServiceImplTest {
 	@Test
 	void scoreRecipeBuildsScoringDataAndKeepsOnlyKnownRecommendations() {
 		givenRecommendationComponents();
-		when(dateTimeService.getNow()).thenReturn(LocalDateTime.of(CURRENT_YEAR, 5, 1, 12, 0));
-		when(recommendationDao.findRecommendations(persistenceContext, AGE, BiologicalGender.FEMALE))
-				.thenAnswer(_ -> Uni.createFrom().item(Map.of(
-						recommendationOf(FIBER), FIBER_VALUE,
-						recommendationOf(SODIUM), SODIUM_VALUE)));
+		givenTheWeightsThatApplyTo(PERSONAL_INFO);
 
 		ScoringRecipeAssessmentMessage message = makeScoringMessage(PERSONAL_INFO);
 
@@ -101,59 +90,62 @@ class RecipeScoringServiceImplTest {
 						Set.of(new RecommendationComponentNameImpl(FIBER))
 				);
 
-		verify(recommendationDao).listAllRecommendationsForScoring(persistenceContext, RecipeLanguage.EN);
+		verify(recommendationService).listComponentsForScoring(persistenceContext, RecipeLanguage.EN);
 	}
 
 	@Test
-	void weighsEachComponentWithTheValueThatAppliesToTheAgeAndGenderOfTheUser() {
+	void weighsEachComponentWithTheWeightThatAppliesToTheUser() {
 		givenRecommendationComponents();
-		when(dateTimeService.getNow()).thenReturn(LocalDateTime.of(CURRENT_YEAR, 5, 1, 12, 0));
-		when(recommendationDao.findRecommendations(persistenceContext, AGE, BiologicalGender.FEMALE))
-				.thenAnswer(_ -> Uni.createFrom().item(Map.of(
-						recommendationOf(FIBER), FIBER_VALUE,
-						recommendationOf(SODIUM), SODIUM_VALUE)));
+		givenTheWeightsThatApplyTo(PERSONAL_INFO);
 
 		ScoringRecipeAssessmentMessage message = makeScoringMessage(PERSONAL_INFO);
 
 		assertThat(weightOf(message, FIBER).getTypeOfRecommendation()).isEqualTo(TypeOfRecommendation.ENCOURAGED);
-		assertThat(weightOf(message, FIBER).getWeight()).isEqualByComparingTo(FIBER_VALUE);
+		assertThat(weightOf(message, FIBER).getWeight()).isEqualByComparingTo(FIBER_WEIGHT);
 		assertThat(weightOf(message, SODIUM).getTypeOfRecommendation()).isEqualTo(TypeOfRecommendation.LIMITED);
-		assertThat(weightOf(message, SODIUM).getWeight()).isEqualByComparingTo(SODIUM_VALUE);
+		assertThat(weightOf(message, SODIUM).getWeight()).isEqualByComparingTo(SODIUM_WEIGHT);
 
-		verify(recommendationDao).findRecommendations(persistenceContext, AGE, BiologicalGender.FEMALE);
+		verify(recommendationService).findRecommendationWeights(persistenceContext, PERSONAL_INFO);
 	}
 
 	@Test
-	void averagesOverEveryAgeAndGenderWhenTheUserHasNoProfile() {
+	void asksForTheWeightsThatApplyWhenTheUserHasNoProfile() {
 		givenRecommendationComponents();
-		when(recommendationDao.findRecommendations(persistenceContext))
-				.thenAnswer(_ -> Uni.createFrom().item(Map.of(recommendationOf(FIBER), FIBER_VALUE)));
+		when(recommendationService.findRecommendationWeights(persistenceContext, null))
+				.thenAnswer(_ -> Uni.createFrom().item(Map.of(recommendationOf(FIBER), FIBER_WEIGHT)));
 
 		ScoringRecipeAssessmentMessage message = makeScoringMessage(null);
 
-		assertThat(weightOf(message, FIBER).getWeight()).isEqualByComparingTo(FIBER_VALUE);
+		assertThat(weightOf(message, FIBER).getWeight()).isEqualByComparingTo(FIBER_WEIGHT);
 
-		verify(recommendationDao).findRecommendations(persistenceContext);
+		verify(recommendationService).findRecommendationWeights(persistenceContext, null);
 	}
 
 	@Test
-	void weighsNothingAComponentTheUserHasNoApplicableValueFor() {
+	void weighsNothingAComponentTheUserHasNoApplicableWeightFor() {
 		givenRecommendationComponents();
-		when(recommendationDao.findRecommendations(persistenceContext))
+		when(recommendationService.findRecommendationWeights(persistenceContext, null))
 				.thenAnswer(_ -> Uni.createFrom().item(Map.<Recommendation, BigDecimal>of()));
 
 		ScoringRecipeAssessmentMessage message = makeScoringMessage(null);
 
-		// The age groups below 15 carry no recommendation value at all; such a component takes no part in the score.
+		// The age groups below 15 carry no recommendation weight at all; such a component takes no part in the score.
 		assertThat(weightOf(message, FIBER).getWeight()).isEqualByComparingTo(BigDecimal.ZERO);
 		assertThat(weightOf(message, SODIUM).getWeight()).isEqualByComparingTo(BigDecimal.ZERO);
 	}
 
 	private void givenRecommendationComponents() {
-		when(recommendationDao.listAllRecommendationsForScoring(persistenceContext, RecipeLanguage.EN))
+		when(recommendationService.listComponentsForScoring(persistenceContext, RecipeLanguage.EN))
 				.thenAnswer(_ -> Uni.createFrom().item(List.of(
 						recommendationComponent(FIBER, TypeOfRecommendation.ENCOURAGED, "High-fiber foods"),
 						recommendationComponent(SODIUM, TypeOfRecommendation.LIMITED, null))));
+	}
+
+	private void givenTheWeightsThatApplyTo(PersonalInfo personalInfo) {
+		when(recommendationService.findRecommendationWeights(persistenceContext, personalInfo))
+				.thenAnswer(_ -> Uni.createFrom().item(Map.of(
+						recommendationOf(FIBER), FIBER_WEIGHT,
+						recommendationOf(SODIUM), SODIUM_WEIGHT)));
 	}
 
 	private ScoringRecipeAssessmentMessage makeScoringMessage(PersonalInfo personalInfo) {

@@ -16,8 +16,8 @@ import jakarta.persistence.Table;
 import eu.dietwise.v1.types.BiologicalGender;
 
 @Entity
-@Table(name = "DW_RECOMMENDATION_VALUE")
-public class RecommendationValueEntity {
+@Table(name = "DW_RECOMMENDATION_WEIGHT")
+public class RecommendationWeightEntity {
 	@Id
 	@Column(name = "id")
 	private UUID id;
@@ -34,8 +34,8 @@ public class RecommendationValueEntity {
 	@Column(name = "gender")
 	private BiologicalGender gender;
 
-	@Column(name = "value")
-	private BigDecimal value;
+	@Column(name = "weight")
+	private BigDecimal weight;
 
 	public UUID getId() {
 		return id;
@@ -69,11 +69,11 @@ public class RecommendationValueEntity {
 		this.gender = gender;
 	}
 
-	public BigDecimal getValue() {
-		return value;
+	public BigDecimal getWeight() {
+		return weight;
 	}
 
-	public void setValue(BigDecimal value) {
-		this.value = value;
+	public void setWeight(BigDecimal weight) {
+		this.weight = weight;
 	}
 }

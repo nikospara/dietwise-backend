@@ -7,22 +7,19 @@ import static eu.dietwise.common.utils.UniComprehensions.forcm;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContext;
 import eu.dietwise.common.dao.reactive.ReactivePersistenceContextFactory;
-import eu.dietwise.dao.recommendations.RecommendationDao;
 import eu.dietwise.services.model.recommendations.RecommendationComponent;
-import eu.dietwise.services.nondomain.DateTimeService;
+import eu.dietwise.services.v1.recommendations.RecommendationService;
 import eu.dietwise.services.v1.scoring.RecipeScoringService;
 import eu.dietwise.services.v1.types.RecipeAssessmentMessage.ScoringRecipeAssessmentMessage;
 import eu.dietwise.v1.model.ImmutableRecommendationSpecialWeight;
 import eu.dietwise.v1.model.ImmutableScoringData;
 import eu.dietwise.v1.model.PersonalInfo;
 import eu.dietwise.v1.model.RecommendationSpecialWeight;
-import eu.dietwise.v1.types.BiologicalGender;
 import eu.dietwise.v1.types.IngredientId;
 import eu.dietwise.v1.types.RecipeLanguage;
 import eu.dietwise.v1.types.Recommendation;
@@ -31,17 +28,14 @@ import io.smallrye.mutiny.Uni;
 @ApplicationScoped
 public class RecipeScoringServiceImpl implements RecipeScoringService {
 	private final ReactivePersistenceContextFactory persistenceContextFactory;
-	private final RecommendationDao recommendationDao;
-	private final DateTimeService dateTimeService;
+	private final RecommendationService recommendationService;
 
 	public RecipeScoringServiceImpl(
 			ReactivePersistenceContextFactory persistenceContextFactory,
-			RecommendationDao recommendationDao,
-			DateTimeService dateTimeService
+			RecommendationService recommendationService
 	) {
 		this.persistenceContextFactory = persistenceContextFactory;
-		this.recommendationDao = recommendationDao;
-		this.dateTimeService = dateTimeService;
+		this.recommendationService = recommendationService;
 	}
 
 	@Override
@@ -51,41 +45,23 @@ public class RecipeScoringServiceImpl implements RecipeScoringService {
 
 	private Uni<ScoringRecipeAssessmentMessage> makeScoringMessageInternal(ReactivePersistenceContext em, Map<IngredientId, Set<RecommendationComponent>> recommendations, RecipeLanguage lang, PersonalInfo personalInfo) {
 		return forcm(
-				recommendationDao.listAllRecommendationsForScoring(em, lang),
-				_ -> findRecommendationValues(em, personalInfo),
-				(recommendationComponents, values) ->
-						toScoringRecipeAssessmentMessage(recommendationComponents, values, recommendations)
+				recommendationService.listComponentsForScoring(em, lang),
+				_ -> recommendationService.findRecommendationWeights(em, personalInfo),
+				(recommendationComponents, weights) ->
+						toScoringRecipeAssessmentMessage(recommendationComponents, weights, recommendations)
 		);
-	}
-
-	/**
-	 * The recommendation value that applies to the user, as precise as their profile allows: by age group and
-	 * biological gender when both are known, averaged over whichever of the two is missing otherwise.
-	 */
-	private Uni<? extends Map<Recommendation, BigDecimal>> findRecommendationValues(ReactivePersistenceContext em, PersonalInfo personalInfo) {
-		Integer age = Optional.ofNullable(personalInfo).map(PersonalInfo::getYearOfBirth).map(yob -> dateTimeService.getNow().getYear() - yob).orElse(null);
-		BiologicalGender gender = Optional.ofNullable(personalInfo).map(PersonalInfo::getGender).orElse(null);
-		if (age != null && gender != null) {
-			return recommendationDao.findRecommendations(em, age, gender);
-		} else if (age != null) {
-			return recommendationDao.findRecommendations(em, age);
-		} else if (gender != null) {
-			return recommendationDao.findRecommendations(em, gender);
-		} else {
-			return recommendationDao.findRecommendations(em);
-		}
 	}
 
 	private ScoringRecipeAssessmentMessage toScoringRecipeAssessmentMessage(
 			List<RecommendationComponent> recommendationComponents,
-			Map<Recommendation, BigDecimal> values,
+			Map<Recommendation, BigDecimal> weights,
 			Map<IngredientId, Set<RecommendationComponent>> recommendationsPerIngredient
 	) {
 		var recommendationNamesPerIngredient = recommendationsPerIngredient.entrySet().stream()
 				.collect(toMap(Map.Entry::getKey, e -> e.getValue().stream().map(RecommendationComponent::getComponentForScoring).collect(toSet())));
 		var scoringData = ImmutableScoringData.builder()
 				.totalNumberOfRecomendations(recommendationComponents.size())
-				.recommendationWeights(recommendationComponents.stream().collect(toMap(RecommendationComponent::getComponentForScoring, rc -> toSpecialWeight(rc, values))))
+				.recommendationWeights(recommendationComponents.stream().collect(toMap(RecommendationComponent::getComponentForScoring, rc -> toSpecialWeight(rc, weights))))
 				.humanFriendlyDisplays(recommendationComponents.stream()
 						.filter(rc -> rc.getHumanFriendlyDisplay().isPresent())
 						.collect(toMap(RecommendationComponent::getComponentForScoring, rc -> rc.getHumanFriendlyDisplay().get()))
@@ -96,13 +72,13 @@ public class RecipeScoringServiceImpl implements RecipeScoringService {
 	}
 
 	/**
-	 * A component the user has no applicable recommendation value for weighs nothing, so it takes no part in the score.
+	 * A component the user has no applicable recommendation weight for weighs nothing, so it takes no part in the score.
 	 * This is how the age groups that the guidelines deliberately leave uncovered behave.
 	 */
-	private RecommendationSpecialWeight toSpecialWeight(RecommendationComponent component, Map<Recommendation, BigDecimal> values) {
+	private RecommendationSpecialWeight toSpecialWeight(RecommendationComponent component, Map<Recommendation, BigDecimal> weights) {
 		return ImmutableRecommendationSpecialWeight.builder()
 				.typeOfRecommendation(component.getTypeOfRecommendation())
-				.weight(values.getOrDefault(component.getRecommendation(), BigDecimal.ZERO))
+				.weight(weights.getOrDefault(component.getRecommendation(), BigDecimal.ZERO))
 				.build();
 	}
 }

@@ -1,4 +1,4 @@
-package eu.dietwise.services.v1.suggestions.impl;
+package eu.dietwise.services.nondomain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

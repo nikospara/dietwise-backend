@@ -131,6 +131,9 @@ mvn -q -pl dietwise-tools/dietwise-publish exec:java > changelogs/YYYYMMDD_publi
 Wire the output into `changelog.xml` (optional args: `exec:java -Dexec.args="<changeset-id> <author>"`; id
 defaults to `publish_working_copy_<timestamp>`). Empty WC → nothing on stdout, a note on stderr.
 
+Restart the application after the generated changeset is applied. It reads the recommendations once and keeps them
+for its lifetime, so until it restarts it goes on assessing recipes against the previous ones.
+
 ### Building the Docker image
 
 The root Dockerfile executes the entire Maven build (no tests) and then creates the application image.
