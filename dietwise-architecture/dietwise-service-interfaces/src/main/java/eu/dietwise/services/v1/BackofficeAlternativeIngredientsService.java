@@ -7,14 +7,14 @@ import eu.dietwise.services.v1.types.AlternativeIngredientRecommendationGrid;
 import io.smallrye.mutiny.Uni;
 
 /**
- * Backoffice operations on the substitution value of Alternative Ingredients: the grid of which ENCOURAGED
- * Recommendations each Alternative Ingredient provides, and the discarding of Working-Copy-only Alternative Ingredients.
+ * Backoffice operations on the substitution value of Alternative Ingredients: the grid of which Recommendations'
+ * components for scoring each Alternative Ingredient carries, and the discarding of Working-Copy-only Alternative Ingredients.
  * The grid's cell toggles and the row's name, explanation and translation edits are staged; published master and recipe
  * assessment are left untouched until a separate publish step. Reserved for users with the ADMIN role.
  */
 public interface BackofficeAlternativeIngredientsService {
 	/**
-	 * The whole substitution-value grid: the ENCOURAGED Recommendation columns and, per Alternative Ingredient, its
+	 * The whole substitution-value grid: the Recommendation columns and, per Alternative Ingredient, its
 	 * effective name, translation completeness and links to those columns (published master overlaid by any Staged
 	 * Change).
 	 *

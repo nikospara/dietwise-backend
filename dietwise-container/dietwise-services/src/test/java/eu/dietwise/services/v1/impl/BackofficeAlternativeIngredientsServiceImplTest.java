@@ -67,7 +67,7 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 	private final MockReactivePersistenceContextFactory persistenceContextFactory = new MockReactivePersistenceContextFactory();
 
 	@Test
-	void recommendationGridKeepsOnlyEncouragedColumnsAndOverlaysLinksForAnAdmin() {
+	void recommendationGridHasAColumnPerRecommendationGroupedByTypeAndOverlaysLinksForAnAdmin() {
 		when(recommendationDao.listForBackoffice(any())).thenReturn(Uni.createFrom().item(List.of(
 				new BackofficeRecommendation(REC_LEGUMES_ID, "Increase legumes", "legumes", RecommendationWeight.ENCOURAGED, null, null),
 				new BackofficeRecommendation(REC_PROCESSED_MEAT_ID, "Decrease processed meat", "processed meat", RecommendationWeight.LIMITED, null, null),
@@ -86,8 +86,9 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 		AlternativeIngredientRecommendationGrid grid = newService().recommendationGrid(adminUser()).await().atMost(AWAIT);
 
 		assertThat(grid.columns()).containsExactly(
-				new RecommendationColumn(REC_LEGUMES_ID, "legumes"),
-				new RecommendationColumn(REC_WHOLE_GRAINS_ID, "whole grains"));
+				new RecommendationColumn(REC_LEGUMES_ID, "legumes", RecommendationWeight.ENCOURAGED),
+				new RecommendationColumn(REC_WHOLE_GRAINS_ID, "whole grains", RecommendationWeight.ENCOURAGED),
+				new RecommendationColumn(REC_PROCESSED_MEAT_ID, "processed meat", RecommendationWeight.LIMITED));
 		assertThat(grid.ingredients()).hasSize(2);
 
 		StagedAlternativeIngredient lentils = grid.ingredients().get(0);
@@ -95,7 +96,7 @@ class BackofficeAlternativeIngredientsServiceImplTest {
 		assertThat(lentils.name()).isEqualTo("Lentils");
 		assertThat(lentils.published()).isTrue();
 		assertThat(lentils.version()).isZero();
-		assertThat(lentils.linkedRecommendationIds()).containsExactlyInAnyOrder(REC_LEGUMES_ID);
+		assertThat(lentils.linkedRecommendationIds()).containsExactlyInAnyOrder(REC_LEGUMES_ID, REC_PROCESSED_MEAT_ID);
 		assertThat(lentils.stagedRecommendationIds()).containsExactlyInAnyOrder(REC_WHOLE_GRAINS_ID);
 		assertThat(lentils.translations())
 				.containsEntry(RecipeLanguage.EL, TranslationState.PRESENT)

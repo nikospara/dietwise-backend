@@ -12,7 +12,7 @@ import eu.dietwise.v1.types.RecipeLanguage;
  * name/explanation edit must be based on ({@code 0} when there is no Staged Change yet), the completeness of its
  * translations for each non-English language, and its links to the grid's Recommendation columns.
  * <p>
- * The links are given as two sets, both restricted to the grid's ENCOURAGED columns: {@code linkedRecommendationIds} are
+ * The links are given as two sets, both restricted to the grid's columns: {@code linkedRecommendationIds} are
  * the Recommendations linked in published master, and {@code stagedRecommendationIds} are the Recommendations whose link
  * carries a pending change in the Working Copy. A column's effective presence is the master link toggled by a staged
  * change: a staged id absent from master is a staged addition, a staged id present in master is a staged removal. A row

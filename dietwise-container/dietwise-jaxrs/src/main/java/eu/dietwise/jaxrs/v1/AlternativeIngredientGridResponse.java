@@ -13,7 +13,7 @@ import eu.dietwise.services.v1.types.TranslationState;
 import eu.dietwise.v1.types.RecipeLanguage;
 
 /**
- * The substitution-value grid as returned to the backoffice: the ENCOURAGED Recommendation {@code columns} (in display
+ * The substitution-value grid as returned to the backoffice: the Recommendation {@code columns} (in display
  * order) and one {@code ingredients} row per Alternative Ingredient (sorted by name). Each row carries its effective
  * name, per-language translation completeness (language name to state name) and its links to the columns as two id
  * lists — the published-master links and the links carrying a pending change in the Working Copy.
@@ -23,11 +23,12 @@ public record AlternativeIngredientGridResponse(
 		List<Ingredient> ingredients
 ) {
 	/**
-	 * One grid column: an ENCOURAGED Recommendation's id and the component for scoring shown in its header.
+	 * One grid column: a Recommendation's id, the component for scoring shown in its header and its weight
+	 * ({@code ENCOURAGED} or {@code LIMITED}).
 	 */
-	public record Column(String id, String componentForScoring) {
+	public record Column(String id, String componentForScoring, String weight) {
 		static Column from(RecommendationColumn column) {
-			return new Column(column.id().toString(), column.componentForScoring());
+			return new Column(column.id().toString(), column.componentForScoring(), column.weight().name());
 		}
 	}
 

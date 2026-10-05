@@ -3,6 +3,7 @@ package eu.dietwise.services.v1.impl;
 import static eu.dietwise.common.utils.UniComprehensions.forc;
 import static eu.dietwise.common.utils.UniComprehensions.forcm;
 
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,9 @@ import io.smallrye.mutiny.Uni;
 
 @ApplicationScoped
 public class BackofficeAlternativeIngredientsServiceImpl implements BackofficeAlternativeIngredientsService {
+	/** The grid shows the ENCOURAGED columns first, then the LIMITED ones; each group keeps the order of the Recommendations. */
+	private static final List<RecommendationWeight> COLUMN_GROUP_ORDER = List.of(RecommendationWeight.ENCOURAGED, RecommendationWeight.LIMITED);
+
 	private final AlternativeIngredientDao alternativeIngredientDao;
 	private final RecommendationDao recommendationDao;
 	private final SuggestionTemplateDao suggestionTemplateDao;
@@ -102,8 +106,8 @@ public class BackofficeAlternativeIngredientsServiceImpl implements BackofficeAl
 			Map<UUID, Map<UUID, Boolean>> stagedLinks
 	) {
 		List<RecommendationColumn> columns = recommendations.stream()
-				.filter(recommendation -> recommendation.weight() == RecommendationWeight.ENCOURAGED)
-				.map(recommendation -> new RecommendationColumn(recommendation.id(), recommendation.componentForScoring()))
+				.map(recommendation -> new RecommendationColumn(recommendation.id(), recommendation.componentForScoring(), recommendation.weight()))
+				.sorted(Comparator.comparingInt(column -> COLUMN_GROUP_ORDER.indexOf(column.weight())))
 				.toList();
 		Set<UUID> columnIds = columns.stream().map(RecommendationColumn::id).collect(Collectors.toSet());
 		List<StagedAlternativeIngredient> rows = ingredients.stream()
